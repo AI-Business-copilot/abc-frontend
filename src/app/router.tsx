@@ -17,6 +17,7 @@ import { SignupPage } from "@/pages/auth/signup-page";
 import { DashboardPage } from "@/pages/dashboard/dashboard-page";
 import { CreateBusinessPage } from "@/pages/onboarding/create-business-page";
 import { HomePage } from "@/pages/public/home-page";
+import ProductsPage from "@/pages/products/products-page";
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -75,6 +76,7 @@ export const router = createBrowserRouter([
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <RequireSession><ResetPasswordPage /></RequireSession> },
   { path: "/auth/callback", element: <CallbackPage /> },
+  { path: "/products", element: <ProductsPage /> },
   {
     element: <RequireProfile />,
     children: [
