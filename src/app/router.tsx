@@ -18,6 +18,7 @@ import { DashboardPage } from "@/pages/dashboard/dashboard-page";
 import { CreateBusinessPage } from "@/pages/onboarding/create-business-page";
 import { HomePage } from "@/pages/public/home-page";
 import ProductsPage from "@/pages/products/products-page";
+import CategoriesPage from "@/pages/products/categories-page";
 import { OperationsPage } from "@/pages/products/operations-page";
 
 function RequireSession({ children }: { children: ReactNode }) {
@@ -95,6 +96,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireBusiness>
             <ProductsPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/products/categories",
+        element: (
+          <RequireBusiness>
+            <CategoriesPage />
           </RequireBusiness>
         ),
       },

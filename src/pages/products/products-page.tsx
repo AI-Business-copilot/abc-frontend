@@ -8,7 +8,8 @@ import {
   type ProductSku,
 } from '@/api/products-list';
 import { useAuth } from '@/hooks/use-auth';
-import { usePermissions } from '@/hooks/use-permissions';
+import { CatalogHeader } from '@/pages/products/catalog-header';
+import { Icon } from '@/pages/products/ui-icon';
 
 const vnd = (value: number) => new Intl.NumberFormat('vi-VN').format(Math.round(value || 0)) + ' đ';
 const compactVnd = (value: number) => {
@@ -16,10 +17,6 @@ const compactVnd = (value: number) => {
   if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(2).replace('.', ',') + ' tỷ';
   return new Intl.NumberFormat('vi-VN').format(Math.round(value)) + ' đ';
 };
-
-const Icon = ({ name, className = '' }: { name: string; className?: string }) => (
-  <span className={`material-symbols-outlined ${className}`}>{name}</span>
-);
 
 function StatCard({
   label,
@@ -215,17 +212,7 @@ function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => v
 
 export default function ProductsPage() {
   const { profile } = useAuth();
-  const { isOwner, isStaff } = usePermissions();
   const business = profile?.business ?? null;
-  const displayName = profile?.user.fullName || profile?.user.email || 'Người dùng';
-  const avatarText =
-    displayName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join('') || 'U';
-  const roleLabel = isOwner ? 'Chủ cửa hàng' : isStaff ? 'Nhân viên' : 'Quản trị viên';
 
   const [data, setData] = useState<ProductListResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -291,60 +278,7 @@ export default function ProductsPage() {
 
   return (
     <div className="abc-products min-h-screen bg-[#f5f6fa] text-[#101828]">
-      {/* Top bar */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#eaecf0]">
-        <div className="h-16 pl-6 pr-5 flex items-center gap-6">
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-9 h-9 rounded-lg bg-[#4f46e5] grid place-items-center text-white shadow-[0_4px_10px_rgba(79,70,229,0.35)]">
-              <Icon name="auto_awesome" className="text-[19px]" />
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-[16px] font-extrabold tracking-tight">ABC Retail</span>
-              <span className="text-[9px] font-bold tracking-[0.14em] text-[#4f46e5] bg-[#eef0ff] px-1.5 py-0.5 rounded">
-                COPILOT
-              </span>
-            </div>
-          </div>
-
-          <div className="flex-1 max-w-[720px]">
-            <div className="h-10 rounded-lg bg-[#f2f4f7] flex items-center gap-2 px-3.5 text-[#667085] focus-within:ring-2 focus-within:ring-[#c7cbff]">
-              <Icon name="search" className="text-[19px]" />
-              <input
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                placeholder="Tra cứu nhanh SKU, mã vạch, tên hàng hóa, danh mục..."
-                className="flex-1 bg-transparent outline-none text-[13px] text-[#101828] placeholder:text-[#98a2b3]"
-              />
-            </div>
-          </div>
-
-          <div className="ml-auto flex items-center gap-3.5">
-            <span className="w-2 h-2 rounded-full bg-[#12b76a]" />
-            <button className="relative w-8 h-8 grid place-items-center rounded-md hover:bg-[#f2f4f7] text-[#475467]">
-              <Icon name="notifications" className="text-[21px]" />
-              <span className="absolute -top-0.5 right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-[#f04438] text-white text-[9.5px] font-bold grid place-items-center">
-                3
-              </span>
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#4f46e5] text-white grid place-items-center text-[12px] font-bold">{avatarText}</div>
-              <div className="leading-tight">
-                <div className="text-[12.5px] font-semibold">{displayName}</div>
-                <div className="text-[10.5px] text-[#98a2b3]">{roleLabel}{business ? ` • ${business.name}` : ''}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <nav className="h-12 px-6 flex items-end gap-6">
-          <button className="h-12 inline-flex items-center border-b-2 border-[#4f46e5] text-[#4f46e5] text-[13px] font-semibold">
-            Sản phẩm
-          </button>
-          <button className="h-12 inline-flex items-center border-b-2 border-transparent text-[#667085] text-[13px] font-medium hover:text-[#344054]">
-            Danh mục
-          </button>
-        </nav>
-      </header>
+      <CatalogHeader active="products" keyword={keyword} onKeywordChange={setKeyword} />
 
       <main className="max-w-[1560px] mx-auto px-6 py-5">
         {/* Title */}
