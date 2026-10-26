@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowUpRight, ChartNoAxesCombined, ShieldCheck, Sparkles } from "lucide-react";
 
 import { Brand } from "@/components/layout/brand";
+import { supabaseConfigured } from "@/lib/supabase";
 
 export function AuthShell({
   eyebrow,
@@ -38,6 +39,13 @@ export function AuthShell({
         <section className="auth-content">
           <div className="auth-mobile-brand"><Brand /></div>
           <div className="auth-form-wrap">
+            {!supabaseConfigured && (
+              <p className="auth-config-warning" role="alert">
+                Chưa cấu hình Supabase: thêm <code>VITE_SUPABASE_URL</code> và{" "}
+                <code>VITE_SUPABASE_ANON_KEY</code> vào{" "}
+                <code>abc-frontend/.env</code> rồi khởi động lại dev server.
+              </p>
+            )}
             <div className="auth-heading">
               <span className="eyebrow">{eyebrow}</span>
               <h2>{title}</h2>

@@ -18,6 +18,7 @@ import { DashboardPage } from "@/pages/dashboard/dashboard-page";
 import { CreateBusinessPage } from "@/pages/onboarding/create-business-page";
 import { HomePage } from "@/pages/public/home-page";
 import ProductsPage from "@/pages/products/products-page";
+import { OperationsPage } from "@/pages/products/operations-page";
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -55,6 +56,15 @@ function RequireOnboarding() {
   return <CreateBusinessPage />;
 }
 
+function RequireBusiness({ children }: { children: ReactNode }) {
+  const { profile } = useAuth();
+  if (!profile) return <LoadingScreen />;
+  if (profile.onboardingRequired || !profile.business) {
+    return <Navigate replace to="/app" />;
+  }
+  return <>{children}</>;
+}
+
 function AppIndex() {
   const { profile } = useAuth();
   if (!profile) return <LoadingScreen />;
@@ -76,15 +86,23 @@ export const router = createBrowserRouter([
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <RequireSession><ResetPasswordPage /></RequireSession> },
   { path: "/auth/callback", element: <CallbackPage /> },
-  { path: "/products", element: <ProductsPage /> },
   {
     element: <RequireProfile />,
     children: [
       { path: "/onboarding", element: <RequireOnboarding /> },
       {
+        path: "/products",
+        element: (
+          <RequireBusiness>
+            <ProductsPage />
+          </RequireBusiness>
+        ),
+      },
+      {
         path: "/app",
         children: [
           { index: true, element: <AppIndex /> },
+          { path: "products", element: <OperationsPage /> },
           { path: "team", element: <TeamPage /> },
           { path: "business", element: <BusinessPage /> },
           { path: "security", element: <SecurityPage /> },

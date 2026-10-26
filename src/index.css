@@ -883,3 +883,114 @@ body { font-size: 15px; }
 .abc-products .font-mono {
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* ===== Missing Supabase configuration notice ===== */
+.auth-config-warning {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid #f3c7a0;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.auth-config-warning code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #ffedd5;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+
+/* ===== Operations hub (Vận hành) ===== */
+.ops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  max-width: 760px;
+}
+
+.ops-tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.ops-tile:hover {
+  border-color: #cfd2ff;
+  box-shadow: 0 10px 24px rgba(23, 33, 58, 0.08);
+  transform: translateY(-2px);
+}
+
+.ops-tile.disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.ops-tile.disabled:hover {
+  border-color: var(--line);
+  box-shadow: none;
+  transform: none;
+}
+
+.ops-tile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.ops-tile-icon.violet {
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+
+.ops-tile-icon.slate {
+  background: #f2f4f7;
+  color: #667085;
+}
+
+.ops-tile-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ops-tile-body strong {
+  font-size: 14px;
+}
+
+.ops-tile-body small {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.ops-tile-arrow {
+  margin-left: auto;
+  color: var(--violet);
+}
+
+.ops-tile-badge {
+  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f2f4f7;
+  color: #667085;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

@@ -1,10 +1,11 @@
-import { supabase } from "@/lib/supabase";
+import { requireSupabaseConfig, supabase } from "@/lib/supabase";
 import { apiRequest } from "@/services/api.service";
 import type { AuthProfile } from "@/types/auth.types";
 
 const callbackUrl = `${window.location.origin}/auth/callback`;
 
 export async function signInWithGoogle() {
+  requireSupabaseConfig();
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -16,6 +17,7 @@ export async function signInWithGoogle() {
 }
 
 export async function signInWithEmail(email: string, password: string) {
+  requireSupabaseConfig();
   const { error } = await supabase.auth.signInWithPassword({
     email: email.trim().toLowerCase(),
     password,
@@ -28,6 +30,7 @@ export async function signUpWithEmail(
   password: string,
   fullName: string,
 ) {
+  requireSupabaseConfig();
   const { data, error } = await supabase.auth.signUp({
     email: email.trim().toLowerCase(),
     password,
@@ -41,6 +44,7 @@ export async function signUpWithEmail(
 }
 
 export async function sendPasswordReset(email: string) {
+  requireSupabaseConfig();
   const redirectTo = new URL(callbackUrl);
   redirectTo.searchParams.set("mode", "recovery");
   const { error } = await supabase.auth.resetPasswordForEmail(
@@ -55,6 +59,7 @@ export async function getApplicationProfile() {
 }
 
 export async function signOut() {
+  requireSupabaseConfig();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
@@ -63,6 +68,7 @@ export async function updatePassword(
   newPassword: string,
   currentPassword?: string,
 ) {
+  requireSupabaseConfig();
   const { data, error } = await supabase.auth.updateUser({
     password: newPassword,
     ...(currentPassword ? { current_password: currentPassword } : {}),

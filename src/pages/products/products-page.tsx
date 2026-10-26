@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   productsListApi,
   type CategoryOption,
@@ -6,8 +7,8 @@ import {
   type ProductListResponse,
   type ProductSku,
 } from '@/api/products-list';
-
-const DEFAULT_BUSINESS_ID = '34344b30-5ac6-4375-9d84-52c993d25ed7';
+import { useAuth } from '@/hooks/use-auth';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const vnd = (value: number) => new Intl.NumberFormat('vi-VN').format(Math.round(value || 0)) + ' đ';
 const compactVnd = (value: number) => {
@@ -213,10 +214,18 @@ function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => v
 }
 
 export default function ProductsPage() {
-  const businessId = useMemo(() => {
-    const stored = localStorage.getItem('businessId');
-    return stored && stored.length > 10 ? stored : DEFAULT_BUSINESS_ID;
-  }, []);
+  const { profile } = useAuth();
+  const { isOwner, isStaff } = usePermissions();
+  const business = profile?.business ?? null;
+  const displayName = profile?.user.fullName || profile?.user.email || 'Người dùng';
+  const avatarText =
+    displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('') || 'U';
+  const roleLabel = isOwner ? 'Chủ cửa hàng' : isStaff ? 'Nhân viên' : 'Quản trị viên';
 
   const [data, setData] = useState<ProductListResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -245,12 +254,12 @@ export default function ProductsPage() {
     setLoading(true);
     setError('');
     productsListApi
-      .list({ businessId, q: debouncedKeyword, categoryId, status, page, pageSize })
+      .list({ q: debouncedKeyword, categoryId, status, page, pageSize })
       .then((res) => {
         if (!cancelled) setData(res.data);
       })
       .catch((err) => {
-        if (!cancelled) setError(err?.response?.data?.message || err.message || 'Không tải được dữ liệu');
+        if (!cancelled) setError(err?.message || 'Không tải được dữ liệu');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -258,7 +267,7 @@ export default function ProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [businessId, debouncedKeyword, categoryId, status, page, pageSize]);
+  }, [debouncedKeyword, categoryId, status, page, pageSize]);
 
   const stats = data?.stats;
   const categories: CategoryOption[] = data?.categories ?? [];
@@ -306,7 +315,6 @@ export default function ProductsPage() {
                 placeholder="Tra cứu nhanh SKU, mã vạch, tên hàng hóa, danh mục..."
                 className="flex-1 bg-transparent outline-none text-[13px] text-[#101828] placeholder:text-[#98a2b3]"
               />
-              <span className="text-[11px] text-[#98a2b3] border border-[#e4e7ec] bg-white rounded px-1.5 py-0.5">⌘K</span>
             </div>
           </div>
 
@@ -319,10 +327,10 @@ export default function ProductsPage() {
               </span>
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#4f46e5] text-white grid place-items-center text-[12px] font-bold">CH</div>
+              <div className="w-8 h-8 rounded-full bg-[#4f46e5] text-white grid place-items-center text-[12px] font-bold">{avatarText}</div>
               <div className="leading-tight">
-                <div className="text-[12.5px] font-semibold">Chủ Cửa Hàng</div>
-                <div className="text-[10.5px] text-[#98a2b3]">Owner • Quản trị viên</div>
+                <div className="text-[12.5px] font-semibold">{displayName}</div>
+                <div className="text-[10.5px] text-[#98a2b3]">{roleLabel}{business ? ` • ${business.name}` : ''}</div>
               </div>
             </div>
           </div>
@@ -342,6 +350,12 @@ export default function ProductsPage() {
         {/* Title */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
+            <nav className="mb-1 flex items-center gap-1.5 text-[11.5px] text-[#98a2b3]" aria-label="Breadcrumb">
+              <Link className="hover:text-[#4f46e5]" to="/app/products">Vận hành</Link>
+              <span>/</span>
+              <span className="font-semibold text-[#475467]">Sản phẩm</span>
+              {business && <><span>•</span><span>{business.name}</span></>}
+            </nav>
             <h1 className="text-[26px] leading-tight font-extrabold tracking-tight">Quản lý Sản phẩm &amp; Biến thể</h1>
             <p className="mt-1 text-[12.5px] text-[#667085]">
               Quản lý danh sách product_templates và theo dõi số lượng biến thể SKU liên kết thời gian thực.
@@ -600,11 +614,7 @@ export default function ProductsPage() {
             </button>
           </div>
         </div>
-
-        <footer className="mt-5 pb-2 flex items-center justify-between text-[11px] text-[#98a2b3]">
-          <span>© 2025 ABC Retail Copilot ERP • Hệ Thống Quản Lý Kho &amp; Điểm Bán Hàng Trực Tuyến.</span>
-          <span>Phiên bản v4.8.2-ERP</span>
-        </footer>
+      
       </main>
 
       {selected && <SkuModal product={selected} onClose={() => setSelected(null)} />}
