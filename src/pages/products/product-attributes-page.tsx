@@ -133,7 +133,7 @@ export function ProductAttributesPage() {
       </main>
 
       <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-[#eaecf0] bg-white px-5 py-3">
-        <div className="mx-auto flex max-w-[1560px] items-center justify-between"><button onClick={() => navigate("/products/new")} className="rounded-lg bg-[#eaf0ff] px-5 py-3 text-[14px] font-semibold text-[#344054]">← Quay lại: Bước 1 - Mẫu sản phẩm cha</button><div className="flex items-center gap-4"><button className="text-[14px] font-semibold text-[#667085]"><Icon name="bookmark_border" className="mr-1 align-middle text-[18px]" />Lưu bản nháp</button><button className="rounded-lg bg-[#4f46e5] px-7 py-3 text-[15px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)]">Tiếp tục: Bước 3 - Sinh biến thể SKU ({combinations} SKU) <Icon name="arrow_forward" className="ml-2 align-middle text-[20px]" /></button></div></div>
+        <div className="mx-auto flex max-w-[1560px] items-center justify-between"><button onClick={() => navigate("/products/new")} className="rounded-lg bg-[#eaf0ff] px-5 py-3 text-[14px] font-semibold text-[#344054]">← Quay lại: Bước 1 - Mẫu sản phẩm cha</button><div className="flex items-center gap-4"><button className="text-[14px] font-semibold text-[#667085]"><Icon name="bookmark_border" className="mr-1 align-middle text-[18px]" />Lưu bản nháp</button><button onClick={() => navigate("/products/new/variants")} className="rounded-lg bg-[#4f46e5] px-7 py-3 text-[15px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)]">Tiếp tục: Bước 3 - Sinh biến thể SKU ({combinations} SKU) <Icon name="arrow_forward" className="ml-2 align-middle text-[20px]" /></button></div></div>
       </footer>
     </div>
   );
