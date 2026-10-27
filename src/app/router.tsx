@@ -28,6 +28,7 @@ import { AttributesPage } from "@/pages/products/attributes-page";
 import { AttributeValuePage } from "@/pages/products/attribute-value-page";
 import { InventoryPage } from "@/pages/inventory/inventory-page";
 import { InventoryCreatePage } from "@/pages/inventory/inventory-create-page";
+import { StockLogPage } from "@/pages/inventory/stock-log-page";
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -176,6 +177,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireBusiness>
             <InventoryCreatePage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/stock-log",
+        element: (
+          <RequireBusiness>
+            <StockLogPage />
           </RequireBusiness>
         ),
       },
