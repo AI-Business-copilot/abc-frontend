@@ -8,6 +8,7 @@ type CatalogHeaderProps = {
   active: "products" | "categories" | "attributes";
   keyword: string;
   onKeywordChange: (value: string) => void;
+  mode?: "catalog" | "inventory";
 };
 
 const tabs = [
@@ -15,8 +16,12 @@ const tabs = [
   { key: "categories", label: "Danh mục", to: "/products/categories" },
   { key: "attributes", label: "Thuộc tính", to: "/products/attributes" },
 ] as const;
+const inventoryTabs = [
+  { key: "inventory", label: "Nhập kho ban đầu", to: "/inventory" },
+  { key: "stock-log", label: "Nhật ký biến động kho (Stock Log)", to: "/inventory/stock-log" },
+] as const;
 
-export function CatalogHeader({ active, keyword, onKeywordChange }: CatalogHeaderProps) {
+export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalog" }: CatalogHeaderProps) {
   const { profile } = useAuth();
   const { isOwner, isStaff } = usePermissions();
 
@@ -89,11 +94,11 @@ export function CatalogHeader({ active, keyword, onKeywordChange }: CatalogHeade
       </div>
 
       <nav className="h-12 px-6 flex items-end gap-6" aria-label="Danh mục chính">
-        {tabs.map((tab) => (
+        {(mode === "inventory" ? inventoryTabs : tabs).map((tab) => (
           <NavLink
             key={tab.key}
             to={tab.to}
-            end={tab.key === "products"}
+            end={tab.key === "products" || tab.key === "inventory"}
             className={({ isActive }) =>
               `h-12 inline-flex items-center border-b-2 text-[13px] transition-colors ${
                 isActive || active === tab.key

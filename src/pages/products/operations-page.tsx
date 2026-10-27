@@ -52,14 +52,14 @@ export function OperationsPage() {
           </span>
         )}
 
-        <span className="ops-tile disabled" title="Tồn kho sẽ ra mắt sau">
+        <Link className="ops-tile" to="/inventory">
           <span className="ops-tile-icon slate"><Warehouse size={22} /></span>
           <span className="ops-tile-body">
             <strong>Tồn kho</strong>
             <small>Nhập hàng, kiểm kê và điều chỉnh tồn kho.</small>
           </span>
-          <span className="ops-tile-badge">Sắp ra mắt</span>
-        </span>
+          <span className="ops-tile-arrow"><ArrowRight size={17} /></span>
+        </Link>
       </div>
     </AppLayout>
   );
