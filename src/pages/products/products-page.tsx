@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   productsListApi,
   type CategoryOption,
@@ -211,6 +211,7 @@ function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => v
 }
 
 export default function ProductsPage() {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const business = profile?.business ?? null;
 
@@ -305,7 +306,7 @@ export default function ProductsPage() {
               Nhập/Xuất Excel
               <Icon name="expand_more" className="text-[17px] text-[#98a2b3]" />
             </button>
-            <button className="h-10 px-4 inline-flex items-center gap-1.5 rounded-lg bg-[#4f46e5] text-white text-[12.5px] font-semibold shadow-[0_4px_12px_rgba(79,70,229,0.3)] hover:bg-[#4338ca]">
+            <button onClick={() => navigate('/products/new')} className="h-10 px-4 inline-flex items-center gap-1.5 rounded-lg bg-[#4f46e5] text-white text-[12.5px] font-semibold shadow-[0_4px_12px_rgba(79,70,229,0.3)] hover:bg-[#4338ca]">
               <Icon name="add_circle" className="text-[18px]" />
               Thêm sản phẩm mới
             </button>
