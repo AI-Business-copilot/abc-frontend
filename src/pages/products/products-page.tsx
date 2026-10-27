@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   productsListApi,
   type CategoryOption,
@@ -212,6 +212,8 @@ function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => v
 
 export default function ProductsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const notice = (location.state as { notice?: string } | null)?.notice;
   const { profile } = useAuth();
   const business = profile?.business ?? null;
 
@@ -312,6 +314,12 @@ export default function ProductsPage() {
             </button>
           </div>
         </div>
+
+        {notice && (
+          <div className="mt-4 rounded-lg bg-[#ecfdf3] border border-[#abefc6] text-[#067647] text-[12.5px] px-4 py-2.5">
+            {notice}
+          </div>
+        )}
 
         {error && (
           <div className="mt-4 rounded-lg bg-[#fef3f2] border border-[#fecdca] text-[#b42318] text-[12.5px] px-4 py-2.5">
