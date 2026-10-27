@@ -5,7 +5,7 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { Icon } from "@/pages/products/ui-icon";
 
 type CatalogHeaderProps = {
-  active: "products" | "categories";
+  active: "products" | "categories" | "attributes";
   keyword: string;
   onKeywordChange: (value: string) => void;
 };
@@ -13,6 +13,7 @@ type CatalogHeaderProps = {
 const tabs = [
   { key: "products", label: "Sản phẩm", to: "/products" },
   { key: "categories", label: "Danh mục", to: "/products/categories" },
+  { key: "attributes", label: "Thuộc tính", to: "/products/attributes" },
 ] as const;
 
 export function CatalogHeader({ active, keyword, onKeywordChange }: CatalogHeaderProps) {

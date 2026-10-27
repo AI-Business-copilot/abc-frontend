@@ -24,6 +24,7 @@ import { ProductCreatePage } from "@/pages/products/product-create-page";
 import { ProductAttributesPage } from "@/pages/products/product-attributes-page";
 import { ProductVariantsPage } from "@/pages/products/product-variants-page";
 import { ProductInventoryPage } from "@/pages/products/product-inventory-page";
+import { AttributesPage } from "@/pages/products/attributes-page";
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -140,6 +141,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireBusiness>
             <CategoriesPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/products/attributes",
+        element: (
+          <RequireBusiness>
+            <AttributesPage />
           </RequireBusiness>
         ),
       },
