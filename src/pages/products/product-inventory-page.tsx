@@ -1,46 +1,429 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
+import { productWizardApi, type TemplateDetail } from "@/api/product-wizard";
 import { CatalogHeader } from "@/pages/products/catalog-header";
 import { Icon } from "@/pages/products/ui-icon";
 
-const initialRows = [
-  ["SRM-B5-30ML-STD", "Serum B5 30ml Bản Tiêu Chuẩn", 100, 75000, "LOT-2025-B5-01 (HSD: 15/12/2026)"],
-  ["SRM-B5-30ML-PLUS", "Serum B5 30ml Bản Tăng Cường", 80, 85000, "LOT-2025-B5-01 (HSD: 15/12/2026)"],
-  ["SRM-B5-50ML-STD", "Serum B5 50ml Bản Tiêu Chuẩn", 100, 95000, "LOT-2025-B5-02 (HSD: 20/01/2027)"],
-  ["SRM-B5-50ML-PLUS", "Serum B5 50ml Bản Tăng Cường", 80, 105000, "LOT-2025-B5-02 (HSD: 20/01/2027)"],
-  ["SRM-B5-100ML-STD", "Serum B5 100ml Bản Tiêu Chuẩn", 65, 110000, "LOT-2025-B5-03 (HSD: 30/03/2027)"],
-  ["SRM-B5-100ML-PLUS", "Serum B5 100ml Bản Tăng Cường", 55, 115000, "LOT-2025-B5-03 (HSD: 30/03/2027)"],
-] as const;
+type StockRow = {
+  id: string;
+  sku: string;
+  attributeText: string;
+  groupValue: string;
+  cost: number;
+  safety: number;
+  quantity: number;
+  lotNumber: string;
+  manufacturingDate: string;
+  expirationDate: string;
+};
+
+const vnd = (value: number) => new Intl.NumberFormat("vi-VN").format(Math.round(value || 0)) + " đ";
+const palette = ["#4f46e5", "#12b76a", "#f79009", "#0ba5ec", "#9e77ed", "#f04438"];
+
+const displayUnit = (unit: string | null | undefined) => (unit || "Cái").split(" (")[0];
 
 export function ProductInventoryPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const templateId = searchParams.get("templateId") || "";
+
   const [keyword, setKeyword] = useState("");
-  const [lot, setLot] = useState("LOT-2025B2-B5");
-  const [expiry, setExpiry] = useState("15/12/2026");
-  const [manufactured, setManufactured] = useState("15/12/2023");
-  const [quantities, setQuantities] = useState<number[]>(initialRows.map((row) => row[2]));
+  const [template, setTemplate] = useState<TemplateDetail | null>(null);
+  const [rows, setRows] = useState<StockRow[]>([]);
+  const [lotNumber, setLotNumber] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
+  const [manufacturingDate, setManufacturingDate] = useState("");
   const [documents, setDocuments] = useState([true, true]);
-  const totalQuantity = quantities.reduce((total, quantity) => total + Number(quantity), 0);
-  const totalValue = useMemo(() => initialRows.reduce((total, row, index) => total + Number(quantities[index]) * row[3], 0), [quantities]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!templateId) {
+      navigate("/products/new", { replace: true });
+      return;
+    }
+    let cancelled = false;
+    productWizardApi
+      .getTemplate(templateId)
+      .then((detail) => {
+        if (cancelled) return;
+        if (detail.productVariants.length === 0) {
+          navigate(`/products/new/variants?templateId=${templateId}`, { replace: true });
+          return;
+        }
+        setTemplate(detail);
+        setRows(
+          detail.productVariants.map((variant) => {
+            const values = variant.variantAttributeValues || [];
+            return {
+              id: variant.id,
+              sku: variant.sku,
+              attributeText: values.map((value) => value.attributeValue.value).join(" • "),
+              groupValue: values[0]?.attributeValue.value || "Khác",
+              cost: Number(variant.costPrice) || 0,
+              safety: variant.safetyStockQty || 0,
+              quantity: 0,
+              lotNumber: "",
+              manufacturingDate: "",
+              expirationDate: "",
+            };
+          }),
+        );
+      })
+      .catch((err: Error) => !cancelled && setError(err.message))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [templateId, navigate]);
+
+  const totals = useMemo(
+    () => ({
+      quantity: rows.reduce((sum, row) => sum + row.quantity, 0),
+      value: rows.reduce((sum, row) => sum + row.quantity * row.cost, 0),
+    }),
+    [rows],
+  );
+
+  const groups = useMemo(() => {
+    const map = new Map<string, { quantity: number; value: number }>();
+    for (const row of rows) {
+      const current = map.get(row.groupValue) || { quantity: 0, value: 0 };
+      current.quantity += row.quantity;
+      current.value += row.quantity * row.cost;
+      map.set(row.groupValue, current);
+    }
+    return [...map.entries()]
+      .filter(([, group]) => group.quantity > 0)
+      .map(([label, group], index) => ({ label, ...group, color: palette[index % palette.length] }));
+  }, [rows]);
+
+  const gradient = useMemo(() => {
+    if (totals.quantity === 0) return "#eef2f7";
+    let cursor = 0;
+    const parts = groups.map((group) => {
+      const start = cursor;
+      cursor += (group.quantity / totals.quantity) * 100;
+      return `${group.color} ${start}% ${cursor}%`;
+    });
+    return `conic-gradient(${parts.join(", ")})`;
+  }, [groups, totals.quantity]);
+
+  const updateRow = (id: string, patch: Partial<StockRow>) => {
+    setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  };
+
+  const assignLotToAll = () => {
+    if (!lotNumber.trim() && !expirationDate && !manufacturingDate) {
+      setError("Nhập ít nhất mã lô hoặc hạn sử dụng trước khi gán cho toàn bộ SKU.");
+      return;
+    }
+    setRows((current) =>
+      current.map((row) => ({
+        ...row,
+        lotNumber: lotNumber.trim(),
+        manufacturingDate,
+        expirationDate,
+      })),
+    );
+    setError("");
+  };
+
+  const publish = async (skipStock: boolean) => {
+    if (!template) return;
+    const items = rows.filter((row) => row.quantity > 0);
+    if (!skipStock && items.length === 0) {
+      setError("Nhập số lượng tồn đầu kỳ cho ít nhất một biến thể, hoặc chọn “Bỏ qua & Để tồn kho = 0”.");
+      return;
+    }
+    if (!skipStock && template.hasLotTracking) {
+      const missing = items.filter((row) => !row.lotNumber.trim() || !row.expirationDate);
+      if (missing.length) {
+        setError(`Có ${missing.length} SKU chưa có mã lô hoặc hạn sử dụng. Dùng “Gán toàn bộ SKU” hoặc nhập trực tiếp từng dòng.`);
+        return;
+      }
+    }
+
+    setBusy(true);
+    setError("");
+    try {
+      if (!skipStock && items.length > 0) {
+        await productWizardApi.createOpeningStock({
+          note: `Tồn đầu kỳ khi tạo sản phẩm ${template.name}`,
+          apply: true,
+          items: items.map((row) => ({
+            variantId: row.id,
+            quantity: row.quantity,
+            unitCost: row.cost,
+            ...(template.hasLotTracking
+              ? {
+                  lotNumber: row.lotNumber.trim(),
+                  manufacturingDate: row.manufacturingDate || undefined,
+                  expirationDate: row.expirationDate,
+                }
+              : {}),
+          })),
+        });
+      }
+      await productWizardApi.updateTemplate(template.id, { isActive: true });
+      sessionStorage.removeItem(`abc:wizard:selections:${template.id}`);
+      sessionStorage.removeItem(`abc:wizard:industry:${template.id}`);
+      navigate("/products", {
+        state: {
+          notice: skipStock
+            ? `Đã đưa “${template.name}” vào kinh doanh với tồn kho ban đầu bằng 0.`
+            : `Đã tạo “${template.name}” với ${rows.length} SKU và ${totals.quantity} ${displayUnit(template.unitOfMeasure)} tồn đầu kỳ.`,
+        },
+      });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f5f6fa]">
+        <CatalogHeader active="products" keyword={keyword} onKeywordChange={setKeyword} />
+        <div className="mx-auto max-w-[1560px] px-5 py-10 text-[13px] text-[#667085]">Đang tải sổ dư tồn kho đầu kỳ…</div>
+      </div>
+    );
+  }
+
+  const unit = displayUnit(template?.unitOfMeasure);
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] pb-24 text-[#101828]">
       <CatalogHeader active="products" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1560px] px-5 py-3">
-        <div className="flex items-center justify-between"><div><p className="text-[11px] font-bold uppercase tracking-wide text-[#4338ca]">QUY TRÌNH KHỞI TẠO HÀNG HÓA CHUẨN ERP RETAIL</p><div className="mt-1 flex items-center gap-2"><h1 className="text-[19px] font-bold">Bước 4: Tồn kho &amp; Phân bổ</h1></div></div><span className="font-mono text-[12px] text-[#667085]">ID Mẫu: TMP-2025-0894</span></div>
-        <div className="mt-3 grid grid-cols-4 gap-3">{[
-          ["✓", "BƯỚC 1 • ĐÃ DUYỆT", "Mẫu cha - Serum B5"],
-          ["✓", "BƯỚC 2 • HOÀN THÀNH", "2 Thuộc tính • 6 Tổ hợp"],
-          ["✓", "BƯỚC 3 • ĐÃ TẠO MÃ", "6 SKU, Barcode & Giá vốn"],
-          ["4", "BƯỚC 4 • CHỐT SỔ 100%", "Số dư tồn đầu kỳ (Kho hàng)"],
-        ].map(([number, label, title], index) => <div key={label} className={["rounded-xl px-4 py-3", index === 3 ? "bg-[#4f46e5] text-white" : "bg-white"].join(" ")}><span className={["mr-2 inline-grid h-7 w-7 place-items-center rounded-full font-bold", index === 3 ? "bg-white text-[#4338ca]" : "bg-[#d1fadf] text-[#067647]"].join(" ")}>{number}</span><span className="text-[10px] font-semibold">{label}</span><p className="ml-9 text-[13px] font-bold">{title}</p></div>)}</div>
-        <section className="mt-4 flex items-center justify-between rounded-xl bg-white px-5 py-4"><div className="flex items-center gap-3"><div className="h-16 w-16 rounded-lg bg-gradient-to-br from-[#dce4e1] to-[#a7c3ca] p-2"><div className="mx-auto h-12 w-6 rounded-md bg-[#d7f0f3]" /></div><div><div><span className="rounded bg-[#eef0ff] px-2 py-1 font-mono text-[11px] font-bold text-[#4338ca]">TMP-2025-0894</span> <span className="rounded bg-[#eef3ff] px-2 py-1 text-[11px]">Mỹ phẩm &amp; Làm đẹp</span> <span className="rounded-full bg-[#6ce7b7] px-2 py-1 text-[11px] font-semibold text-[#067647]">⚙ FEFO Date Lô: ĐANG BẬT</span></div><h2 className="mt-1 text-[21px] font-bold">Serum Dưỡng Ẩm Phục Hồi Da B5 Concentrate...</h2></div></div><div className="flex gap-3 text-center"><div className="rounded-lg bg-[#eef3ff] px-5 py-2"><p className="text-[10px] text-[#667085]">TỔNG BIẾN THỂ</p><b>6 SKU</b><small className="block text-[#667085]">3 Dung tích × 2 Bản</small></div><div className="rounded-lg bg-[#eef3ff] px-5 py-2"><p className="text-[10px] text-[#667085]">TỔNG TỒN BAN ĐẦU</p><b className="text-[#4338ca]">{totalQuantity} Chai</b></div><div className="rounded-lg bg-[#eef3ff] px-5 py-2"><p className="text-[10px] text-[#667085]">GIÁ TRỊ TÀI SẢN KHO</p><b>{totalValue.toLocaleString("vi-VN")} đ</b><small className="block text-[#667085]">Theo đơn giá vốn net</small></div></div></section>
-        <section className="mt-4 rounded-xl border border-[#e1e7f2] bg-white p-4"><h2 className="text-[16px] font-bold"><Icon name="qr_code_2" className="mr-2 align-middle text-[21px] text-[#4338ca]" />Thiết Lập Lô &amp; Hạn Sử Dụng Mặc Định (FEFO Tracking) <span className="ml-2 rounded-full bg-[#6ce7b7] px-2 py-1 text-[10px] text-[#067647]">⚙ Quản lý Date: Đang Bật</span></h2><p className="text-[11px] text-[#667085]">Cấu hình thông tin lô sản xuất và chu kỳ hạn sử dụng khởi tạo cho tất cả 6 biến thể</p><div className="mt-3 grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-3"><label className="text-[10px] font-bold uppercase">Mã số lô (Lot Number)<input value={lot} onChange={(event) => setLot(event.target.value)} className="mt-1 h-10 w-full rounded-lg border-0 bg-[#eef3ff] px-3 font-mono text-[13px] outline-none" /></label><label className="text-[10px] font-bold uppercase">Hạn sử dụng (EXP Date)<input value={expiry} onChange={(event) => setExpiry(event.target.value)} className="mt-1 h-10 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[13px] outline-none" /><span className="relative -top-8 float-right mr-3 text-[11px] text-[#067647]">Còn 22 tháng</span></label><label className="text-[10px] font-bold uppercase">Ngày sản xuất (MFG)<input value={manufactured} onChange={(event) => setManufactured(event.target.value)} className="mt-1 h-10 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[13px] outline-none" /></label><button className="h-10 rounded-lg bg-[#4f46e5] px-7 text-[14px] font-bold text-white">Gán toàn bộ SKU</button></div></section>
-        <section className="mt-4 overflow-hidden rounded-xl bg-white"><div className="px-4 py-4"><h2 className="text-[16px] font-bold">Thiết Lập Số Dư Tồn Đầu Kỳ (Kho Cửa Hàng Chính) <span className="ml-2 rounded-full bg-[#eef0ff] px-2 py-1 text-[11px] font-semibold text-[#4338ca]">▣ Địa điểm: Kho Cửa Hàng Chính (Mặc định)</span></h2><p className="text-[11px] text-[#667085]">Mô hình đơn kho tập trung: Nhập số lượng tồn đầu kỳ cho từng biến thể để ghi sổ cái</p></div><table className="w-full text-left text-[12px]"><thead className="bg-[#eef3ff] text-[10px] uppercase text-[#667085]"><tr><th className="px-4 py-3">Thông tin biến thể &amp; giá vốn</th><th className="w-72 px-4 py-3">Số lượng tồn đầu kỳ</th><th className="w-56 px-4 py-3">Thành tiền vốn</th></tr></thead><tbody>{initialRows.map((row, index) => <tr key={row[0]} className="border-b border-[#eaecf0]"><td className="px-4 py-3"><b className="block text-[14px]">{row[1]} <span className="rounded bg-[#eef3ff] px-1.5 py-1 text-[10px]">{row[0].includes("30ML") ? "30ml" : row[0].includes("50ML") ? "50ml" : "100ml"}</span></b><code className="font-semibold text-[#4338ca]">{row[0]}</code>　<span className="font-mono text-[#667085]">• Vốn: {row[3].toLocaleString("vi-VN")} đ　• An toàn: {index < 2 ? 20 : index < 4 ? 25 : 30}</span><small className="block text-[#667085]">♢ Lô: {row[4]}</small></td><td className="px-4"><div className="flex items-center gap-2"><input type="number" value={quantities[index]} onChange={(event) => setQuantities((current) => current.map((quantity, currentIndex) => currentIndex === index ? Number(event.target.value) : quantity))} className="h-10 w-36 rounded-lg border-0 bg-[#eef3ff] px-3 text-center text-[15px] outline-none" /><span className="text-[#667085]">chai</span></div></td><td className="px-4 text-right text-[15px] font-bold">{(Number(quantities[index]) * row[3]).toLocaleString("vi-VN")} đ</td></tr>)}</tbody><tfoot className="bg-[#deebff]"><tr><td className="px-4 py-3 text-[16px] font-bold">▥ TỔNG CỘNG HỆ THỐNG KHO</td><td className="px-4 text-right"><b className="rounded bg-[#4f46e5] px-3 py-2 text-white">{totalQuantity} chai</b></td><td className="px-4 text-right text-[16px] font-bold text-[#4338ca]">{totalValue.toLocaleString("vi-VN")} đ</td></tr></tfoot></table></section>
-        <div className="mt-4 grid grid-cols-[0.8fr_1.5fr] gap-4"><section className="rounded-xl bg-white p-4"><h2 className="font-bold">◉ Cơ Cấu Giá Trị Theo Phân Loại</h2><p className="mt-1 text-[10px] uppercase text-[#667085]">THEO DUNG TÍCH</p><div className="mx-auto my-4 grid h-36 w-36 place-items-center rounded-full border-[18px] border-[#4f46e5] border-r-[#067647] border-b-[#667085]"><span className="text-center text-[11px]">TỔNG TỒN<br /><b className="text-[20px]">480</b><br />chai</span></div><p className="text-[11px] text-[#667085]">■ Dung tích 30ml (180 chai)　 <b>31.3%</b></p><p className="text-[11px] text-[#667085]">■ Dung tích 50ml (180 chai)　 <b>39.2%</b></p><p className="text-[11px] text-[#667085]">■ Dung tích 100ml (120 chai)　 <b>29.5%</b></p></section><section className="rounded-xl bg-white p-4"><h2 className="font-bold"><Icon name="print" className="mr-2 align-middle text-[19px] text-[#4338ca]" />Tùy chọn Xuất phiếu &amp; Tài liệu Đính kèm <span className="rounded bg-[#6ce7b7] px-2 py-1 text-[10px] text-[#067647]">Sẵn sàng in</span></h2><p className="text-[11px] text-[#667085]">Tự động tổng hợp chứng từ và tem mã vạch tiêu chuẩn ngay sau khi bấm lưu</p><div className="mt-14 grid grid-cols-2 gap-3">{["Phiếu kiểm kê F02", "Tem Barcode dán kệ"].map((label, index) => <button key={label} onClick={() => setDocuments((current) => current.map((value, itemIndex) => itemIndex === index ? !value : value))} className="rounded-lg border border-[#b8c2e0] p-4 text-left"><span className="float-right text-[#4338ca]">{documents[index] ? "☑" : "□"}</span><b>{label}</b><small className="mt-1 block text-[#667085]">{index === 0 ? "Bao gồm chữ ký thủ kho & chủ shop, xuất file PDF A4 chuẩn ISO." : "Tạo file in 6 SKU (khổ Decal 35×22mm hoặc nhiệt Zebra/Godex)."}</small></button>)}</div></section></div>
+        {error && <div className="mb-3 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-4 py-2.5 text-[12.5px] text-[#b42318]">{error}</div>}
+
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#4338ca]">QUY TRÌNH KHỞI TẠO HÀNG HÓA CHUẨN ERP RETAIL</p>
+            <div className="mt-1 flex items-center gap-2">
+              <h1 className="text-[19px] font-bold">Bước 4: Tồn kho &amp; Phân bổ</h1>
+            </div>
+          </div>
+          <span className="font-mono text-[12px] text-[#667085]">ID Mẫu: {template?.code}</span>
+        </div>
+
+        <div className="mt-3 grid grid-cols-4 gap-3">
+          {[
+            ["✓", "BƯỚC 1 • ĐÃ DUYỆT", `Mẫu cha - ${template?.name || ""}`],
+            ["✓", "BƯỚC 2 • HOÀN THÀNH", "Thuộc tính & tổ hợp"],
+            ["✓", "BƯỚC 3 • ĐÃ TẠO MÃ", `${rows.length} SKU, Barcode & Giá vốn`],
+            ["4", "BƯỚC 4 • CHỐT SỔ 100%", "Số dư tồn đầu kỳ (Kho hàng)"],
+          ].map(([number, label, title], index) => (
+            <div key={label} className={["rounded-xl px-4 py-3", index === 3 ? "bg-[#4f46e5] text-white" : "bg-white"].join(" ")}>
+              <span className={["mr-2 inline-grid h-7 w-7 place-items-center rounded-full font-bold", index === 3 ? "bg-white text-[#4338ca]" : "bg-[#d1fadf] text-[#067647]"].join(" ")}>{number}</span>
+              <span className="text-[10px] font-semibold">{label}</span>
+              <p className="ml-9 text-[13px] font-bold">{title}</p>
+            </div>
+          ))}
+        </div>
+
+        <section className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-lg bg-[#eef0ff] text-[#4338ca]">
+              {template?.imageUrl ? <img alt={template.name} className="h-full w-full object-cover" src={template.imageUrl} /> : <Icon name="inventory_2" className="text-[28px]" />}
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded bg-[#eef0ff] px-2 py-1 font-mono text-[11px] font-bold text-[#4338ca]">{template?.code}</span>
+                <span className="rounded bg-[#eef3ff] px-2 py-1 text-[11px]">{template?.category?.name || "Chưa phân loại"}</span>
+                <span className={["rounded-full px-2 py-1 text-[11px] font-semibold", template?.hasLotTracking ? "bg-[#6ce7b7] text-[#067647]" : "bg-[#f2f4f7] text-[#667085]"].join(" ")}>
+                  ⚙ FEFO Date Lô: {template?.hasLotTracking ? "ĐANG BẬT" : "ĐANG TẮT"}
+                </span>
+              </div>
+              <h2 className="mt-1 text-[21px] font-bold">{template?.name}</h2>
+            </div>
+          </div>
+          <div className="flex gap-3 text-center">
+            <div className="rounded-lg bg-[#eef3ff] px-5 py-2">
+              <p className="text-[10px] text-[#667085]">TỔNG BIẾN THỂ</p>
+              <b>{rows.length} SKU</b>
+              <small className="block text-[#667085]">{rows[0]?.attributeText || ""}</small>
+            </div>
+            <div className="rounded-lg bg-[#eef3ff] px-5 py-2">
+              <p className="text-[10px] text-[#667085]">TỔNG TỒN BAN ĐẦU</p>
+              <b className="text-[#4338ca]">{totals.quantity} {unit}</b>
+            </div>
+            <div className="rounded-lg bg-[#eef3ff] px-5 py-2">
+              <p className="text-[10px] text-[#667085]">GIÁ TRỊ TÀI SẢN KHO</p>
+              <b>{vnd(totals.value)}</b>
+              <small className="block text-[#667085]">Theo đơn giá vốn net</small>
+            </div>
+          </div>
+        </section>
+
+        {template?.hasLotTracking ? (
+          <section className="mt-4 rounded-xl border border-[#e1e7f2] bg-white p-4">
+            <h2 className="text-[16px] font-bold">
+              <Icon name="qr_code_2" className="mr-2 align-middle text-[21px] text-[#4338ca]" />
+              Thiết Lập Lô &amp; Hạn Sử Dụng Mặc Định (FEFO Tracking)
+              <span className="ml-2 rounded-full bg-[#6ce7b7] px-2 py-1 text-[10px] text-[#067647]">⚙ Quản lý Date: Đang Bật</span>
+            </h2>
+            <p className="text-[11px] text-[#667085]">Cấu hình thông tin lô sản xuất và hạn sử dụng khởi tạo cho tất cả {rows.length} biến thể</p>
+            <div className="mt-3 grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-3">
+              <label className="text-[10px] font-bold uppercase">
+                Mã số lô (Lot Number)
+                <input value={lotNumber} onChange={(event) => setLotNumber(event.target.value)} placeholder="VD: LOT-2026-B5" className="mt-1 h-10 w-full rounded-lg border-0 bg-[#eef3ff] px-3 font-mono text-[13px] outline-none" />
+              </label>
+              <label className="text-[10px] font-bold uppercase">
+                Hạn sử dụng (EXP Date)
+                <input value={expirationDate} onChange={(event) => setExpirationDate(event.target.value)} type="date" className="mt-1 h-10 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[13px] outline-none" />
+                {expirationDate && <span className="mt-1 block text-[10px] font-normal text-[#067647]">Hạn dùng: {expirationDate}</span>}
+              </label>
+              <label className="text-[10px] font-bold uppercase">
+                Ngày sản xuất (MFG)
+                <input value={manufacturingDate} onChange={(event) => setManufacturingDate(event.target.value)} type="date" className="mt-1 h-10 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[13px] outline-none" />
+              </label>
+              <button onClick={assignLotToAll} className="h-10 rounded-lg bg-[#4f46e5] px-7 text-[14px] font-bold text-white">
+                Gán toàn bộ SKU
+              </button>
+            </div>
+          </section>
+        ) : (
+          <section className="mt-4 rounded-xl border border-[#e1e7f2] bg-white p-4 text-[12px] text-[#667085]">
+            Sản phẩm này không bật quản lý lô/hạn dùng. Hệ thống sẽ ghi sổ tồn kho theo biến thể và kho mặc định.
+          </section>
+        )}
+
+        <section className="mt-4 overflow-hidden rounded-xl bg-white">
+          <div className="px-4 py-4">
+            <h2 className="text-[16px] font-bold">
+              Thiết Lập Số Dư Tồn Đầu Kỳ (Kho Cửa Hàng Chính)
+              <span className="ml-2 rounded-full bg-[#eef0ff] px-2 py-1 text-[11px] font-semibold text-[#4338ca]">▣ Địa điểm: Kho Cửa Hàng Chính (Mặc định)</span>
+            </h2>
+            <p className="text-[11px] text-[#667085]">Mô hình đơn kho tập trung: Nhập số lượng tồn đầu kỳ cho từng biến thể để ghi sổ cái.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] text-left text-[12px]">
+              <thead className="bg-[#eef3ff] text-[10px] uppercase text-[#667085]">
+                <tr>
+                  <th className="px-4 py-3">Thông tin biến thể &amp; giá vốn</th>
+                  <th className="w-72 px-4 py-3">Số lượng tồn đầu kỳ</th>
+                  <th className="w-56 px-4 py-3">Thành tiền vốn</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id} className="border-b border-[#eaecf0]">
+                    <td className="px-4 py-3">
+                      <b className="block text-[14px]">
+                        {template?.name} <span className="rounded bg-[#eef3ff] px-1.5 py-1 text-[10px]">{row.attributeText}</span>
+                      </b>
+                      <code className="font-semibold text-[#4338ca]">{row.sku}</code>　
+                      <span className="font-mono text-[#667085]">• Vốn: {vnd(row.cost)}　• An toàn: {row.safety}</span>
+                      {template?.hasLotTracking && (
+                        <small className="block text-[#667085]">
+                          ♢ Lô: {row.lotNumber || "Chưa gán"}　{row.expirationDate ? `• HSD: ${row.expirationDate}` : ""}
+                        </small>
+                      )}
+                    </td>
+                    <td className="px-4">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          value={row.quantity}
+                          onChange={(event) => updateRow(row.id, { quantity: Math.max(0, Math.trunc(Number(event.target.value) || 0)) })}
+                          className="h-10 w-36 rounded-lg border-0 bg-[#eef3ff] px-3 text-center text-[15px] outline-none focus:ring-2 focus:ring-[#c7cbff]"
+                        />
+                        <span className="text-[#667085]">{unit}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 text-right text-[15px] font-bold">{vnd(row.quantity * row.cost)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-[#deebff]">
+                <tr>
+                  <td className="px-4 py-3 text-[16px] font-bold">▥ TỔNG CỘNG HỆ THỐNG KHO</td>
+                  <td className="px-4 py-3 text-[16px] font-bold">{totals.quantity} {unit}</td>
+                  <td className="px-4 py-3 text-right text-[16px] font-bold">{vnd(totals.value)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+
+        <div className="mt-4 grid grid-cols-[0.8fr_1.5fr] gap-4">
+          <section className="rounded-xl bg-white p-4">
+            <h2 className="font-bold">◉ Cơ Cấu Giá Trị Theo Phân Loại</h2>
+            <p className="mt-1 text-[10px] uppercase text-[#667085]">THEO THUỘC TÍNH ĐẦU TIÊN</p>
+            <div className="mx-auto my-4 grid h-36 w-36 place-items-center rounded-full" style={{ background: gradient }}>
+              <div className="grid h-24 w-24 place-items-center rounded-full bg-white text-center text-[11px]">
+                TỔNG TỒN
+                <br />
+                <b className="text-[20px]">{totals.quantity}</b>
+                <br />
+                {unit}
+              </div>
+            </div>
+            {groups.map((group) => (
+              <p key={group.label} className="flex items-center justify-between text-[11px] text-[#667085]">
+                <span>
+                  <span className="mr-1.5 inline-block h-2 w-2 rounded-sm" style={{ background: group.color }} />
+                  {group.label} ({group.quantity} {unit})
+                </span>
+                <b>{totals.quantity ? ((group.quantity / totals.quantity) * 100).toFixed(1) : "0.0"}%</b>
+              </p>
+            ))}
+            {groups.length === 0 && <p className="text-[11px] text-[#98a2b3]">Nhập số lượng tồn đầu kỳ để xem cơ cấu giá trị.</p>}
+          </section>
+
+          <section className="rounded-xl bg-white p-4">
+            <h2 className="font-bold">
+              <Icon name="print" className="mr-2 align-middle text-[19px] text-[#4338ca]" />
+              Tùy chọn Xuất phiếu &amp; Tài liệu Đính kèm
+              <span className="rounded bg-[#6ce7b7] px-2 py-1 text-[10px] text-[#067647]">Sẵn sàng in</span>
+            </h2>
+            <p className="text-[11px] text-[#667085]">Tự động tổng hợp chứng từ và tem mã vạch tiêu chuẩn ngay sau khi bấm lưu.</p>
+            <div className="mt-14 grid grid-cols-2 gap-3">
+              {["Phiếu kiểm kê F02", "Tem Barcode dán kệ"].map((label, index) => (
+                <button
+                  key={label}
+                  onClick={() => setDocuments((current) => current.map((value, itemIndex) => (itemIndex === index ? !value : value)))}
+                  className="rounded-lg border border-[#b8c2e0] p-4 text-left"
+                >
+                  <span className="float-right text-[#4338ca]">{documents[index] ? "☑" : "□"}</span>
+                  <b>{label}</b>
+                  <small className="mt-1 block text-[#667085]">
+                    {index === 0
+                      ? "Bao gồm chữ ký thủ kho & chủ shop, xuất file PDF A4 chuẩn ISO."
+                      : `Tạo file in ${rows.length} SKU (khổ Decal 35×22mm hoặc nhiệt Zebra/Godex).`}
+                  </small>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
       </main>
-      <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-[#eaecf0] bg-white px-5 py-3"><div className="mx-auto flex max-w-[1560px] items-center justify-between"><button onClick={() => navigate("/products/new/variants")} className="rounded-lg bg-[#eaf0ff] px-5 py-3 text-[14px] font-semibold text-[#344054]">← Bước 3: Sinh biến thể SKU</button><span className="text-[13px] text-[#667085]">Bỏ qua &amp; Để tồn kho = 0</span><button className="rounded-lg bg-[#4f46e5] px-7 py-3 text-[15px] font-bold text-white">🚀 Hoàn tất &amp; Đưa vào Kinh doanh (Publish)</button></div></footer>
+
+      <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-[#eaecf0] bg-white px-5 py-3">
+        <div className="mx-auto flex max-w-[1560px] items-center justify-between">
+          <button onClick={() => navigate(`/products/new/variants?templateId=${templateId}`)} className="rounded-lg bg-[#eaf0ff] px-5 py-3 text-[14px] font-semibold text-[#344054]">
+            ← Bước 3: Sinh biến thể SKU
+          </button>
+          <div className="flex items-center gap-4">
+            <button disabled={busy} onClick={() => void publish(true)} className="text-[13px] font-semibold text-[#667085] disabled:opacity-60">
+              Bỏ qua &amp; Để tồn kho = 0
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => void publish(false)}
+              className="rounded-lg bg-[#4f46e5] px-7 py-3 text-[15px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] disabled:opacity-60"
+            >
+              {busy ? "Đang hoàn tất..." : "🚀 Hoàn tất & Đưa vào Kinh doanh (Publish)"}
+            </button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
