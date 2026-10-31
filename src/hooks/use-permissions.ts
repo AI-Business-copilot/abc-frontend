@@ -8,7 +8,7 @@ export function usePermissions() {
     const platformAdmin = profile?.platformRoles.some(
       (role) => role.code === "SYSTEM_ADMIN",
     );
-
+    console.log(profile);
     return {
       can: (permission: string) => permissions.has(permission),
       isOwner: profile?.business?.role === "OWNER",

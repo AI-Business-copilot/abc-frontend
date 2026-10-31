@@ -1,0 +1,74 @@
+import { useEffect, useState } from 'react';
+import { auditApi, type BusinessMember } from '../../../api/audit';
+import type { AuditItemAssignment, VariantOption } from '../../../types/audit';
+
+/** One editable row in the owner's form: employee + variant (+ optional existing lot). */
+export interface AuditRowDraft {
+  key: string;
+  assignedToUserId: string;
+  variant: VariantOption | null;
+  /** Empty string means the employee chooses an existing lot or a new lot while counting. */
+  lotId: string;
+}
+
+let rowCounter = 0;
+
+export function emptyRow(assignedToUserId = ''): AuditRowDraft {
+  rowCounter += 1;
+  return { key: `row-${rowCounter}`, assignedToUserId, variant: null, lotId: '' };
+}
+
+/** Returns an error message, or null when every row is complete and unique. */
+export function validateRows(rows: AuditRowDraft[]): string | null {
+  if (rows.length === 0) return 'Add at least one row (employee + SKU).';
+
+  const seen = new Set<string>();
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    if (!row.assignedToUserId) return `Row ${i + 1}: choose an employee.`;
+    if (!row.variant) return `Row ${i + 1}: choose a SKU.`;
+    if (row.lotId) {
+      const key = `${row.variant.id}:${row.lotId}`;
+      if (seen.has(key)) return `Row ${i + 1}: duplicate SKU and lot.`;
+      seen.add(key);
+    }
+  }
+  return null;
+}
+
+export function rowsToAssignments(rows: AuditRowDraft[]): AuditItemAssignment[] {
+  return rows.map((row) => ({
+    assignedToUserId: row.assignedToUserId,
+    variantId: row.variant!.id,
+    lotId: row.lotId || null,
+  }));
+}
+
+/** Active STAFF members of the current business. */
+export function useStaffMembers() {
+  const [members, setMembers] = useState<BusinessMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await auditApi.getMembers();
+        if (cancelled) return;
+        setMembers(data.members.filter((m) => m.role === 'STAFF' && m.status === 'ACTIVE'));
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load staff members');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { members, loading, error };
+}

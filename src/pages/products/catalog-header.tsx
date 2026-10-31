@@ -18,6 +18,7 @@ const tabs = [
 ] as const;
 const inventoryTabs = [
   { key: "inventory", label: "Nhập kho ban đầu", to: "/inventory" },
+  { key: "stock-audit", label: "Kiểm kê tồn kho (Stock Audit)", to: "/inventory/audit" },
   { key: "stock-log", label: "Nhật ký biến động kho (Stock Log)", to: "/inventory/stock-log" },
 ] as const;
 

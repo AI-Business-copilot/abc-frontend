@@ -29,6 +29,11 @@ import { AttributeValuePage } from "@/pages/products/attribute-value-page";
 import { InventoryPage } from "@/pages/inventory/inventory-page";
 import { InventoryCreatePage } from "@/pages/inventory/inventory-create-page";
 import { StockLogPage } from "@/pages/inventory/stock-log-page";
+import { AuditListPage } from "@/pages/inventory/audit/audit-list-page";
+import { AuditCreatePage } from "@/pages/inventory/audit/audit-create-page";
+import { AuditDetailPage } from "@/pages/inventory/audit/audit-detail-page";
+import { AuditCountPage } from "@/pages/inventory/audit/audit-count-page";
+import { AuditItemDetailPage } from "@/pages/inventory/audit/audit-item-detail-page";
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -185,6 +190,46 @@ export const router = createBrowserRouter([
         element: (
           <RequireBusiness>
             <StockLogPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit",
+        element: (
+          <RequireBusiness>
+            <AuditListPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit/create",
+        element: (
+          <RequireBusiness>
+            <AuditCreatePage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit/:auditId",
+        element: (
+          <RequireBusiness>
+            <AuditDetailPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit/:auditId/items/:itemId",
+        element: (
+          <RequireBusiness>
+            <AuditItemDetailPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit/:auditId/count",
+        element: (
+          <RequireBusiness>
+            <AuditCountPage />
           </RequireBusiness>
         ),
       },
