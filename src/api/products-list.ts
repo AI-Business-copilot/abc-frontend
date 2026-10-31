@@ -1,6 +1,4 @@
-﻿import { supabase } from "@/lib/supabase";
-
-const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+﻿import { apiJson } from "@/lib/api-client";
 
 export type ProductSku = {
   id: string;
@@ -67,24 +65,7 @@ export type ProductListQuery = {
 };
 
 async function getJson<T>(path: string): Promise<T> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-  }
-
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    headers: { Authorization: `Bearer ${session.access_token}` },
-  });
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => ({}))) as { message?: string };
-    throw new Error(payload.message || `Yêu cầu thất bại (${response.status}).`);
-  }
-
-  return (await response.json()) as T;
+  return apiJson<T>(path);
 }
 
 export const productsListApi = {

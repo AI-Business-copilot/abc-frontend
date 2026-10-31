@@ -10,6 +10,11 @@ import {
 import type { Session } from "@supabase/supabase-js";
 
 import { getApplicationProfile, signOut } from "@/services/auth.service";
+import {
+  hasStoredAuthSession,
+  isSessionExpiredError,
+  markSessionExpired,
+} from "@/lib/api-client";
 import { supabase } from "@/lib/supabase";
 import type { AuthProfile } from "@/types/auth.types";
 
@@ -39,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    const hadStoredSession = hasStoredAuthSession();
     const loadProfile = async (nextSession: Session | null) => {
       setSession(nextSession);
       setProfile(null);
@@ -72,9 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .getSession()
       .then(({ data, error }) => {
         if (error) throw error;
+        if (!data.session && hadStoredSession) markSessionExpired();
         return loadProfile(data.session);
       })
       .catch((error: unknown) => {
+        if (isSessionExpiredError(error)) markSessionExpired();
         if (active) {
           setProfileError(
             error instanceof Error ? error.message : "Không khởi tạo được phiên.",
