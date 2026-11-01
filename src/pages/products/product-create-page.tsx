@@ -64,6 +64,10 @@ export function ProductCreatePage() {
   const [description, setDescription] = useState(initialDraft.description || "");
   const [images, setImages] = useState<string[]>(initialDraft.images || []);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showQuickCat, setShowQuickCat] = useState(false);
+  const [quickCatName, setQuickCatName] = useState("");
+  const [quickCatParentId, setQuickCatParentId] = useState("");
+  const [quickCatBusy, setQuickCatBusy] = useState(false);
   const [activeAfterCreate, setActiveAfterCreate] = useState(initialDraft.activeAfterCreate ?? true);
   const [industry, setIndustry] = useState<"FASHION" | "BEAUTY">(initialDraft.industry || "BEAUTY");
   const [busy, setBusy] = useState(false);
@@ -193,6 +197,51 @@ export function ProductCreatePage() {
     return "";
   };
 
+  const resetAllProgress = () => {
+    sessionStorage.removeItem("abc:wizard:draft:new");
+    if (templateId) {
+      sessionStorage.removeItem(`abc:wizard:draft:${templateId}`);
+      sessionStorage.removeItem(`abc:wizard:industry:${templateId}`);
+      sessionStorage.removeItem(`abc:wizard:selections:${templateId}`);
+    }
+    sessionStorage.removeItem("abc:wizard:active_template_id");
+    sessionStorage.removeItem("abc:wizard:active_template_name");
+    setName("");
+    setCategoryId("");
+    setDescription("");
+    setImages([]);
+    setTemplate(null);
+    setNotice("Đã làm mới form và xóa toàn bộ bản nháp dở dang.");
+    navigate("/products/new", { replace: true });
+  };
+
+  const handleCreateQuickCategory = async () => {
+    const trimmed = quickCatName.trim();
+    if (!trimmed) {
+      setError("Vui lòng nhập tên danh mục.");
+      return;
+    }
+    setQuickCatBusy(true);
+    setError("");
+    try {
+      const created = await productWizardApi.createCategory({
+        name: trimmed,
+        parentId: quickCatParentId || null,
+      });
+      const updatedCats = await categoriesApi.list();
+      setCategories(updatedCats);
+      setCategoryId(created.id);
+      setShowQuickCat(false);
+      setQuickCatName("");
+      setQuickCatParentId("");
+      setNotice(`Đã tạo danh mục “${created.name}” và tự động chọn.`);
+    } catch (err: any) {
+      setError(err?.message || "Không tạo được danh mục.");
+    } finally {
+      setQuickCatBusy(false);
+    }
+  };
+
   const save = async (nextStep: boolean) => {
     const validation = validate();
     if (validation) {
@@ -202,9 +251,13 @@ export function ProductCreatePage() {
     setBusy(true);
     setError("");
     try {
-      const record = template
-        ? await productWizardApi.updateTemplate(template.id, formPayload())
+      const targetId = template?.id || templateId;
+      const record = targetId
+        ? await productWizardApi.updateTemplate(targetId, formPayload())
         : await productWizardApi.createTemplate({ ...formPayload(), isActive: false });
+      if (!templateId && record?.id) {
+        window.history.replaceState(null, "", `/products/new?templateId=${record.id}`);
+      }
       setTemplate(record);
       sessionStorage.setItem("abc:wizard:industry:" + record.id, industry);
       sessionStorage.setItem(`abc:wizard:draft:${record.id}`, JSON.stringify({
@@ -279,10 +332,24 @@ export function ProductCreatePage() {
 
       <main className="mx-auto max-w-[1560px] px-5 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-[17px] font-bold">Quy trình Khởi tạo Hàng hóa &amp; Biến thể SKU Matrix</h1>
-          <span className="text-[12px] text-[#667085]">
-            Tiến độ tổng thể: <b className="text-[#4f46e5]">25%</b>
-          </span>
+          <div>
+            <h1 className="text-[17px] font-bold">Quy trình Khởi tạo Hàng hóa &amp; Biến thể SKU Matrix</h1>
+            <p className="text-[11.5px] text-[#667085]">Bước 1: Thiết lập thông tin Mẫu Sản Phẩm Cha</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={resetAllProgress}
+              className="flex items-center gap-1.5 rounded-lg border border-[#e4e7ec] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#667085] hover:bg-[#fef3f2] hover:text-[#d92d20] shadow-sm transition-colors"
+              title="Xóa bản nháp và làm mới toàn bộ form Bước 1"
+            >
+              <Icon name="restart_alt" className="text-[16px]" />
+              Bỏ lưu tiến trình Bước 1
+            </button>
+            <span className="text-[12px] text-[#667085]">
+              Tiến độ: <b className="text-[#4f46e5]">25%</b>
+            </span>
+          </div>
         </div>
 
         <div className="mt-3 grid grid-cols-4 gap-3">
@@ -518,7 +585,7 @@ export function ProductCreatePage() {
             <div className="mt-4 grid grid-cols-[1.25fr_0.85fr] gap-3">
               <label className="text-[12px] font-semibold">
                 Danh Mục Sản Phẩm <span className="text-[#d92d20]">*</span>
-                <span className="float-right text-[#4338ca]">＋ Thêm nhanh</span>
+                <button type="button" onClick={() => setShowQuickCat(true)} className="float-right text-[#4338ca] hover:underline font-semibold">＋ Thêm nhanh danh mục</button>
                 <select
                   value={categoryId}
                   onChange={(event) => handleCategoryChange(event.target.value)}
@@ -631,6 +698,81 @@ export function ProductCreatePage() {
           </button>
         </div>
       </footer>
+
+      {/* MODAL THÊM NHANH DANH MỤC */}
+      {showQuickCat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <h3 className="text-[17px] font-bold text-gray-900 flex items-center gap-2">
+                <Icon name="category" className="text-[22px] text-[#4f46e5]" />
+                Thêm nhanh danh mục sản phẩm
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowQuickCat(false)}
+                className="rounded-lg p-1 text-gray-400 hover:text-gray-600"
+              >
+                <Icon name="close" className="text-[20px]" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="text-[13px] font-semibold text-gray-700">
+                  Tên danh mục mới <span className="text-red-500">*</span>
+                </label>
+                <input
+                  autoFocus
+                  type="text"
+                  value={quickCatName}
+                  onChange={(e) => setQuickCatName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && void handleCreateQuickCategory()}
+                  placeholder="Ví dụ: Áo hoodie, Giày sneaker, Túi xách, Serum..."
+                  className="mt-1.5 h-11 w-full rounded-xl border border-gray-300 bg-white px-3.5 text-[14px] outline-none focus:border-[#4f46e5] focus:ring-2 focus:ring-[#4f46e5]/20"
+                />
+              </div>
+
+              <div>
+                <label className="text-[13px] font-semibold text-gray-700">
+                  Danh mục cha (Tùy chọn)
+                </label>
+                <select
+                  value={quickCatParentId}
+                  onChange={(e) => setQuickCatParentId(e.target.value)}
+                  className="mt-1.5 h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-[13px] outline-none focus:border-[#4f46e5]"
+                >
+                  <option value="">(Không có - Tạo làm danh mục gốc)</option>
+                  {categories?.items.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={quickCatBusy}
+                onClick={() => setShowQuickCat(false)}
+                className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-[13px] font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={quickCatBusy || !quickCatName.trim()}
+                onClick={() => void handleCreateQuickCategory()}
+                className="rounded-xl bg-[#4f46e5] px-5 py-2.5 text-[13px] font-bold text-white hover:bg-[#4338ca] disabled:opacity-60"
+              >
+                {quickCatBusy ? "Đang tạo..." : "Tạo danh mục ngay"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

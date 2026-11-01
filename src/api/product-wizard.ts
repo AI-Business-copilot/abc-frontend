@@ -144,4 +144,9 @@ export const productWizardApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  createCategory: (payload: { name: string; parentId?: string | null; description?: string }) =>
+    request<{ id: string; name: string }>("/categories", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };

@@ -125,6 +125,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "/products/attributes-selection",
+        element: (
+          <RequireBusiness>
+            <ProductAttributesPage />
+          </RequireBusiness>
+        ),
+      },
+      {
         path: "/products/new/variants",
         element: (
           <RequireBusiness>

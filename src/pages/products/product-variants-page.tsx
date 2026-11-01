@@ -42,16 +42,16 @@ function loadTemplateWithVariants(templateId: string, selections: Selection[]): 
 
   const promise = (async () => {
     let detail = await productWizardApi.getTemplate(templateId);
-    if (detail.productVariants.length === 0) {
-      if (selections.length === 0) {
-        throw new Error("Thiếu cấu hình thuộc tính. Vui lòng quay lại Bước 2 và chọn giá trị thuộc tính.");
-      }
+    // Nếu chưa có biến thể HOẶC có cấu hình selections từ Bước 2, đồng bộ tạo các tổ hợp biến thể mới
+    if (selections.length > 0) {
       await productWizardApi.generateVariants(
         templateId,
         selections.map((selection) => ({ attributeId: selection.attributeId, attributeValueIds: selection.valueIds })),
         { costPrice: 75000, basePrice: 145000 },
       );
       detail = await productWizardApi.getTemplate(templateId);
+    } else if (detail.productVariants.length === 0) {
+      throw new Error("Thiếu cấu hình thuộc tính. Vui lòng quay lại Bước 2 và chọn giá trị thuộc tính.");
     }
     return detail;
   })().catch((err) => {
@@ -150,6 +150,33 @@ export function ProductVariantsPage() {
 
   const updateRow = (id: string, patch: Partial<PriceRow>) => {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  };
+
+  const resyncFromStep2 = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const selections = readSelections(templateId);
+      if (selections.length === 0) {
+        throw new Error("Chưa có cấu hình thuộc tính ở Bước 2.");
+      }
+      pendingLoads.clear();
+      await productWizardApi.generateVariants(
+        templateId,
+        selections.map((selection) => ({ attributeId: selection.attributeId, attributeValueIds: selection.valueIds })),
+        { costPrice: baseCost || 75000, basePrice: 145000 },
+      );
+      const detail = await productWizardApi.getTemplate(templateId);
+      setTemplate(detail);
+      const mapped = mapRows(detail, selections);
+      setRows(mapped);
+      setSelectedIds(mapped.map((row) => row.id));
+      setNotice("Đã đồng bộ và cập nhật lại toàn bộ ma trận biến thể theo cấu hình Bước 2 mới nhất.");
+    } catch (err: any) {
+      setError(err?.message || "Lỗi đồng bộ biến thể.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const applyPricing = () => {
@@ -273,10 +300,22 @@ export function ProductVariantsPage() {
             </h1>
             <p className="mt-1 text-[11px] text-[#667085]">Quy trình Khởi tạo Hàng hóa &amp; Biến thể SKU Matrix • Chuẩn hóa dữ liệu ERP đa kênh</p>
           </div>
-          <span className="rounded-lg bg-white px-4 py-2 text-[12px] font-semibold shadow-sm">
-            <Icon name="verified_user" className="mr-1 align-middle text-[17px] text-[#067647]" />
-            {template?.code || "TMP"} <span className="ml-2 text-[#98a2b3]">• {rows.length} SKU khả dụng</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={resyncFromStep2}
+              className="flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white px-3.5 py-2 text-[12px] font-bold text-[#4f46e5] hover:bg-[#eef0ff] shadow-sm disabled:opacity-60"
+              title="Đồng bộ lại toàn bộ biến thể theo thay đổi mới nhất từ Bước 2"
+            >
+              <Icon name="sync" className="text-[16px]" />
+              {busy ? "Đang đồng bộ..." : "Đồng bộ lại từ Bước 2"}
+            </button>
+            <span className="rounded-lg bg-white px-4 py-2 text-[12px] font-semibold shadow-sm">
+              <Icon name="verified_user" className="mr-1 align-middle text-[17px] text-[#067647]" />
+              {template?.code || "TMP"} <span className="ml-2 text-[#98a2b3]">• {rows.length} SKU</span>
+            </span>
+          </div>
         </div>
 
         <div className="mt-3 grid grid-cols-4 gap-3">

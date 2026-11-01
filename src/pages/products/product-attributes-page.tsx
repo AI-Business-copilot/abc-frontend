@@ -197,6 +197,13 @@ export function ProductAttributesPage() {
     setNotice("Đã lưu cấu hình thuộc tính cho mẫu sản phẩm.");
   };
 
+  const resetStep2Progress = () => {
+    sessionStorage.removeItem(`abc:wizard:selections:${templateId}`);
+    const industry = sessionStorage.getItem(`abc:wizard:industry:${templateId}`) || "BEAUTY";
+    setSelections(defaultSelections(attributes, industry));
+    setNotice("Đã làm mới thiết lập thuộc tính Bước 2 về mặc định.");
+  };
+
   const goBackToStep1 = () => {
     persist(selections);
     navigate(`/products/new?templateId=${templateId}`);
@@ -270,6 +277,15 @@ export function ProductAttributesPage() {
               <Icon name="info" className="mr-1 align-middle text-[17px]" />
               {categoryLabel}
             </span>
+            <button
+              type="button"
+              onClick={resetStep2Progress}
+              className="flex items-center gap-1 rounded-lg border border-[#fecdca] bg-white px-3 py-3 text-[12px] font-semibold text-[#b42318] hover:bg-[#fef3f2]"
+              title="Xóa lựa chọn thuộc tính đã lưu và đưa về mặc định"
+            >
+              <Icon name="restart_alt" className="text-[17px]" />
+              Bỏ lưu tiến trình Bước 2
+            </button>
             <button
               type="button"
               onClick={() => {
