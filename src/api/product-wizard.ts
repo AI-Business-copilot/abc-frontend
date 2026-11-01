@@ -133,7 +133,7 @@ export const productWizardApi = {
     }),
   bulkUpdateVariants: (
     templateId: string,
-    variants: { id: string; costPrice: number; basePrice: number; safetyStockQty: number }[],
+    variants: { id: string; costPrice: number; basePrice: number; safetyStockQty: number; sku?: string; barcode?: string }[],
   ) =>
     request<{ updated: number }>(`/products/templates/${templateId}/variants/bulk`, {
       method: "PATCH",

@@ -74,6 +74,8 @@ export function ProductVariantsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [baseCost, setBaseCost] = useState(75000);
   const [margin, setMargin] = useState(48.5);
+  const [skuPrefix, setSkuPrefix] = useState("");
+  const [showPrefixHelper, setShowPrefixHelper] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -158,11 +160,57 @@ export function ProductVariantsPage() {
     setNotice(`Đã áp dụng giá vốn ${vnd(nextCost)} và margin ${margin}% cho ${target.length} biến thể.`);
   };
 
+  const applyCustomPrefix = () => {
+    const prefix = (skuPrefix || "").trim().toUpperCase();
+    if (!prefix) {
+      setError("Vui lòng nhập tiền tố (ví dụ: ABC-TSHIRT hoặc TENANT-DANHMUC).");
+      return;
+    }
+    const target = selectedIds.length ? selectedIds : rows.map((row) => row.id);
+    setRows((current) =>
+      current.map((row, idx) => {
+        if (!target.includes(row.id)) return row;
+        const valPart = row.attributeText
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/Đ/g, "D")
+          .toUpperCase()
+          .replace(/[^A-Z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        const newSku = `${prefix}-${valPart || String(idx + 1).padStart(2, "0")}`;
+        return { ...row, sku: newSku };
+      }),
+    );
+    setNotice(`Đã tự động cập nhật tiền tố “${prefix}” cho ${target.length} biến thể.`);
+  };
+
   const persistPrices = async () => {
     if (!template) return;
+    // Kiểm tra SKU hợp lệ và không trùng lặp
+    const emptySku = rows.find((r) => !r.sku.trim());
+    if (emptySku) {
+      throw new Error("Mã SKU không được để trống. Vui lòng kiểm tra lại các dòng.");
+    }
+    const skuSet = new Set<string>();
+    for (const r of rows) {
+      const normalized = r.sku.trim().toUpperCase();
+      if (skuSet.has(normalized)) {
+        throw new Error(`Mã SKU “${normalized}” bị trùng lặp trong bảng. Mỗi biến thể phải có mã SKU duy nhất.`);
+      }
+      skuSet.add(normalized);
+    }
+
     await productWizardApi.bulkUpdateVariants(
       template.id,
-      rows.map((row) => ({ id: row.id, costPrice: row.cost, basePrice: row.price, safetyStockQty: row.safety })),
+      rows.map((row) => ({
+        id: row.id,
+        costPrice: row.cost,
+        basePrice: row.price,
+        safetyStockQty: row.safety,
+        sku: row.sku.trim().toUpperCase(),
+        barcode: row.barcode.trim() || undefined,
+      })),
     );
   };
 
@@ -305,6 +353,68 @@ export function ProductVariantsPage() {
           </button>
         </section>
 
+        {/* Cấu hình tiền tố SKU & Trợ lý quy tắc [TENANT]-[SLUG]-[VALUE] */}
+        <section className="mt-4 rounded-xl border border-[#c7cbff] bg-gradient-to-r from-[#eef2ff] via-white to-[#f5f6ff] p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#4f46e5] text-white">
+                <Icon name="qr_code" className="text-[22px]" />
+              </span>
+              <div>
+                <h3 className="text-[15px] font-bold text-[#101828]">
+                  Cấu hình Tiền tố SKU: <code className="text-[#4f46e5] font-mono">[TENANT]-[SLUG]-[VALUE]</code>
+                </h3>
+                <p className="text-[12px] text-[#667085]">
+                  Hệ thống hỗ trợ tự động đồng bộ theo danh mục hoặc bạn có thể chỉnh sửa thủ công từng mã SKU trực tiếp trong bảng.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={skuPrefix}
+                onChange={(e) => setSkuPrefix(e.target.value)}
+                placeholder="Ví dụ: ABC-AOTHUN..."
+                className="h-10 w-48 rounded-lg border border-[#d0d5dd] bg-white px-3 font-mono text-[12px] uppercase outline-none focus:border-[#4f46e5]"
+              />
+              <button
+                type="button"
+                onClick={applyCustomPrefix}
+                className="h-10 rounded-lg bg-[#4f46e5] px-4 text-[12.5px] font-bold text-white shadow-sm hover:bg-[#4338ca]"
+              >
+                Gán tiền tố
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPrefixHelper((v) => !v)}
+                className="h-10 rounded-lg border border-[#d0d5dd] bg-white px-3 text-[12px] font-semibold text-[#475467] hover:bg-gray-50"
+              >
+                {showPrefixHelper ? "Ẩn giải thích ▲" : "Ý nghĩa quy tắc ▼"}
+              </button>
+            </div>
+          </div>
+
+          {showPrefixHelper && (
+            <div className="mt-3 rounded-lg border border-[#e0e7ff] bg-white p-3 text-[12px] text-[#475467]">
+              <p className="font-bold text-[#101828] mb-1">Cấu trúc mã SKU chuẩn ERP:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  <b className="font-mono text-[#4f46e5]">[TENANT]</b>: Mã viết tắt của doanh nghiệp/gian hàng của bạn (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">ABC</code>).
+                </li>
+                <li>
+                  <b className="font-mono text-[#4f46e5]">[SLUG]</b>: Tên rút gọn không dấu của danh mục sản phẩm (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">AOTHUN</code>, <code className="bg-gray-100 px-1 py-0.5 rounded">SERUM</code>). Các sản phẩm cùng danh mục sẽ tự động chia sẻ tiền tố này để dễ quản lý kho.
+                </li>
+                <li>
+                  <b className="font-mono text-[#4f46e5]">[VALUE]</b>: Ký hiệu viết tắt của các giá trị thuộc tính (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">DO-XL</code>, <code className="bg-gray-100 px-1 py-0.5 rounded">100ML</code>).
+                </li>
+              </ul>
+              <p className="mt-2 text-[#067647] font-medium">
+                💡 Bạn có thể click trực tiếp vào ô mã SKU bên dưới bảng để tự gõ mã tùy chỉnh theo quy ước riêng của kho bạn!
+              </p>
+            </div>
+          )}
+        </section>
+
         <section className="mt-4 overflow-hidden rounded-xl bg-white">
           <div className="flex items-center justify-between px-4 py-3">
             <h2 className="text-[16px] font-bold">
@@ -358,10 +468,20 @@ export function ProductVariantsPage() {
                         <span className="mt-1 inline-block rounded bg-[#eef3ff] px-2 py-1 text-[10px]">{row.attributeText}</span>
                       </td>
                       <td className="px-2">
-                        <code className="rounded bg-[#eef3ff] px-2 py-2 font-semibold">{row.sku}</code>
+                        <input
+                          value={row.sku}
+                          onChange={(e) => updateRow(row.id, { sku: e.target.value })}
+                          placeholder="Mã SKU..."
+                          className="w-36 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-2.5 py-1.5 font-mono text-[11.5px] font-bold text-[#101828] outline-none focus:border-[#4f46e5] focus:bg-white"
+                        />
                       </td>
                       <td className="px-2">
-                        <code className="rounded bg-[#eef3ff] px-2 py-2">{row.barcode || "—"}</code>
+                        <input
+                          value={row.barcode}
+                          onChange={(e) => updateRow(row.id, { barcode: e.target.value })}
+                          placeholder="Mã vạch..."
+                          className="w-32 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-2 py-1.5 font-mono text-[11px] text-[#475467] outline-none focus:border-[#4f46e5] focus:bg-white"
+                        />
                       </td>
                       <td className="px-2">
                         <input

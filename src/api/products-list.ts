@@ -1,4 +1,4 @@
-﻿import { apiJson } from "@/lib/api-client";
+import { apiJson } from "@/lib/api-client";
 
 export type ProductSku = {
   id: string;
@@ -79,5 +79,10 @@ export const productsListApi = {
     });
     const data = await getJson<ProductListResponse>(`/products/list?${search.toString()}`);
     return { data };
+  },
+  delete: async (templateId: string) => {
+    return apiJson<{ message: string; softDeleted: boolean }>(`/products/templates/${templateId}`, {
+      method: "DELETE",
+    });
   },
 };
