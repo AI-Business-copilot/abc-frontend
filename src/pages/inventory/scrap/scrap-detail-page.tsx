@@ -182,11 +182,8 @@ export function ScrapDetailPage() {
                 <CardHeader><CardTitle>Ảnh bằng chứng ({order.images.length})</CardTitle></CardHeader>
                 <CardContent>
                   <ScrapGallery
-                    canEdit={canEdit}
                     images={order.images}
-                    onChanged={refreshQuietly}
                     onImageError={() => void refreshQuietly()}
-                    orderId={order.id}
                   />
                 </CardContent>
               </Card>

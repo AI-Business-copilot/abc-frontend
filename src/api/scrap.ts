@@ -4,7 +4,6 @@ import type {
   ExpiringLotsResponse,
   LotStatus,
   RejectionReasonCode,
-  ScrapImage,
   ScrapOrder,
   ScrapOrderDetail,
   ScrapOrdersResponse,
@@ -44,15 +43,23 @@ export const scrapApi = {
     return apiRequest<ScrapOrderDetail>(`${base}/scrap-orders/${id}`);
   },
 
+  /** Creates the order and its evidence photos in one request. Photos cannot be added or removed afterward. */
   createScrapOrder(body: {
     lotId: string;
     scrapReason: string;
     scrapQty?: number;
     scrapSource?: ScrapSource;
+    images: File[];
   }) {
+    const form = new FormData();
+    form.append("lotId", body.lotId);
+    form.append("scrapReason", body.scrapReason);
+    if (body.scrapQty !== undefined) form.append("scrapQty", String(body.scrapQty));
+    if (body.scrapSource) form.append("scrapSource", body.scrapSource);
+    for (const image of body.images) form.append("files", image);
     return apiRequest<ScrapOrder>(`${base}/scrap-orders`, {
       method: "POST",
-      body: JSON.stringify(body),
+      body: form,
     });
   },
 
@@ -85,24 +92,4 @@ export const scrapApi = {
     return apiRequest<ScrapStatistics>(`${base}/scrap-statistics`);
   },
 
-  uploadScrapImage(orderId: string, file: File, note?: string) {
-    const form = new FormData();
-    form.append("file", file);
-    if (note?.trim()) form.append("note", note.trim());
-    return apiRequest<ScrapImage>(`${base}/scrap-orders/${orderId}/images`, {
-      method: "POST",
-      body: form,
-    });
-  },
-
-  updateScrapImageNote(imageId: string, note: string | null) {
-    return apiRequest<ScrapImage>(`${base}/scrap-order-images/${imageId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ note }),
-    });
-  },
-
-  deleteScrapImage(imageId: string) {
-    return apiRequest<void>(`${base}/scrap-order-images/${imageId}`, { method: "DELETE" });
-  },
 };

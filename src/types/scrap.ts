@@ -104,7 +104,6 @@ export interface ScrapImage {
   scrapOrderId: string;
   mimeType: string;
   sizeBytes: number;
-  note: string | null;
   uploadedBy: string;
   uploadedByName: string;
   createdAt: string;

@@ -79,7 +79,7 @@ export function OwnerReviewPanel({
       </p>
       {error && <Alert variant="destructive">{error}</Alert>}
       {noPhotos && (
-        <Alert>Phiếu chưa có ảnh nên chưa thể duyệt. Bạn có thể từ chối hoặc chờ nhân viên bổ sung ảnh.</Alert>
+        <Alert>Phiếu chưa có ảnh.</Alert>
       )}
       <div className="flex flex-wrap gap-2">
         <Button disabled={busy || noPhotos} onClick={() => void approve()} type="button">

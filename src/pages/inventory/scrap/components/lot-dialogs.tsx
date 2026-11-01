@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { scrapApi } from "@/api/scrap";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import type { ExpiringLot } from "@/types/scrap";
+import {
+  ALLOWED_SCRAP_IMAGE_TYPES,
+  MAX_SCRAP_IMAGES,
+  MAX_SCRAP_IMAGE_BYTES,
+  type ExpiringLot,
+} from "@/types/scrap";
 import { Modal } from "./scrap-ui";
 
 export function lotStock(lot: ExpiringLot) {
@@ -87,7 +92,10 @@ export function QuarantineDialog({
   );
 }
 
-/** Staff open a scrap order for a quarantined lot. The server defaults the quantity and stock source. */
+/**
+ * Staff open a scrap order for a quarantined lot. The evidence photos (1-10) are sent with the create request
+ * and cannot be added or removed afterward.
+ */
 export function CreateScrapDialog({
   lot,
   onClose,
@@ -100,8 +108,33 @@ export function CreateScrapDialog({
   const max = lot.quarantineQty ?? lotStock(lot);
   const [quantity, setQuantity] = useState(String(max));
   const [reason, setReason] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const addFiles = (list: FileList | null) => {
+    const chosen = list ? Array.from(list) : [];
+    if (fileInput.current) fileInput.current.value = "";
+    if (chosen.length === 0) return;
+
+    if (files.length + chosen.length > MAX_SCRAP_IMAGES) {
+      setError(`Mỗi phiếu có tối đa ${MAX_SCRAP_IMAGES} ảnh. Bạn chỉ có thể thêm ${MAX_SCRAP_IMAGES - files.length} ảnh nữa.`);
+      return;
+    }
+    for (const file of chosen) {
+      if (!ALLOWED_SCRAP_IMAGE_TYPES.includes(file.type)) {
+        setError(`"${file.name}" không hợp lệ. Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP.`);
+        return;
+      }
+      if (file.size > MAX_SCRAP_IMAGE_BYTES) {
+        setError(`"${file.name}" lớn hơn 5 MB.`);
+        return;
+      }
+    }
+    setError(null);
+    setFiles((current) => [...current, ...chosen]);
+  };
 
   const submit = async () => {
     const qty = Number(quantity);
@@ -113,6 +146,10 @@ export function CreateScrapDialog({
       setError("Vui lòng nhập lý do hủy hàng.");
       return;
     }
+    if (files.length === 0) {
+      setError("Vui lòng thêm ít nhất một ảnh bằng chứng.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -120,6 +157,7 @@ export function CreateScrapDialog({
         lotId: lot.id,
         scrapQty: qty,
         scrapReason: reason.trim(),
+        images: files,
       });
       onCreated(order.id);
     } catch (err) {
@@ -138,6 +176,7 @@ export function CreateScrapDialog({
         Số lượng hủy (tối đa {max})
       </label>
       <Input
+        disabled={submitting}
         id="scrap-qty"
         inputMode="numeric"
         min={1}
@@ -150,13 +189,63 @@ export function CreateScrapDialog({
         Lý do hủy
       </label>
       <Input
+        disabled={submitting}
         id="scrap-reason"
         maxLength={255}
         onChange={(event) => setReason(event.target.value)}
         placeholder="Ví dụ: hết hạn sử dụng, bao bì hư hỏng"
         value={reason}
       />
-      <p className="mt-2 text-xs text-slate-500">Bạn sẽ thêm ảnh bằng chứng ở bước tiếp theo.</p>
+
+      <div className="mt-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-medium text-slate-700">Ảnh bằng chứng</span>
+          <span className="text-xs text-slate-500">
+            {files.length}/{MAX_SCRAP_IMAGES} ảnh · JPEG, PNG, WebP · tối đa 5 MB
+          </span>
+        </div>
+        <input
+          accept={ALLOWED_SCRAP_IMAGE_TYPES.join(",")}
+          aria-label="Chọn ảnh bằng chứng"
+          className="hidden"
+          multiple
+          onChange={(event) => addFiles(event.target.files)}
+          ref={fileInput}
+          type="file"
+        />
+        <Button
+          className="mt-2"
+          disabled={submitting || files.length >= MAX_SCRAP_IMAGES}
+          onClick={() => fileInput.current?.click()}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          Thêm ảnh
+        </Button>
+        {files.length > 0 && (
+          <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto text-sm">
+            {files.map((file, index) => (
+              <li
+                className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-1.5"
+                key={`${file.name}-${file.lastModified}-${index}`}
+              >
+                <span className="truncate text-slate-700">{file.name}</span>
+                <button
+                  aria-label={`Bỏ ảnh ${file.name}`}
+                  className="shrink-0 text-xs text-rose-600 hover:underline disabled:opacity-50"
+                  disabled={submitting}
+                  onClick={() => setFiles((current) => current.filter((_, i) => i !== index))}
+                  type="button"
+                >
+                  Bỏ
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className="mt-5 flex justify-end gap-2">
         <Button disabled={submitting} onClick={onClose} type="button" variant="outline">Hủy</Button>
         <Button disabled={submitting} onClick={() => void submit()} type="button">
