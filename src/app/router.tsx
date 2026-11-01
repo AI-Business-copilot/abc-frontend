@@ -34,6 +34,9 @@ import { AuditCreatePage } from "@/pages/inventory/audit/audit-create-page";
 import { AuditDetailPage } from "@/pages/inventory/audit/audit-detail-page";
 import { AuditCountPage } from "@/pages/inventory/audit/audit-count-page";
 import { AuditItemDetailPage } from "@/pages/inventory/audit/audit-item-detail-page";
+import { LotsPage } from "@/pages/inventory/scrap/lots-page";
+import { ScrapListPage } from "@/pages/inventory/scrap/scrap-list-page";
+import { ScrapDetailPage } from "@/pages/inventory/scrap/scrap-detail-page";
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -190,6 +193,30 @@ export const router = createBrowserRouter([
         element: (
           <RequireBusiness>
             <StockLogPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/lots",
+        element: (
+          <RequireBusiness>
+            <LotsPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/scrap",
+        element: (
+          <RequireBusiness>
+            <ScrapListPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/scrap/:orderId",
+        element: (
+          <RequireBusiness>
+            <ScrapDetailPage />
           </RequireBusiness>
         ),
       },

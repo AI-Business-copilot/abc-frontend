@@ -44,4 +44,5 @@ export interface BusinessMember {
 
 export interface ApiErrorPayload {
   error?: string;
+  message?: string;
 }

@@ -20,6 +20,8 @@ const inventoryTabs = [
   { key: "inventory", label: "Nhập kho ban đầu", to: "/inventory" },
   { key: "stock-audit", label: "Kiểm kê tồn kho (Stock Audit)", to: "/inventory/audit" },
   { key: "stock-log", label: "Nhật ký biến động kho (Stock Log)", to: "/inventory/stock-log" },
+  { key: "lots", label: "Lô hàng & hạn sử dụng", to: "/inventory/lots" },
+  { key: "scrap", label: "Phiếu hủy hàng", to: "/inventory/scrap" },
 ] as const;
 
 export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalog" }: CatalogHeaderProps) {
