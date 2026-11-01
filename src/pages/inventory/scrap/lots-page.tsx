@@ -42,9 +42,11 @@ export function LotsPage() {
     : lots;
 
   const cards = [
-    { label: "Sắp hết hạn", value: summary.warning, tone: "text-amber-700" },
-    { label: "Không dùng được", value: summary.unusable, tone: "text-rose-700" },
-    { label: "Đang cách ly", value: summary.quarantined, tone: "text-violet-700" },
+    { label: "Lô bình thường", value: summary.healthy, tone: "text-emerald-700" },
+    { label: "Lô sắp hết hạn", value: summary.warning, tone: "text-amber-700" },
+    { label: "Lô không dùng được", value: summary.unusable, tone: "text-rose-700" },
+    { label: "Lô đang cách ly", value: summary.quarantined, tone: "text-violet-700" },
+    { label: "Lô đã hủy", value: summary.scrapped, tone: "text-slate-600" },
   ];
 
   return (
@@ -60,7 +62,7 @@ export function LotsPage() {
           {message && <Alert variant="success">{message}</Alert>}
           {error && <Alert variant="destructive">{error}</Alert>}
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {cards.map((card) => (
               <Card className="p-5" key={card.label}>
                 <p className="text-sm text-slate-500">{card.label}</p>
