@@ -75,6 +75,8 @@ export function ProductAttributesPage() {
       .then(([detail, attributeList]) => {
         if (cancelled) return;
         setTemplate(detail);
+        sessionStorage.setItem("abc:wizard:active_template_id", templateId);
+        sessionStorage.setItem("abc:wizard:active_template_name", detail.name);
         setAttributes(attributeList);
         const saved = readSelections(templateId);
         const valid = saved.filter((item) => attributeList.some((attribute) => attribute.id === item.attributeId));
@@ -91,6 +93,12 @@ export function ProductAttributesPage() {
       cancelled = true;
     };
   }, [templateId, navigate]);
+
+  useEffect(() => {
+    if (templateId && selections.length > 0) {
+      persist(selections);
+    }
+  }, [selections, templateId]);
 
   const attrById = useMemo(() => new Map(attributes.map((attribute) => [attribute.id, attribute])), [attributes]);
 
@@ -262,6 +270,17 @@ export function ProductAttributesPage() {
               <Icon name="info" className="mr-1 align-middle text-[17px]" />
               {categoryLabel}
             </span>
+            <button
+              type="button"
+              onClick={() => {
+                persist(selections);
+                navigate("/products/attributes");
+              }}
+              className="rounded-lg border border-[#c7cbff] bg-white px-4 py-3 text-[12px] font-semibold text-[#4338ca] hover:bg-[#eef0ff]"
+            >
+              <Icon name="open_in_new" className="mr-1 align-middle text-[17px]" />
+              Quản lý Thư viện Thuộc tính
+            </button>
           </div>
         </div>
 
