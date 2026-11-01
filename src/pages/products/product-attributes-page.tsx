@@ -8,6 +8,7 @@ import {
 } from "@/api/product-wizard";
 import { CatalogHeader } from "@/pages/products/catalog-header";
 import { Icon } from "@/pages/products/ui-icon";
+import { getPrimaryImage } from "@/lib/image-utils";
 
 type Selection = {
   attributeId: string;
@@ -188,6 +189,11 @@ export function ProductAttributesPage() {
     setNotice("Đã lưu cấu hình thuộc tính cho mẫu sản phẩm.");
   };
 
+  const goBackToStep1 = () => {
+    persist(selections);
+    navigate(`/products/new?templateId=${templateId}`);
+  };
+
   const goNext = () => {
     if (selections.length === 0) {
       setError("Vui lòng chọn ít nhất một thuộc tính sinh biến thể.");
@@ -229,7 +235,7 @@ export function ProductAttributesPage() {
           <div className="flex items-center gap-3">
             <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-lg bg-[#eef0ff] text-[#4338ca]">
               {template?.imageUrl ? (
-                <img alt={template.name} className="h-full w-full object-cover" src={template.imageUrl} />
+                <img alt={template.name} className="h-full w-full object-cover" src={getPrimaryImage(template.imageUrl)} />
               ) : (
                 <Icon name="inventory_2" className="text-[26px]" />
               )}
@@ -248,7 +254,7 @@ export function ProductAttributesPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => navigate(`/products/new?templateId=${templateId}`)} className="rounded-lg bg-[#eef3ff] px-4 py-3 text-[12px] font-semibold text-[#344054]">
+            <button type="button" onClick={goBackToStep1} className="rounded-lg bg-[#eef3ff] px-4 py-3 text-[12px] font-semibold text-[#344054]">
               <Icon name="edit_note" className="mr-1 align-middle text-[17px]" />
               Xem / sửa mẫu cha
             </button>
@@ -443,7 +449,7 @@ export function ProductAttributesPage() {
 
       <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-[#eaecf0] bg-white px-5 py-3">
         <div className="mx-auto flex max-w-[1560px] items-center justify-between">
-          <button onClick={() => navigate(`/products/new?templateId=${templateId}`)} className="rounded-lg bg-[#eaf0ff] px-5 py-3 text-[14px] font-semibold text-[#344054]">
+          <button type="button" onClick={goBackToStep1} className="rounded-lg bg-[#eaf0ff] px-5 py-3 text-[14px] font-semibold text-[#344054]">
             ← Quay lại: Bước 1 - Mẫu sản phẩm cha
           </button>
           <div className="flex items-center gap-4">

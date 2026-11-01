@@ -24,27 +24,68 @@ const readFileAsDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
+type FormDraft = {
+  name: string;
+  categoryId: string;
+  unit: string;
+  manageExpiry: boolean;
+  description: string;
+  images: string[];
+  activeAfterCreate: boolean;
+  industry: "FASHION" | "BEAUTY";
+};
+
+const getDraftKey = (tId: string) => (tId ? `abc:wizard:draft:${tId}` : "abc:wizard:draft:new");
+
 export function ProductCreatePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get("templateId") || "";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const draftKey = getDraftKey(templateId);
+
+  // Đọc bản nháp đã lưu tạm từ sessionStorage nếu có (tránh mất thông tin khi reload)
+  const initialDraft = useMemo((): Partial<FormDraft> => {
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  }, [draftKey]);
+
   const [keyword, setKeyword] = useState("");
   const [categories, setCategories] = useState<CategoryListResponse | null>(null);
   const [template, setTemplate] = useState<TemplateRecord | null>(null);
-  const [name, setName] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [unit, setUnit] = useState("Chai (Bottle)");
-  const [manageExpiry, setManageExpiry] = useState(true);
-  const [description, setDescription] = useState("");
-  const [images, setImages] = useState<string[]>([]);
+  const [name, setName] = useState(initialDraft.name || "");
+  const [categoryId, setCategoryId] = useState(initialDraft.categoryId || "");
+  const [unit, setUnit] = useState(initialDraft.unit || "Chai (Bottle)");
+  const [manageExpiry, setManageExpiry] = useState(initialDraft.manageExpiry ?? true);
+  const [description, setDescription] = useState(initialDraft.description || "");
+  const [images, setImages] = useState<string[]>(initialDraft.images || []);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [activeAfterCreate, setActiveAfterCreate] = useState(true);
-  const [industry, setIndustry] = useState<"FASHION" | "BEAUTY">("BEAUTY");
+  const [activeAfterCreate, setActiveAfterCreate] = useState(initialDraft.activeAfterCreate ?? true);
+  const [industry, setIndustry] = useState<"FASHION" | "BEAUTY">(initialDraft.industry || "BEAUTY");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  // Tự động lưu bản nháp vào sessionStorage mỗi khi thông tin thay đổi
+  useEffect(() => {
+    const draft: FormDraft = {
+      name,
+      categoryId,
+      unit,
+      manageExpiry,
+      description,
+      images,
+      activeAfterCreate,
+      industry,
+    };
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify(draft));
+    } catch {}
+  }, [draftKey, name, categoryId, unit, manageExpiry, description, images, activeAfterCreate, industry]);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +98,7 @@ export function ProductCreatePage() {
     };
   }, []);
 
+  // Khi có templateId (quay lại từ Bước 2 hoặc sửa mẫu cha): khôi phục thông tin đầy đủ
   useEffect(() => {
     if (!templateId) return;
     let cancelled = false;
@@ -65,6 +107,24 @@ export function ProductCreatePage() {
       .then((result) => {
         if (cancelled) return;
         setTemplate(result);
+
+        // Khôi phục bản nháp sessionStorage nếu có sửa đổi trước đó
+        const savedDraft = sessionStorage.getItem(`abc:wizard:draft:${templateId}`);
+        if (savedDraft) {
+          try {
+            const parsed = JSON.parse(savedDraft);
+            setName(parsed.name ?? result.name);
+            setCategoryId(parsed.categoryId ?? (result.categoryId || ""));
+            setUnit(parsed.unit ?? (result.unitOfMeasure || "Cái"));
+            setManageExpiry(parsed.manageExpiry ?? Boolean(result.hasLotTracking));
+            setDescription(parsed.description ?? (result.description || ""));
+            setImages(parsed.images && parsed.images.length > 0 ? parsed.images : getAllImages(result.imageUrl));
+            if (parsed.industry) setIndustry(parsed.industry);
+            return;
+          } catch {}
+        }
+
+        // Nếu chưa có nháp, nạp dữ liệu chuẩn từ database
         setName(result.name);
         setCategoryId(result.categoryId || "");
         setUnit(result.unitOfMeasure || "Cái");
@@ -72,7 +132,12 @@ export function ProductCreatePage() {
         setDescription(result.description || "");
         const parsedImages = getAllImages(result.imageUrl);
         setImages(parsedImages);
-        setActiveImageIndex(0);
+
+        // Khôi phục ngành hàng đã lưu
+        const storedIndustry = sessionStorage.getItem("abc:wizard:industry:" + templateId);
+        if (storedIndustry === "FASHION" || storedIndustry === "BEAUTY") {
+          setIndustry(storedIndustry);
+        }
       })
       .catch((err: Error) => !cancelled && setError(err.message));
     return () => {
@@ -89,16 +154,29 @@ export function ProductCreatePage() {
     });
   }, [categories]);
 
-  const rootName = useMemo(() => {
-    if (!categories || !categoryId) return "";
-    const root = categories.items.find((item) => item.id === categoryId || item.children.some((child) => child.id === categoryId));
-    return root?.name || "";
-  }, [categories, categoryId]);
+  // Chuyển đổi ngành hàng: Thời trang -> tắt quản lý lô, Mỹ phẩm -> bật quản lý lô
+  const selectIndustry = (type: "FASHION" | "BEAUTY") => {
+    setIndustry(type);
+    if (type === "FASHION") {
+      setManageExpiry(false);
+    } else {
+      setManageExpiry(true);
+    }
+  };
 
-  useEffect(() => {
-    if (!rootName) return;
-    setIndustry(/mỹ phẩm|chăm sóc|trang điểm|nước hoa|chống nắng|sức khỏe/i.test(rootName) ? "BEAUTY" : "FASHION");
-  }, [rootName]);
+  const handleCategoryChange = (newCatId: string) => {
+    setCategoryId(newCatId);
+    if (!newCatId || !categories) return;
+    const cat = categories.items.find(
+      (item) => item.id === newCatId || item.children.some((child) => child.id === newCatId),
+    );
+    const catName = cat?.name || "";
+    if (/mỹ phẩm|chăm sóc|trang điểm|nước hoa|chống nắng|sức khỏe/i.test(catName)) {
+      selectIndustry("BEAUTY");
+    } else if (/thời trang|may mặc|quần|áo|váy|đầm|giày|dép|túi/i.test(catName)) {
+      selectIndustry("FASHION");
+    }
+  };
 
   const formPayload = () => ({
     name: name.trim(),
@@ -129,6 +207,19 @@ export function ProductCreatePage() {
         : await productWizardApi.createTemplate({ ...formPayload(), isActive: false });
       setTemplate(record);
       sessionStorage.setItem("abc:wizard:industry:" + record.id, industry);
+      sessionStorage.setItem(`abc:wizard:draft:${record.id}`, JSON.stringify({
+        name: name.trim(),
+        categoryId,
+        unit,
+        manageExpiry,
+        description,
+        images,
+        activeAfterCreate,
+        industry,
+      }));
+      if (!templateId) {
+        sessionStorage.removeItem("abc:wizard:draft:new");
+      }
       if (nextStep) {
         navigate(`/products/new/attributes?templateId=${record.id}`);
         return;
@@ -393,7 +484,7 @@ export function ProductCreatePage() {
             <div className="mt-2 grid grid-cols-2 overflow-hidden rounded-lg bg-[#eef0ff] p-1">
               <button
                 type="button"
-                onClick={() => setIndustry("FASHION")}
+                onClick={() => selectIndustry("FASHION")}
                 className={["rounded-md py-3 text-[14px] font-bold", industry === "FASHION" ? "bg-white text-[#4338ca] shadow-sm" : "text-[#667085]"].join(" ")}
               >
                 <Icon name="checkroom" className="mr-2 align-middle text-[19px]" />
@@ -401,7 +492,7 @@ export function ProductCreatePage() {
               </button>
               <button
                 type="button"
-                onClick={() => setIndustry("BEAUTY")}
+                onClick={() => selectIndustry("BEAUTY")}
                 className={["rounded-md py-3 text-[14px] font-bold", industry === "BEAUTY" ? "bg-white text-[#4338ca] shadow-sm" : "text-[#667085]"].join(" ")}
               >
                 <Icon name="health_and_safety" className="mr-2 align-middle text-[19px]" />
@@ -430,7 +521,7 @@ export function ProductCreatePage() {
                 <span className="float-right text-[#4338ca]">＋ Thêm nhanh</span>
                 <select
                   value={categoryId}
-                  onChange={(event) => setCategoryId(event.target.value)}
+                  onChange={(event) => handleCategoryChange(event.target.value)}
                   className="mt-2 h-12 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[13px] font-normal outline-none"
                 >
                   <option value="">Chọn danh mục sản phẩm</option>
@@ -464,7 +555,7 @@ export function ProductCreatePage() {
                 <div className="flex-1">
                   <h3 className="text-[16px] font-bold">Quản Lý &amp; Theo Dõi Lô Hạn Dùng</h3>
                   <p className="mt-1 text-[12px] leading-[1.4] text-[#667085]">
-                    <b>Quy chuẩn FEFO (First Expired, First Out):</b> Kích hoạt cờ này khi sản phẩm là mỹ phẩm, thực phẩm hoặc hóa phẩm có ngày hết hạn.
+                    <b>Quy chuẩn FEFO (First Expired, First Out):</b> Tự động tắt với Thời trang và bật với Mỹ phẩm có ngày hết hạn.
                   </p>
                 </div>
                 <button
@@ -508,7 +599,16 @@ export function ProductCreatePage() {
 
       <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-[#eaecf0] bg-white px-5 py-3">
         <div className="mx-auto flex max-w-[1560px] items-center gap-2">
-          <button type="button" onClick={() => navigate("/products")} className="h-12 rounded-lg bg-[#eaf0ff] px-5 text-[14px] font-semibold text-[#344054]">
+          <button
+            type="button"
+            onClick={() => {
+              if (!templateId) {
+                sessionStorage.removeItem("abc:wizard:draft:new");
+              }
+              navigate("/products");
+            }}
+            className="h-12 rounded-lg bg-[#eaf0ff] px-5 text-[14px] font-semibold text-[#344054]"
+          >
             Hủy &amp; Quay lại
           </button>
           <button

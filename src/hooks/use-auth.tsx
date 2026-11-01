@@ -45,34 +45,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     const hadStoredSession = hasStoredAuthSession();
-    const loadProfile = async (nextSession: Session | null) => {
+    const loadProfile = async (nextSession: Session | null, silent = false) => {
       setSession(nextSession);
-      setProfile(null);
-      setProfileError(null);
       if (!nextSession) {
+        setProfile(null);
+        setProfileError(null);
         if (active) setLoading(false);
         return;
       }
 
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       try {
         const nextProfile = await getApplicationProfile();
         if (active) setProfile(nextProfile);
       } catch (error) {
-        if (active) {
+        if (active && !silent) {
           setProfileError(
             error instanceof Error ? error.message : "Không tải được hồ sơ.",
           );
         }
       } finally {
-        if (active) setLoading(false);
+        if (active && !silent) setLoading(false);
       }
     };
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      void loadProfile(nextSession);
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // Khi refresh token định kỳ, cập nhật âm thầm không unmount các component đang mở
+      const isSilent = event === "TOKEN_REFRESHED" || Boolean(nextSession && session?.user?.id === nextSession?.user?.id);
+      void loadProfile(nextSession, isSilent);
     });
     void supabase.auth
       .getSession()
@@ -95,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [session?.user?.id]);
 
   const logout = useCallback(async () => {
     await signOut();

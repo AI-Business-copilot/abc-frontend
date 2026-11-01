@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { productWizardApi, type TemplateDetail } from "@/api/product-wizard";
 import { CatalogHeader } from "@/pages/products/catalog-header";
 import { Icon } from "@/pages/products/ui-icon";
+import { getPrimaryImage } from "@/lib/image-utils";
 
 type Selection = { attributeId: string; displayOrder: number; valueIds: string[] };
 
@@ -254,7 +255,7 @@ export function ProductVariantsPage() {
         <section className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white px-4 py-3">
           <div className="flex items-center gap-3">
             <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-lg bg-[#eef0ff] text-[#4338ca]">
-              {template?.imageUrl ? <img alt={template.name} className="h-full w-full object-cover" src={template.imageUrl} /> : <Icon name="inventory_2" className="text-[25px]" />}
+              {template?.imageUrl ? <img alt={template.name} className="h-full w-full object-cover" src={getPrimaryImage(template.imageUrl)} /> : <Icon name="inventory_2" className="text-[25px]" />}
             </span>
             <div>
               <h2 className="text-[16px] font-bold">{template?.name}</h2>
