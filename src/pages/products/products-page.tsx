@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   productsListApi,
@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { CatalogHeader } from '@/pages/products/catalog-header';
 import { Icon } from '@/pages/products/ui-icon';
+import { getPrimaryImage } from '@/lib/image-utils';
 
 const vnd = (value: number) => new Intl.NumberFormat('vi-VN').format(Math.round(value || 0)) + ' đ';
 const compactVnd = (value: number) => {
@@ -77,8 +78,8 @@ function ProductCard({ product, onView }: { product: ProductItem; onView: (p: Pr
   return (
     <article className="bg-white rounded-xl border border-[#e8eaf0] overflow-hidden flex flex-col shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:shadow-[0_6px_18px_rgba(16,24,40,0.08)] transition-shadow">
       <div className="relative h-[186px] bg-[#f2f4f7]">
-        {product.imageUrl ? (
-          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+        {getPrimaryImage(product.imageUrl) ? (
+          <img src={getPrimaryImage(product.imageUrl)} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full grid place-items-center text-[#98a2b3]">
             <Icon name="image" className="text-[40px]" />
