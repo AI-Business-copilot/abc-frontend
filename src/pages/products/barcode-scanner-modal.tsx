@@ -96,6 +96,7 @@ export function BarcodeScannerModal({
   const [isProcessingUpload, setIsProcessingUpload] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<any>(null);
   const isScanningRef = useRef(false);
 
@@ -165,20 +166,33 @@ export function BarcodeScannerModal({
     }, 2000);
   };
 
-  // TẮT CAMERA HOÀN TOÀN
+  // TẮT CAMERA HOÀN TOÀN (Ngắt nguồn phần cứng, tắt đèn LED ngay lập tức)
   const stopAllCameras = () => {
     isScanningRef.current = false;
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
       scanIntervalRef.current = null;
     }
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
+    if (streamRef.current) {
       try {
-        stream.getTracks().forEach((track) => {
+        streamRef.current.getTracks().forEach((track) => {
           track.stop();
           track.enabled = false;
         });
+      } catch {
+        // ignore
+      }
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      try {
+        if (videoRef.current.srcObject) {
+          const s = videoRef.current.srcObject as MediaStream;
+          s.getTracks().forEach((t) => {
+            t.stop();
+            t.enabled = false;
+          });
+        }
       } catch {
         // ignore
       }
@@ -223,9 +237,13 @@ export function BarcodeScannerModal({
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       if (!isScanningRef.current) {
-        stream.getTracks().forEach((t) => t.stop());
+        stream.getTracks().forEach((t) => {
+          t.stop();
+          t.enabled = false;
+        });
         return;
       }
+      streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -341,7 +359,15 @@ export function BarcodeScannerModal({
   }, [barcodeDirectory]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          stopAllCameras();
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    >
       <div className="flex h-[92vh] max-h-[820px] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden">
         {/* Header Modal */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-3.5 bg-gray-50 shrink-0">
@@ -384,7 +410,10 @@ export function BarcodeScannerModal({
             Camera Quét Trực Tiếp
           </button>
           <button
-            onClick={() => setActiveTab("hardware")}
+            onClick={() => {
+              stopAllCameras();
+              setActiveTab("hardware");
+            }}
             className={[
               "flex items-center gap-2 border-b-2 py-3 px-4 text-[13px] font-bold transition-colors",
               activeTab === "hardware"
@@ -396,7 +425,10 @@ export function BarcodeScannerModal({
             Súng quét Barcode / Máy POS
           </button>
           <button
-            onClick={() => setActiveTab("upload")}
+            onClick={() => {
+              stopAllCameras();
+              setActiveTab("upload");
+            }}
             className={[
               "flex items-center gap-2 border-b-2 py-3 px-4 text-[13px] font-bold transition-colors",
               activeTab === "upload"
@@ -408,7 +440,10 @@ export function BarcodeScannerModal({
             Tải ảnh mã vạch lên
           </button>
           <button
-            onClick={() => setActiveTab("sample")}
+            onClick={() => {
+              stopAllCameras();
+              setActiveTab("sample");
+            }}
             className={[
               "flex items-center gap-2 border-b-2 py-3 px-4 text-[13px] font-bold transition-colors",
               activeTab === "sample"
