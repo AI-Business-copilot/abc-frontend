@@ -27,7 +27,7 @@ export async function apiRequest<T>(
   const response = await fetch(`${apiBaseUrl}${path}`, { ...init, headers });
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as ApiErrorPayload;
-    throw new Error(payload.error || `Yêu cầu thất bại (${response.status}).`);
+    throw new Error(payload.error || payload.message || `Yêu cầu thất bại (${response.status}).`);
   }
 
   if (response.status === 204) {
