@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from "@zxing/library";
+import {
+  MultiFormatReader,
+  BarcodeFormat,
+  DecodeHintType,
+  RGBLuminanceSource,
+  BinaryBitmap,
+  GlobalHistogramBinarizer,
+  HybridBinarizer,
+} from "@zxing/library";
 import { Icon } from "@/pages/products/ui-icon";
 import type { ProductItem, ProductSku } from "@/api/products-list";
 import { BarcodeSvg } from "@/components/barcode/barcode-svg";
@@ -63,7 +71,7 @@ export function BarcodeScannerModal({
   onSelectProduct,
 }: BarcodeScannerModalProps) {
   const [activeTab, setActiveTab] = useState<"camera" | "hardware" | "upload" | "sample">("camera");
-  const [barcodeMode, setBarcodeMode] = useState<"all" | "ean13" | "code128">("ean13");
+  const [barcodeMode, setBarcodeMode] = useState<"all" | "ean13" | "code128">("all");
   const [scannedCode, setScannedCode] = useState("");
   const [inputVal, setInputVal] = useState("");
   const [matchResult, setMatchResult] = useState<FoundMatch | null>(null);
@@ -74,12 +82,15 @@ export function BarcodeScannerModal({
   const [isDetected, setIsDetected] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
-  const [scanEngine, setScanEngine] = useState<"native" | "zxing">("native");
+  const [scanEngine, setScanEngine] = useState<"native" | "zxing">("zxing");
   const [scanLatencyMs, setScanLatencyMs] = useState<number>(0);
 
+  // Trạng thái tải ảnh
+  const [uploadError, setUploadError] = useState("");
+  const [isProcessingUpload, setIsProcessingUpload] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
-  const nativeDetectorLoopRef = useRef<any>(null);
+  const scanIntervalRef = useRef<any>(null);
   const isScanningRef = useRef(false);
 
   // Tạo từ điển tra cứu nhanh barcode -> { product, sku } (Truy vấn tức thì 0.1ms)
@@ -151,17 +162,9 @@ export function BarcodeScannerModal({
   // TẮT CAMERA HOÀN TOÀN
   const stopAllCameras = () => {
     isScanningRef.current = false;
-    if (nativeDetectorLoopRef.current) {
-      clearInterval(nativeDetectorLoopRef.current);
-      nativeDetectorLoopRef.current = null;
-    }
-    if (codeReaderRef.current) {
-      try {
-        codeReaderRef.current.reset();
-      } catch {
-        // ignore
-      }
-      codeReaderRef.current = null;
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
     }
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
@@ -177,7 +180,29 @@ export function BarcodeScannerModal({
     }
   };
 
-  // KHỞI ĐỘNG CAMERA: ƯU TIÊN NATIVE BROWSER BARCODE DETECTOR (SIÊU NHANH < 5MS)
+  // Kiểm tra mã quét được có hợp lệ theo chế độ không
+  const processDetectedCode = (text: string): boolean => {
+    if (!text) return false;
+    const clean = text.trim();
+    if (!clean) return false;
+
+    if (/^\d{13}$/.test(clean)) {
+      if (isValidEan13(clean)) {
+        handleBarcodeDetected(clean);
+        return true;
+      }
+      return false;
+    }
+
+    if (barcodeMode !== "ean13" && clean.length >= 3) {
+      handleBarcodeDetected(clean);
+      return true;
+    }
+
+    return false;
+  };
+
+  // KHỞI ĐỘNG CAMERA & FRAME SCANNER TRỰC TIẾP
   const startCameraScan = async (deviceId?: string) => {
     stopAllCameras();
     setCameraLoading(true);
@@ -186,7 +211,6 @@ export function BarcodeScannerModal({
     isScanningRef.current = true;
 
     try {
-      // 1. Lấy danh sách camera
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoInputs = devices.filter((d) => d.kind === "videoinput");
       setVideoDevices(videoInputs);
@@ -203,12 +227,11 @@ export function BarcodeScannerModal({
       }
       if (targetId) setSelectedDeviceId(targetId);
 
-      // Yêu cầu luồng camera độ phân giải HD cao để vạch barcode rõ nét nhất
       const constraints: MediaStreamConstraints = {
         video: {
           deviceId: targetId ? { exact: targetId } : undefined,
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
           facingMode: targetId ? undefined : { ideal: "environment" },
         },
       };
@@ -221,81 +244,112 @@ export function BarcodeScannerModal({
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        await videoRef.current.play().catch(() => {});
       }
 
-      // 2. KIỂM TRA NATIVE BARCODE DETECTOR CỦA GOOGLE CHROME/EDGE/ANDROID/IOS (CHÍNH XÁC 100%, KHÔNG BAO GIỜ ĐỌC NGƯỢC)
+      // Khởi tạo ZXing MultiFormatReader
+      const hints = new Map<DecodeHintType, any>();
+      const formats: BarcodeFormat[] = [];
+      if (barcodeMode === "ean13") {
+        formats.push(BarcodeFormat.EAN_13);
+      } else if (barcodeMode === "code128") {
+        formats.push(BarcodeFormat.CODE_128);
+      } else {
+        formats.push(BarcodeFormat.EAN_13, BarcodeFormat.CODE_128, BarcodeFormat.QR_CODE);
+      }
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+      hints.set(DecodeHintType.TRY_HARDER, true);
+
+      const zxingReader = new MultiFormatReader();
+      zxingReader.setHints(hints);
+
+      // Kiểm tra Native BarcodeDetector
+      let nativeDetector: any = null;
       if ("BarcodeDetector" in window) {
-        setScanEngine("native");
-        const supportedFormats: string[] = await (window as any).BarcodeDetector.getSupportedFormats().catch(() => [
-          "ean_13",
-          "code_128",
-          "qr_code",
-        ]);
+        try {
+          const supported: string[] = await (window as any).BarcodeDetector.getSupportedFormats().catch(() => []);
+          const has1D = supported.includes("ean_13") || supported.includes("code_128");
+          if (has1D) {
+            nativeDetector = new (window as any).BarcodeDetector({
+              formats: supported.filter((f) =>
+                barcodeMode === "ean13" ? f === "ean_13" : barcodeMode === "code128" ? f === "code_128" : true,
+              ),
+            });
+            setScanEngine("native");
+          }
+        } catch {
+          nativeDetector = null;
+        }
+      }
+      if (!nativeDetector) {
+        setScanEngine("zxing");
+      }
 
-        const detectorFormats = supportedFormats.filter((f) =>
-          barcodeMode === "ean13" ? f === "ean_13" : barcodeMode === "code128" ? f === "code_128" : true,
-        );
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-        const detector = new (window as any).BarcodeDetector({
-          formats: detectorFormats.length > 0 ? detectorFormats : ["ean_13", "code_128"],
-        });
+      // Frame scan loop mỗi 70ms: quét trực tiếp frame video với latency < 8ms
+      scanIntervalRef.current = setInterval(async () => {
+        if (!videoRef.current || videoRef.current.readyState < 2 || !isScanningRef.current) return;
+        const video = videoRef.current;
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        if (!vw || !vh) return;
 
-        // Quét chu kỳ 60ms siêu tốc bằng phần cứng GPU
-        nativeDetectorLoopRef.current = setInterval(async () => {
-          if (!videoRef.current || videoRef.current.readyState < 2 || !isScanningRef.current) return;
+        // 1. Thử native BarcodeDetector nếu có hỗ trợ
+        if (nativeDetector) {
           try {
-            const detected = await detector.detect(videoRef.current);
+            const detected = await nativeDetector.detect(video);
             if (detected && detected.length > 0) {
-              const codeVal = detected[0].rawValue;
-              if (codeVal) {
-                handleBarcodeDetected(codeVal);
+              const code = detected[0].rawValue?.trim();
+              if (code && processDetectedCode(code)) return;
+            }
+          } catch {
+            // fallback canvas
+          }
+        }
+
+        // 2. Quét canvas ZXing (cắt vùng trọng tâm 75% width x 50% height ở giữa khung hình)
+        if (ctx) {
+          const cropW = Math.round(vw * 0.75);
+          const cropH = Math.round(vh * 0.5);
+          const cropX = Math.round((vw - cropW) / 2);
+          const cropY = Math.round((vh - cropH) / 2);
+
+          canvas.width = cropW;
+          canvas.height = cropH;
+          ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+          try {
+            const imgData = ctx.getImageData(0, 0, cropW, cropH);
+            const lumSource = new RGBLuminanceSource(new Uint8ClampedArray(imgData.data), cropW, cropH);
+
+            // Pass 1: GlobalHistogramBinarizer (nhanh nhất & tối ưu nhất cho barcode 1D)
+            try {
+              const bitmap = new BinaryBitmap(new GlobalHistogramBinarizer(lumSource));
+              const res = zxingReader.decode(bitmap);
+              if (res && res.getText()) {
+                const code = res.getText().trim();
+                if (processDetectedCode(code)) return;
+              }
+            } catch {
+              // Pass 2: HybridBinarizer (khi ánh sáng không đồng đều)
+              try {
+                const bitmap = new BinaryBitmap(new HybridBinarizer(lumSource));
+                const res = zxingReader.decode(bitmap);
+                if (res && res.getText()) {
+                  const code = res.getText().trim();
+                  if (processDetectedCode(code)) return;
+                }
+              } catch {
+                // frame skip
               }
             }
           } catch {
-            // ignore frame skip
+            // frame skip
           }
-        }, 60);
-      } else {
-        // 3. NẾU TRÌNH DUYỆT CHƯA CÓ NATIVE DETECTOR: DÙNG ZXING VỚI CẤU HÌNH KHÓA CHẶT FORMAT (CHỐNG ĐỌC NHẦM)
-        setScanEngine("zxing");
-        const hints = new Map<DecodeHintType, any>();
-        const formats: BarcodeFormat[] = [];
-
-        if (barcodeMode === "ean13") {
-          formats.push(BarcodeFormat.EAN_13);
-        } else if (barcodeMode === "code128") {
-          formats.push(BarcodeFormat.CODE_128);
-        } else {
-          formats.push(BarcodeFormat.EAN_13, BarcodeFormat.CODE_128, BarcodeFormat.QR_CODE);
         }
-
-        hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
-        hints.set(DecodeHintType.TRY_HARDER, true);
-
-        const reader = new BrowserMultiFormatReader(hints, 60);
-        codeReaderRef.current = reader;
-
-        if (videoRef.current) {
-          reader.decodeFromVideoElementContinuously(videoRef.current, (result: any, error: any) => {
-            if (result && isScanningRef.current) {
-              const text = result.getText()?.trim();
-              if (text) {
-                if (/^\d{13}$/.test(text)) {
-                  if (isValidEan13(text)) {
-                    handleBarcodeDetected(text);
-                  }
-                } else if (text.length >= 4) {
-                  handleBarcodeDetected(text);
-                }
-              }
-            }
-            if (error && !(error as any).name?.includes("NotFoundException")) {
-              // ignore
-            }
-          });
-        }
-      }
+      }, 70);
     } catch (err: any) {
       setCameraError(err?.message || "Không thể truy cập camera. Vui lòng cấp quyền camera trong trình duyệt.");
     } finally {
@@ -319,25 +373,122 @@ export function BarcodeScannerModal({
     void startCameraScan(newDeviceId);
   };
 
-  // Tải ảnh mã vạch lên
-  const handleFileUpload = async (files: FileList | null) => {
+  // Tải ảnh mã vạch lên: Đa tầng xử lý (Multi-pass resolution & contrast)
+  const handleFileUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
+    setUploadError("");
+    setIsProcessingUpload(true);
+
     const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      try {
-        const hints = new Map<DecodeHintType, any>();
-        hints.set(DecodeHintType.TRY_HARDER, true);
-        hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13, BarcodeFormat.CODE_128]);
-        const imgReader = new BrowserMultiFormatReader(hints);
-        const res = await imgReader.decodeFromImageUrl(dataUrl);
-        if (res && res.getText()) {
-          handleBarcodeDetected(res.getText());
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          const zxingReader = new MultiFormatReader();
+          const hints = new Map<DecodeHintType, any>();
+          hints.set(DecodeHintType.TRY_HARDER, true);
+          hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+            BarcodeFormat.EAN_13,
+            BarcodeFormat.CODE_128,
+            BarcodeFormat.QR_CODE,
+          ]);
+          zxingReader.setHints(hints);
+
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          if (!ctx) throw new Error("Canvas context unavailable");
+
+          const tryDecodeCanvas = (c: HTMLCanvasElement): string | null => {
+            const cCtx = c.getContext("2d", { willReadFrequently: true });
+            if (!cCtx) return null;
+            const imgData = cCtx.getImageData(0, 0, c.width, c.height);
+            const lumSource = new RGBLuminanceSource(new Uint8ClampedArray(imgData.data), c.width, c.height);
+            for (const Binarizer of [GlobalHistogramBinarizer, HybridBinarizer]) {
+              try {
+                const bitmap = new BinaryBitmap(new Binarizer(lumSource));
+                const res = zxingReader.decode(bitmap);
+                if (res && res.getText()) return res.getText().trim();
+              } catch {
+                // continue
+              }
+            }
+            return null;
+          };
+
+          // 1. Thử native BarcodeDetector trước nếu có
+          if ("BarcodeDetector" in window) {
+            try {
+              const detector = new (window as any).BarcodeDetector();
+              const detected = await detector.detect(img);
+              if (detected && detected.length > 0 && detected[0].rawValue) {
+                const val = detected[0].rawValue.trim();
+                handleBarcodeDetected(val);
+                setIsProcessingUpload(false);
+                return;
+              }
+            } catch {
+              // continue
+            }
+          }
+
+          // Pass 1: Kích thước nguyên bản
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          ctx.drawImage(img, 0, 0);
+          let foundCode = tryDecodeCanvas(canvas);
+
+          // Pass 2: Cắt bỏ 35% phía dưới (loại bỏ số in đè bên dưới thanh vạch)
+          if (!foundCode) {
+            const cropH = Math.round(canvas.height * 0.65);
+            const cropCanvas = document.createElement("canvas");
+            cropCanvas.width = canvas.width;
+            cropCanvas.height = cropH;
+            const cropCtx = cropCanvas.getContext("2d", { willReadFrequently: true });
+            if (cropCtx) {
+              cropCtx.drawImage(canvas, 0, 0, canvas.width, cropH, 0, 0, canvas.width, cropH);
+              foundCode = tryDecodeCanvas(cropCanvas);
+            }
+          }
+
+          // Pass 3: Phóng to 2x (upscale để phục hồi vạch thanh bị mất do chụp màn hình nhỏ)
+          if (!foundCode) {
+            const scaleCanvas = document.createElement("canvas");
+            scaleCanvas.width = canvas.width * 2;
+            scaleCanvas.height = canvas.height * 2;
+            const scaleCtx = scaleCanvas.getContext("2d", { willReadFrequently: true });
+            if (scaleCtx) {
+              scaleCtx.imageSmoothingEnabled = true;
+              scaleCtx.drawImage(img, 0, 0, scaleCanvas.width, scaleCanvas.height);
+              foundCode = tryDecodeCanvas(scaleCanvas);
+            }
+          }
+
+          // Pass 4: Phóng to 3x và cắt phần vạch
+          if (!foundCode) {
+            const scaleCanvas = document.createElement("canvas");
+            scaleCanvas.width = canvas.width * 3;
+            scaleCanvas.height = Math.round(canvas.height * 3 * 0.65);
+            const scaleCtx = scaleCanvas.getContext("2d", { willReadFrequently: true });
+            if (scaleCtx) {
+              scaleCtx.imageSmoothingEnabled = true;
+              scaleCtx.drawImage(img, 0, 0, canvas.width, Math.round(canvas.height * 0.65), 0, 0, scaleCanvas.width, scaleCanvas.height);
+              foundCode = tryDecodeCanvas(scaleCanvas);
+            }
+          }
+
+          if (foundCode) {
+            handleBarcodeDetected(foundCode);
+          } else {
+            setUploadError("Chưa nhận diện được vạch mã trong ảnh chụp này. Bạn có thể gõ hoặc dán trực tiếp mã số vào ô bên dưới.");
+          }
+        } catch {
+          setUploadError("Không thể đọc mã từ file ảnh này. Vui lòng thử lại với ảnh rõ nét hơn.");
+        } finally {
+          setIsProcessingUpload(false);
         }
-      } catch {
-        alert("Không nhận diện được mã vạch trong ảnh. Hãy chụp rõ nét hơn hoặc cắt thẳng góc.");
-      }
+      };
+      img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };
@@ -632,18 +783,71 @@ export function BarcodeScannerModal({
                   Tải ảnh mã vạch lên để quét tức thì
                 </h3>
                 <p className="mt-1 max-w-md text-[12px] text-gray-500 leading-relaxed">
-                  Nếu webcam máy tính bị mờ không lấy nét được, bạn chỉ cần dùng điện thoại chụp ảnh mã vạch rồi tải ảnh lên đây để giải mã chính xác 100%.
+                  Nếu webcam máy tính bị mờ không lấy nét được, bạn chỉ cần dùng điện thoại chụp ảnh mã vạch rồi tải ảnh lên đây để giải mã chính xác.
                 </p>
-                <label className="mt-4 inline-flex items-center gap-2 cursor-pointer rounded-xl bg-[#4f46e5] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#4338ca]">
+                <label className="mt-4 inline-flex items-center gap-2 cursor-pointer rounded-xl bg-[#4f46e5] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#4338ca] transition-colors">
                   <Icon name="upload" className="text-[18px]" />
-                  Chọn file ảnh chụp mã vạch
+                  {isProcessingUpload ? "Đang xử lý ảnh..." : "Chọn file ảnh chụp mã vạch"}
                   <input
                     type="file"
                     accept="image/*"
+                    disabled={isProcessingUpload}
                     className="hidden"
                     onChange={(e) => void handleFileUpload(e.target.files)}
                   />
                 </label>
+
+                {isProcessingUpload && (
+                  <div className="mt-4 flex items-center gap-2 text-indigo-600 text-[12.5px] font-semibold animate-pulse">
+                    <Icon name="progress_activity" className="animate-spin text-[18px]" />
+                    <span>Đang quét phân tích mã vạch qua 4 tầng thuật toán...</span>
+                  </div>
+                )}
+
+                {uploadError && (
+                  <div className="mt-4 max-w-md rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-[12px] text-amber-800 shadow-sm">
+                    <div className="flex items-start gap-2.5">
+                      <Icon name="warning" className="text-[20px] text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-amber-900">{uploadError}</p>
+                        <p className="mt-1 text-amber-700 text-[11px]">
+                          💡 Gợi ý: Bạn có thể nhập hoặc dán trực tiếp dãy số in bên dưới ảnh mã vạch vào ô kiểm tra bên dưới.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ô nhập nhanh mã số */}
+                <div className="mt-4 w-full max-w-md">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={inputVal}
+                      onChange={(e) => setInputVal(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && inputVal.trim()) {
+                          handleBarcodeDetected(inputVal.trim());
+                          setInputVal("");
+                        }
+                      }}
+                      placeholder="Hoặc gõ/dán mã số (VD: 8938506248782)..."
+                      className="h-10 flex-1 rounded-xl border border-gray-300 bg-white px-3 font-mono text-[12.5px] outline-none focus:border-[#4f46e5]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (inputVal.trim()) {
+                          handleBarcodeDetected(inputVal.trim());
+                          setInputVal("");
+                        }
+                      }}
+                      className="rounded-xl bg-[#4f46e5] px-4 font-bold text-white text-[12.5px] hover:bg-[#4338ca]"
+                    >
+                      Kiểm tra
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 

@@ -13,7 +13,7 @@ interface BarcodeSvgProps {
 
 export function BarcodeSvg({
   value,
-  format = "CODE128",
+  format,
   width = 1.6,
   height = 42,
   fontSize = 12,
@@ -25,40 +25,38 @@ export function BarcodeSvg({
   useEffect(() => {
     if (!svgRef.current || !value) return;
 
+    const cleanVal = String(value).trim();
+    // Tự động nhận diện định dạng tối ưu:
+    // Nếu là 12 hoặc 13 số -> ưu tiên chuẩn EAN13 bán lẻ hàng hóa
+    // Nếu có chữ hoặc định dạng SKU nội bộ -> dùng chuẩn CODE128
+    let actualFormat = format || (/^\d{12,13}$/.test(cleanVal) ? "EAN13" : "CODE128");
+
     try {
-      // Tự động kiểm tra format: nếu định dạng EAN13 nhưng giá trị không đúng 12 hoặc 13 chữ số thì fallback về CODE128
-      let actualFormat = format;
-      const cleanVal = String(value).trim();
-
-      if (format === "EAN13") {
-        if (!/^\d{12,13}$/.test(cleanVal)) {
-          actualFormat = "CODE128";
-        }
-      }
-
       JsBarcode(svgRef.current, cleanVal, {
         format: actualFormat,
         width,
         height,
         displayValue,
         fontSize,
-        textMargin: 2,
-        margin: 2,
+        textMargin: 3,
+        margin: 6,
         font: "monospace",
         fontOptions: "bold",
         lineColor: "#000000",
         background: "#ffffff",
       });
     } catch {
-      // Fallback về CODE128 nếu có lỗi format
+      // Fallback về CODE128 nếu có lỗi check digit EAN13
       try {
         if (svgRef.current) {
-          JsBarcode(svgRef.current, String(value).trim(), {
+          JsBarcode(svgRef.current, cleanVal, {
             format: "CODE128",
             width,
             height,
             displayValue,
             fontSize,
+            textMargin: 3,
+            margin: 6,
             font: "monospace",
             lineColor: "#000000",
             background: "#ffffff",
