@@ -5,6 +5,9 @@ import { productWizardApi, type TemplateDetail } from "@/api/product-wizard";
 import { CatalogHeader } from "@/pages/products/catalog-header";
 import { Icon } from "@/pages/products/ui-icon";
 import { getPrimaryImage } from "@/lib/image-utils";
+import { useAuth } from "@/hooks/use-auth";
+import { OpeningStockVoucherModal, type VoucherItem } from "./opening-stock-voucher-modal";
+import { BarcodePrintModal, type PrintableVariant } from "./barcode-print-modal";
 
 type StockRow = {
   id: string;
@@ -26,6 +29,7 @@ const displayUnit = (unit: string | null | undefined) => (unit || "Cái").split(
 
 export function ProductInventoryPage() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get("templateId") || "";
 
@@ -35,10 +39,13 @@ export function ProductInventoryPage() {
   const [lotNumber, setLotNumber] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
   const [manufacturingDate, setManufacturingDate] = useState("");
-  const [documents, setDocuments] = useState([true, true]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  // Modal xem trước chứng từ & in ấn
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [showBarcodePrintModal, setShowBarcodePrintModal] = useState(false);
 
   useEffect(() => {
     if (!templateId) {
@@ -100,6 +107,43 @@ export function ProductInventoryPage() {
       .filter(([, group]) => group.quantity > 0)
       .map(([label, group], index) => ({ label, ...group, color: palette[index % palette.length] }));
   }, [rows]);
+
+  const voucherItems: VoucherItem[] = useMemo(() => {
+    if (!template) return [];
+    return rows
+      .filter((r) => r.quantity > 0)
+      .map((r) => {
+        const v = template.productVariants.find((pv) => pv.id === r.id);
+        return {
+          id: r.id,
+          sku: r.sku,
+          barcode: v?.barcode || undefined,
+          name: template.name,
+          attributeText: r.attributeText,
+          unit: displayUnit(template.unitOfMeasure),
+          quantity: r.quantity,
+          cost: r.cost,
+          lotNumber: r.lotNumber,
+          expirationDate: r.expirationDate,
+          manufacturingDate: r.manufacturingDate,
+        };
+      });
+  }, [template, rows]);
+
+  const printableVariants: PrintableVariant[] = useMemo(() => {
+    if (!template) return [];
+    return rows.map((r) => {
+      const v = template.productVariants.find((pv) => pv.id === r.id);
+      return {
+        id: r.id,
+        sku: r.sku,
+        barcode: v?.barcode || r.sku,
+        templateName: template.name,
+        attributeText: r.attributeText,
+        price: Number(v?.basePrice) || 0,
+      };
+    });
+  }, [template, rows]);
 
   const gradient = useMemo(() => {
     if (totals.quantity === 0) return "#eef2f7";
@@ -379,28 +423,65 @@ export function ProductInventoryPage() {
           </section>
 
           <section className="rounded-xl bg-white p-4">
-            <h2 className="font-bold">
-              <Icon name="print" className="mr-2 align-middle text-[19px] text-[#4338ca]" />
-              Tùy chọn Xuất phiếu &amp; Tài liệu Đính kèm
-              <span className="rounded bg-[#6ce7b7] px-2 py-1 text-[10px] text-[#067647]">Sẵn sàng in</span>
+            <h2 className="font-bold flex items-center justify-between">
+              <span className="flex items-center">
+                <Icon name="print" className="mr-2 text-[19px] text-[#4338ca]" />
+                Tùy chọn Xuất phiếu &amp; Tài liệu Đính kèm
+              </span>
+              <span className="rounded bg-[#6ce7b7] px-2 py-0.5 text-[10px] font-bold text-[#067647]">
+                Sẵn sàng in A4 / Decal
+              </span>
             </h2>
-            <p className="text-[11px] text-[#667085]">Tự động tổng hợp chứng từ và tem mã vạch tiêu chuẩn ngay sau khi bấm lưu.</p>
-            <div className="mt-14 grid grid-cols-2 gap-3">
-              {["Phiếu kiểm kê F02", "Tem Barcode dán kệ"].map((label, index) => (
+            <p className="mt-1 text-[11px] text-[#667085]">
+              Xem trước chứng từ kiểm kê kho chuẩn A4 hoặc in tem mã vạch barcode trước khi đưa vào kinh doanh.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 text-left flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <b className="text-[13px] text-gray-900">Phiếu kiểm kê F02</b>
+                    <span className="text-[10px] font-bold text-[#4f46e5] bg-white px-2 py-0.5 rounded border border-indigo-100">Khổ A4</span>
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-[#667085] leading-relaxed">
+                    Bao gồm chữ ký thủ kho, kế toán &amp; chủ shop, xuất file PDF A4 chuẩn ISO.
+                  </p>
+                </div>
                 <button
-                  key={label}
-                  onClick={() => setDocuments((current) => current.map((value, itemIndex) => (itemIndex === index ? !value : value)))}
-                  className="rounded-lg border border-[#b8c2e0] p-4 text-left"
+                  type="button"
+                  onClick={() => {
+                    if (voucherItems.length === 0) {
+                      setError("Hãy nhập số lượng tồn > 0 cho ít nhất một biến thể để xem trước phiếu kiểm kê.");
+                      return;
+                    }
+                    setError("");
+                    setShowVoucherModal(true);
+                  }}
+                  className="mt-4 w-full rounded-lg bg-[#4f46e5] py-2 text-[12px] font-bold text-white shadow-sm hover:bg-[#4338ca] transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <span className="float-right text-[#4338ca]">{documents[index] ? "☑" : "□"}</span>
-                  <b>{label}</b>
-                  <small className="mt-1 block text-[#667085]">
-                    {index === 0
-                      ? "Bao gồm chữ ký thủ kho & chủ shop, xuất file PDF A4 chuẩn ISO."
-                      : `Tạo file in ${rows.length} SKU (khổ Decal 35×22mm hoặc nhiệt Zebra/Godex).`}
-                  </small>
+                  <Icon name="visibility" className="text-[16px]" />
+                  Xem trước Phiếu kiểm kê A4
                 </button>
-              ))}
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 text-left flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <b className="text-[13px] text-gray-900">Tem Barcode dán kệ</b>
+                    <span className="text-[10px] font-bold text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200">Decal nhiệt</span>
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-[#667085] leading-relaxed">
+                    Tạo file in {rows.length} SKU (khổ Decal 50×30mm hoặc 35×22mm cho máy in Xprinter/Zebra/Godex).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBarcodePrintModal(true)}
+                  className="mt-4 w-full rounded-lg border border-gray-300 bg-white py-2 text-[12px] font-bold text-gray-800 shadow-sm hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Icon name="qr_code_2" className="text-[16px] text-[#4f46e5]" />
+                  In Tem Mã Vạch (Decal)
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -411,20 +492,64 @@ export function ProductInventoryPage() {
           <button onClick={() => navigate(`/products/new/variants?templateId=${templateId}`)} className="rounded-lg bg-[#eaf0ff] px-5 py-3 text-[14px] font-semibold text-[#344054]">
             ← Bước 3: Sinh biến thể SKU
           </button>
-          <div className="flex items-center gap-4">
-            <button disabled={busy} onClick={() => void publish(true)} className="text-[13px] font-semibold text-[#667085] disabled:opacity-60">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (voucherItems.length === 0) {
+                  setError("Hãy nhập số lượng tồn > 0 cho ít nhất một biến thể để xem trước phiếu kiểm kê.");
+                  return;
+                }
+                setError("");
+                setShowVoucherModal(true);
+              }}
+              className="rounded-lg border border-[#cfd2ff] bg-white px-4 py-2.5 text-[13px] font-bold text-[#4f46e5] hover:bg-[#eef0ff] shadow-sm transition-colors inline-flex items-center gap-1.5"
+            >
+              <Icon name="receipt_long" className="text-[18px]" />
+              Xem trước Phiếu kiểm kê (A4)
+            </button>
+            <button disabled={busy} onClick={() => void publish(true)} className="text-[13px] font-semibold text-[#667085] disabled:opacity-60 px-2">
               Bỏ qua &amp; Để tồn kho = 0
             </button>
             <button
               disabled={busy}
               onClick={() => void publish(false)}
-              className="rounded-lg bg-[#4f46e5] px-7 py-3 text-[15px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] disabled:opacity-60"
+              className="rounded-lg bg-[#4f46e5] px-7 py-3 text-[14px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] disabled:opacity-60"
             >
               {busy ? "Đang hoàn tất..." : "🚀 Hoàn tất & Đưa vào Kinh doanh (Publish)"}
             </button>
           </div>
         </div>
       </footer>
+
+      {/* MODAL XEM TRƯỚC PHIẾU KIỂM KÊ KHO A4 */}
+      {showVoucherModal && (
+        <OpeningStockVoucherModal
+          voucherCode={`PKK-${new Date().getFullYear()}-${template?.code?.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "001"}`}
+          businessName={profile?.business?.name || "CỬA HÀNG ERP"}
+          businessAddress={profile?.business?.address || "Việt Nam"}
+          businessPhone={profile?.business?.phone || "0900000000"}
+          creatorName={profile?.user?.fullName || "Quản trị viên"}
+          note={`Kiểm kê nạp tồn kho ban đầu khi tạo sản phẩm ${template?.name || ""}`}
+          items={voucherItems}
+          hasLotTracking={Boolean(template?.hasLotTracking)}
+          onClose={() => setShowVoucherModal(false)}
+          onConfirmPublish={() => {
+            setShowVoucherModal(false);
+            void publish(false);
+          }}
+          isPublishing={busy}
+        />
+      )}
+
+      {/* MODAL IN TEM MÃ VẠCH */}
+      {showBarcodePrintModal && (
+        <BarcodePrintModal
+          shopName={profile?.business?.name || "CỬA HÀNG ERP"}
+          variants={printableVariants}
+          onClose={() => setShowBarcodePrintModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { Icon } from "@/pages/products/ui-icon";
 
 type CatalogHeaderProps = {
-  active: "products" | "categories" | "attributes";
+  active: "products" | "categories" | "attributes" | "inventory" | "stock-log";
   keyword: string;
   onKeywordChange: (value: string) => void;
   mode?: "catalog" | "inventory";
@@ -15,9 +15,11 @@ const tabs = [
   { key: "products", label: "Sản phẩm", to: "/products" },
   { key: "categories", label: "Danh mục", to: "/products/categories" },
   { key: "attributes", label: "Thuộc tính", to: "/products/attributes" },
+  { key: "inventory", label: "Phiếu kiểm kê kho", to: "/inventory" },
 ] as const;
 const inventoryTabs = [
-  { key: "inventory", label: "Nhập kho ban đầu", to: "/inventory" },
+  { key: "products", label: "← Quay lại Sản phẩm", to: "/products" },
+  { key: "inventory", label: "Phiếu kiểm kê & Nạp tồn", to: "/inventory" },
   { key: "stock-log", label: "Nhật ký biến động kho (Stock Log)", to: "/inventory/stock-log" },
 ] as const;
 

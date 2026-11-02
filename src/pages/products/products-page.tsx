@@ -10,7 +10,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { CatalogHeader } from '@/pages/products/catalog-header';
 import { Icon } from '@/pages/products/ui-icon';
-import { getPrimaryImage } from '@/lib/image-utils';
+import { getAllImages } from '@/lib/image-utils';
 import { BarcodeScannerModal } from '@/pages/products/barcode-scanner-modal';
 
 const vnd = (value: number) => new Intl.NumberFormat('vi-VN').format(Math.round(value || 0)) + ' đ';
@@ -86,14 +86,60 @@ function ProductCard({
   onDelete: (p: ProductItem) => void;
 }) {
   const missingCategory = !product.categoryId;
+  const images = useMemo(() => getAllImages(product.imageUrl), [product.imageUrl]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Hiệu ứng tự động lướt qua các ảnh biến thể / góc chụp khi hover
+  useEffect(() => {
+    if (!isHovered || images.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % images.length);
+    }, 1200);
+    return () => clearInterval(timer);
+  }, [isHovered, images.length]);
+
   return (
-    <article className="bg-white rounded-xl border border-[#e8eaf0] overflow-hidden flex flex-col shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:shadow-[0_6px_18px_rgba(16,24,40,0.08)] transition-shadow">
-      <div className="relative h-[186px] bg-[#f2f4f7]">
-        {getPrimaryImage(product.imageUrl) ? (
-          <img src={getPrimaryImage(product.imageUrl)} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+    <article
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setCurrentIdx(0);
+      }}
+      className="bg-white rounded-xl border border-[#e8eaf0] overflow-hidden flex flex-col shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:shadow-[0_8px_24px_rgba(16,24,40,0.1)] transition-all duration-300 group"
+    >
+      <div className="relative h-[200px] bg-[#f2f4f7] overflow-hidden">
+        {images.length > 0 && images[currentIdx] ? (
+          <img
+            src={images[currentIdx]}
+            alt={product.name}
+            className="w-full h-full object-cover transition-all duration-500 transform group-hover:scale-105"
+            loading="lazy"
+          />
         ) : (
           <div className="w-full h-full grid place-items-center text-[#98a2b3]">
             <Icon name="image" className="text-[40px]" />
+          </div>
+        )}
+
+        {/* Thanh chấm tròn chuyển góc chụp / màu sắc biến thể */}
+        {images.length > 1 && (
+          <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center gap-1.5 z-10 pointer-events-auto">
+            {images.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentIdx(idx);
+                }}
+                className={[
+                  "h-1.5 rounded-full transition-all duration-300 shadow",
+                  idx === currentIdx ? "w-5 bg-white" : "w-1.5 bg-white/60 hover:bg-white",
+                ].join(" ")}
+                title={`Góc chụp / Màu #${idx + 1}`}
+              />
+            ))}
           </div>
         )}
 
@@ -106,7 +152,7 @@ function ProductCard({
           {product.variantCount} Biến thể SKU
         </span>
 
-        <span className="absolute bottom-2.5 left-2.5 inline-flex items-center h-[22px] px-2 rounded bg-[#101828]/85 text-white text-[10.5px] font-semibold tracking-wide font-mono">
+        <span className="absolute bottom-2.5 left-2.5 inline-flex items-center h-[22px] px-2 rounded bg-[#101828]/85 text-white text-[10.5px] font-semibold tracking-wide font-mono z-10">
           {product.code}
         </span>
       </div>
@@ -188,46 +234,106 @@ function ProductCard({
 }
 
 function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => void }) {
+  const images = useMemo(() => getAllImages(product.imageUrl), [product.imageUrl]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#101828]/45 backdrop-blur-[2px] grid place-items-center p-6" onClick={onClose}>
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-4 border-b border-[#eaecf0] flex items-start justify-between gap-4">
+    <div className="fixed inset-0 z-50 bg-[#101828]/50 backdrop-blur-sm grid place-items-center p-4" onClick={onClose}>
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-[#eaecf0] flex items-start justify-between gap-4 bg-gray-50/50">
           <div>
-            <p className="text-[11px] font-semibold tracking-wide text-[#4f46e5] uppercase">{product.code}</p>
-            <h3 className="text-[17px] font-bold text-[#101828] mt-0.5">{product.name}</h3>
-            <p className="text-[12px] text-[#667085] mt-0.5">{product.categoryPath || 'Chưa phân loại'} • {product.variantCount} biến thể</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono font-bold tracking-wide text-[#4f46e5] uppercase bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+                {product.code}
+              </span>
+              <span className="text-[11px] text-[#667085]">{product.categoryPath || 'Chưa phân loại'}</span>
+            </div>
+            <h3 className="text-[18px] font-extrabold text-[#101828] mt-1">{product.name}</h3>
+            <p className="text-[12px] text-[#667085] mt-0.5">
+              Danh sách {product.variantCount} biến thể SKU • Có ảnh chụp và thuộc tính tương ứng
+            </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 grid place-items-center rounded-md hover:bg-[#f2f4f7] text-[#667085]">
-            <Icon name="close" className="text-[18px]" />
+          <button onClick={onClose} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-[#f2f4f7] text-[#667085]">
+            <Icon name="close" className="text-[20px]" />
           </button>
         </div>
 
-        <div className="max-h-[420px] overflow-auto">
+        <div className="max-h-[460px] overflow-auto p-4">
           <table className="w-full text-[12.5px]">
-            <thead className="bg-[#f9fafb] sticky top-0">
+            <thead className="bg-[#f9fafb] sticky top-0 border-b border-gray-200">
               <tr className="text-[#667085]">
-                <th className="text-left font-medium px-5 py-2.5">SKU</th>
-                <th className="text-left font-medium px-3 py-2.5">Barcode</th>
-                <th className="text-right font-medium px-3 py-2.5">Giá vốn</th>
-                <th className="text-right font-medium px-3 py-2.5">Giá bán</th>
-                <th className="text-right font-medium px-5 py-2.5">Tồn kho</th>
+                <th className="text-left font-semibold px-3 py-2.5 w-16">Ảnh</th>
+                <th className="text-left font-semibold px-3 py-2.5">Mã SKU</th>
+                <th className="text-left font-semibold px-3 py-2.5">Mã vạch Barcode</th>
+                <th className="text-right font-semibold px-3 py-2.5">Giá vốn</th>
+                <th className="text-right font-semibold px-3 py-2.5">Giá bán</th>
+                <th className="text-right font-semibold px-4 py-2.5">Tồn kho</th>
               </tr>
             </thead>
             <tbody>
-              {product.skus.map((sku: ProductSku) => (
-                <tr key={sku.id} className="border-t border-[#f2f4f7]">
-                  <td className="px-5 py-2.5 font-mono text-[11.5px] font-semibold text-[#344054]">{sku.sku}</td>
-                  <td className="px-3 py-2.5 font-mono text-[11.5px] text-[#667085]">{sku.barcode || "—"}</td>
-                  <td className="px-3 py-2.5 text-right text-[#475467]">{vnd(sku.costPrice)}</td>
-                  <td className="px-3 py-2.5 text-right font-semibold text-[#4f46e5]">{vnd(sku.basePrice)}</td>
-                  <td className="px-5 py-2.5 text-right font-semibold text-[#101828]">{sku.stockQty}</td>
-                </tr>
-              ))}
+              {product.skus.map((sku: ProductSku, idx: number) => {
+                const variantImg = images[idx % images.length] || images[0] || null;
+                return (
+                  <tr key={sku.id} className="border-b border-[#f2f4f7] hover:bg-[#fafbff] transition-colors">
+                    <td className="px-3 py-2">
+                      {variantImg ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewImage(variantImg)}
+                          className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 hover:border-[#4f46e5] shadow-xs block transition-transform hover:scale-105"
+                          title="Bấm để xem ảnh phóng to"
+                        >
+                          <img src={variantImg} alt={sku.sku} className="w-full h-full object-cover" />
+                        </button>
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 grid place-items-center text-gray-400">
+                          <Icon name="image" className="text-[18px]" />
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="font-mono text-[12px] font-bold text-gray-900">{sku.sku}</div>
+                      <div className="text-[11px] text-gray-500">Biến thể #{idx + 1}</div>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-[11.5px] text-[#4f46e5] font-semibold">
+                      {sku.barcode ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Icon name="qr_code" className="text-[14px]" />
+                          {sku.barcode}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 italic">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right text-[#475467]">{vnd(sku.costPrice)}</td>
+                    <td className="px-3 py-2 text-right font-bold text-[#4f46e5]">{vnd(sku.basePrice)}</td>
+                    <td className="px-4 py-2 text-right font-bold text-gray-900">{sku.stockQty} {product.unitOfMeasure}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        <div className="px-5 py-3 bg-[#f9fafb] border-t border-[#eaecf0] flex items-center justify-between text-[12px] text-[#667085]">
+        {/* Phóng to ảnh biến thể */}
+        {previewImage && (
+          <div
+            className="fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4"
+            onClick={() => setPreviewImage(null)}
+          >
+            <div className="relative max-w-lg w-full bg-white rounded-2xl overflow-hidden p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setPreviewImage(null)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/60 text-white grid place-items-center hover:bg-black"
+              >
+                <Icon name="close" className="text-[18px]" />
+              </button>
+              <img src={previewImage} alt="Preview" className="w-full max-h-[70vh] object-contain rounded-xl" />
+            </div>
+          </div>
+        )}
+
+        <div className="px-6 py-3 bg-[#f9fafb] border-t border-[#eaecf0] flex items-center justify-between text-[12px] text-[#667085]">
           <span>Tồn kho tổng: <b className="text-[#101828]">{new Intl.NumberFormat('vi-VN').format(product.stockQty)} {product.unitOfMeasure}</b></span>
           <span>Giá trị tồn (AVCO): <b className="text-[#101828]">{compactVnd(product.stockValue)}</b></span>
         </div>
@@ -389,6 +495,13 @@ export default function ProductsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              to="/inventory"
+              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white text-[#4f46e5] text-[12.5px] font-semibold hover:bg-[#eef0ff] shadow-sm transition-colors"
+            >
+              <Icon name="receipt_long" className="text-[18px]" />
+              Phiếu kiểm kê kho
+            </Link>
             <button
               type="button"
               onClick={() => setShowScannerModal(true)}
