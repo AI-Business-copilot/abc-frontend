@@ -7,6 +7,7 @@ import {
   type ProductListResponse,
   type ProductSku,
 } from '@/api/products-list';
+import { productWizardApi } from '@/api/product-wizard';
 import { useAuth } from '@/hooks/use-auth';
 import { CatalogHeader } from '@/pages/products/catalog-header';
 import { Icon } from '@/pages/products/ui-icon';
@@ -79,11 +80,13 @@ function ProductCard({
   onView,
   onEdit,
   onDelete,
+  onQuickCategory,
 }: {
   product: ProductItem;
   onView: (p: ProductItem) => void;
   onEdit: (p: ProductItem) => void;
   onDelete: (p: ProductItem) => void;
+  onQuickCategory: (p: ProductItem) => void;
 }) {
   const missingCategory = !product.categoryId;
   const images = useMemo(() => getAllImages(product.imageUrl), [product.imageUrl]);
@@ -193,11 +196,12 @@ function ProductCard({
           <div className="flex items-center gap-1.5 ml-auto">
             {missingCategory ? (
               <button
-                onClick={() => onEdit(product)}
-                className="h-8 px-2.5 inline-flex items-center justify-center gap-1 rounded-md bg-[#eef0ff] text-[#4f46e5] text-[12px] font-semibold whitespace-nowrap hover:bg-[#e2e5ff]"
+                type="button"
+                onClick={() => onQuickCategory(product)}
+                className="h-8 px-2.5 inline-flex items-center justify-center gap-1 rounded-md bg-[#eef0ff] text-[#4f46e5] text-[12px] font-bold whitespace-nowrap hover:bg-[#e2e5ff] shadow-2xs"
               >
                 <Icon name="sell" className="text-[15px]" />
-                Gán Danh Mục
+                Gán Danh Mục Nhanh
               </button>
             ) : (
               <button
@@ -342,6 +346,81 @@ function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => v
   );
 }
 
+function QuickCategoryModal({
+  product,
+  categories,
+  onClose,
+  onSaved,
+}: {
+  product: ProductItem;
+  categories: CategoryOption[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [selectedId, setSelectedId] = useState(product.categoryId || (categories[0]?.id ?? ''));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async () => {
+    if (!selectedId) {
+      setError('Vui lòng chọn một danh mục');
+      return;
+    }
+    setBusy(true);
+    try {
+      await productWizardApi.updateTemplate(product.id, { categoryId: selectedId });
+      onSaved();
+    } catch (err: any) {
+      setError(err?.message || 'Lỗi khi gán danh mục');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-indigo-50 text-[#4f46e5]"><Icon name="sell" className="text-[20px]" /></span>
+            <div>
+              <h3 className="text-[16px] font-bold text-gray-900">Gán nhanh danh mục</h3>
+              <p className="text-[11.5px] text-gray-500 truncate max-w-[240px]">{product.name}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700">
+            <Icon name="close" className="text-[20px]" />
+          </button>
+        </div>
+
+        {error && <div className="mt-3 text-[12px] text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200">{error}</div>}
+
+        <div className="mt-4">
+          <label className="text-[12.5px] font-semibold text-gray-700 mb-1.5 block">Chọn danh mục sản phẩm:</label>
+          <select
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+            className="w-full h-11 px-3.5 rounded-xl border border-gray-300 bg-white text-[13.5px] font-medium text-gray-800 outline-none focus:border-[#4f46e5]"
+          >
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.parentName ? `${c.parentName} > ` : ''}{c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mt-6 flex items-center justify-end gap-2.5">
+          <button onClick={onClose} className="px-4 py-2 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600 hover:bg-gray-50">Hủy</button>
+          <button disabled={busy} onClick={() => void handleSave()} className="px-5 py-2 rounded-xl bg-[#4f46e5] text-white text-[13px] font-bold shadow-md hover:bg-[#4338ca] disabled:opacity-50">
+            {busy ? 'Đang lưu...' : 'Lưu danh mục'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductsPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -366,6 +445,7 @@ export default function ProductsPage() {
   const [deletingProduct, setDeletingProduct] = useState<ProductItem | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [showScannerModal, setShowScannerModal] = useState(false);
+  const [quickCategoryProduct, setQuickCategoryProduct] = useState<ProductItem | null>(null);
 
   // Debounce gọi server ở mức thấp (100ms) để không spam network
   useEffect(() => {
@@ -673,6 +753,7 @@ export default function ProductsPage() {
                 onView={setSelected}
                 onEdit={handleEditProduct}
                 onDelete={handleOpenDelete}
+                onQuickCategory={(p) => setQuickCategoryProduct(p)}
               />
             ))}
           </div>
@@ -704,7 +785,19 @@ export default function ProductsPage() {
                         {product.name}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-[#667085]">{product.categoryPath || '—'}</td>
+                    <td className="px-4 py-3 text-[#667085]">
+                      {product.categoryPath ? (
+                        product.categoryPath
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setQuickCategoryProduct(product)}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#e64a19] bg-orange-50 border border-orange-200 px-2 py-0.5 rounded hover:bg-orange-100 transition-colors"
+                        >
+                          <Icon name="sell" className="text-[13px]" /> Gán ngay
+                        </button>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right text-[#475467]">{vnd(product.avgCost)}</td>
                     <td className="px-4 py-3 text-right font-semibold text-[#4f46e5]">{vnd(product.avgPrice)}</td>
                     <td className="px-4 py-3 text-right">{product.variantCount}</td>
@@ -809,6 +902,20 @@ export default function ProductsPage() {
           products={rawItems}
           onClose={() => setShowScannerModal(false)}
           onSelectProduct={(p) => setSelected(p)}
+        />
+      )}
+
+      {/* MODAL GÁN NHANH DANH MỤC (1-CLICK KHÔNG CẦN QUA WIZARD) */}
+      {quickCategoryProduct && (
+        <QuickCategoryModal
+          product={quickCategoryProduct}
+          categories={categories}
+          onClose={() => setQuickCategoryProduct(null)}
+          onSaved={() => {
+            setNotice(`Đã gán danh mục thành công cho “${quickCategoryProduct.name}”.`);
+            setQuickCategoryProduct(null);
+            void fetchProducts();
+          }}
         />
       )}
 

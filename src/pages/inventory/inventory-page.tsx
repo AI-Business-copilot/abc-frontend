@@ -83,9 +83,15 @@ export function InventoryPage() {
     }
   };
 
-  const totals = data?.totals || { totalQuantity: 0, totalValue: 0, totalSku: 0 };
-  const statusStats = data?.statusStats || { draft: 0, applied: 0, cancelled: 0 };
-  const rows = data?.rows || [];
+  const stats = data?.stats || {
+    totalSheets: 0,
+    appliedSheets: 0,
+    draftSheets: 0,
+    loadedSkuCount: 0,
+    totalSkuCount: 0,
+    totalOpeningValue: 0,
+  };
+  const rows = data?.items || [];
 
   const voucherItems: VoucherItem[] =
     activeSheet?.items.map((it) => ({
@@ -142,7 +148,7 @@ export function InventoryPage() {
               </span>
             </div>
             <p className="mt-3 text-[26px] font-extrabold text-gray-900">
-              {data?.total || 0} <span className="text-[12px] font-normal text-[#667085]">phiếu</span>
+              {stats.totalSheets} <span className="text-[12px] font-normal text-[#667085]">phiếu</span>
             </p>
           </div>
 
@@ -154,7 +160,7 @@ export function InventoryPage() {
               </span>
             </div>
             <p className="mt-3 text-[26px] font-extrabold text-[#027a48]">
-              {totals.totalSku} <span className="text-[12px] font-normal text-[#667085]">SKU</span>
+              {stats.loadedSkuCount} <span className="text-[12px] font-normal text-[#667085]">/ {stats.totalSkuCount} SKU</span>
             </p>
           </div>
 
@@ -166,7 +172,7 @@ export function InventoryPage() {
               </span>
             </div>
             <p className="mt-3 text-[24px] font-extrabold text-[#4f46e5]">
-              {vnd(totals.totalValue)}
+              {vnd(stats.totalOpeningValue)}
             </p>
           </div>
 
@@ -177,8 +183,8 @@ export function InventoryPage() {
                 <Icon name="pending_actions" className="text-[20px]" />
               </span>
             </div>
-            <p className={`mt-3 text-[26px] font-extrabold ${statusStats.draft > 0 ? "text-[#d92d20]" : "text-gray-900"}`}>
-              {statusStats.draft} <span className="text-[12px] font-normal text-[#667085]">phiếu</span>
+            <p className={`mt-3 text-[26px] font-extrabold ${stats.draftSheets > 0 ? "text-[#d92d20]" : "text-gray-900"}`}>
+              {stats.draftSheets} <span className="text-[12px] font-normal text-[#667085]">phiếu</span>
             </p>
           </div>
         </div>
@@ -265,16 +271,15 @@ export function InventoryPage() {
                         )}
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="font-medium text-gray-800">{row.createdByUser?.fullName || "Chủ Cửa Hàng"}</div>
-                        <div className="text-[11px] text-gray-400">{row.createdByUser?.email}</div>
+                        <div className="font-medium text-gray-800">{row.createdByName || "Chủ Cửa Hàng"}</div>
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         <span className="rounded-full bg-[#f2f4f7] px-2.5 py-0.5 font-mono text-[11.5px] font-semibold text-gray-700">
-                          {row.totalLines} SKU
+                          {row.itemCount} SKU
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-right font-bold text-gray-900">
-                        {row.totalQuantity.toLocaleString("vi-VN")}
+                        {row.totalQty.toLocaleString("vi-VN")}
                       </td>
                       <td className="px-4 py-3.5 text-right font-bold text-[#4f46e5]">
                         {vnd(row.totalValue)}

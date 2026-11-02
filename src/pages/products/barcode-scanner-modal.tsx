@@ -295,7 +295,21 @@ export function BarcodeScannerModal({
     } else {
       stopAllCameras();
     }
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        stopAllCameras();
+      } else if (activeTab === "camera") {
+        void startCameraScan(selectedDeviceId);
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("beforeunload", stopAllCameras);
+
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("beforeunload", stopAllCameras);
       stopAllCameras();
     };
   }, [activeTab, barcodeMode]);

@@ -111,6 +111,31 @@ export function OpeningStockVoucherModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:p-0 print:bg-white print:static">
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-voucher-root, #printable-voucher-root * {
+            visibility: visible !important;
+          }
+          #printable-voucher-root {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 15mm 20mm !important;
+            background: white !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+        }
+      `}</style>
       {/* Vùng hộp thoại xem trước và in */}
       <div className="flex h-[94vh] max-h-[900px] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden print:max-w-none print:h-auto print:shadow-none print:rounded-none">
         {/* Header Modal - Ẩn khi in ấn */}
@@ -148,7 +173,7 @@ export function OpeningStockVoucherModal({
 
         {/* Nội dung Phiếu A4 có thể cuộn hoặc in ấn */}
         <div className="flex-1 overflow-y-auto p-8 bg-gray-100 print:p-0 print:bg-white print:overflow-visible">
-          <div className="mx-auto max-w-[780px] bg-white p-8 shadow-sm rounded-xl border border-gray-200 print:border-none print:shadow-none print:p-0">
+          <div id="printable-voucher-root" className="mx-auto max-w-[780px] bg-white p-8 shadow-sm rounded-xl border border-gray-200 print:border-none print:shadow-none print:p-0">
             {/* Header Doanh nghiệp */}
             <div className="flex items-start justify-between border-b border-gray-300 pb-4">
               <div>
@@ -159,42 +184,33 @@ export function OpeningStockVoucherModal({
                 <p className="text-[12px] text-gray-600">Điện thoại: {businessPhone}</p>
               </div>
               <div className="text-right">
-                <span className="inline-block rounded border border-gray-300 bg-gray-50 px-2 py-0.5 text-[10.5px] font-mono text-gray-600">
-                  Mẫu số 01 - VT (TT 200/BTC)
+                <span className="inline-block rounded border border-gray-300 bg-gray-50 px-2 py-0.5 text-[10px] font-mono text-gray-700">
+                  Mẫu số 01 - VT (Thông tư số 88/2021 &amp; TT 200/2014/TT-BTC)
                 </span>
-                <p className="font-mono text-[12.5px] font-bold text-[#4f46e5] mt-1.5">
+                <p className="font-mono text-[13px] font-extrabold text-[#4f46e5] mt-1">
                   Số: {voucherCode}
                 </p>
               </div>
             </div>
 
             {/* Tiêu đề Phiếu */}
-            <div className="my-6 text-center">
-              <h1 className="text-[21px] font-black uppercase tracking-wider text-gray-900">
+            <div className="my-5 text-center">
+              <h1 className="text-[20px] font-black uppercase tracking-wider text-gray-900">
                 PHIẾU KIỂM KÊ KHO &amp; NHẬP TỒN ĐẦU KỲ
               </h1>
-              <p className="text-[12px] text-gray-500 italic mt-1">
-                Ngày lập: {date} • Kho hàng: Kho Tổng Chính
+              <p className="text-[12px] text-gray-500 italic mt-0.5">
+                Ngày lập: {date} • Địa điểm kiểm kê: {businessAddress}
               </p>
             </div>
 
             {/* Thông tin diễn giải */}
-            <div className="mb-5 grid grid-cols-2 gap-4 text-[12px] text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200 print:bg-transparent print:border-none print:p-0">
-              <div>
+            <div className="mb-4 text-[12px] text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200 print:bg-transparent print:border-none print:p-0">
+              <div className="grid grid-cols-2 gap-4">
                 <p>
-                  <b>Người lập phiếu:</b> {creatorName}
+                  <b>Người lập biểu:</b> {creatorName}
                 </p>
-                <p className="mt-1">
-                  <b>Bộ phận:</b> Quản lý Kho vận &amp; Bán hàng
-                </p>
-              </div>
-              <div>
                 <p>
-                  <b>Diễn giải:</b> {note}
-                </p>
-                <p className="mt-1">
-                  <b>Chế độ quản lý:</b>{" "}
-                  {hasLotTracking ? "Quản lý Lô & Hạn sử dụng (FEFO)" : "Sản phẩm thông thường"}
+                  <b>Diễn giải / Căn cứ:</b> {note}
                 </p>
               </div>
             </div>
@@ -294,25 +310,19 @@ export function OpeningStockVoucherModal({
               <b>Tổng số tiền (bằng chữ):</b> {totals.words}
             </div>
 
-            {/* Chữ ký 3 bên */}
-            <div className="mt-10 grid grid-cols-3 gap-4 text-center text-[12px] text-gray-800">
+            {/* Chữ ký 2 bên (Chuẩn Hộ kinh doanh & Doanh nghiệp vừa và nhỏ) */}
+            <div className="mt-10 grid grid-cols-2 gap-8 text-center text-[12px] text-gray-800">
               <div>
-                <p className="font-bold">Người lập phiếu</p>
-                <p className="text-[10.5px] text-gray-500 italic">(Ký, ghi rõ họ tên)</p>
-                <div className="h-16"></div>
-                <p className="font-bold text-gray-900">{creatorName}</p>
+                <p className="font-bold text-[13px] uppercase">Người lập biểu</p>
+                <p className="text-[10.5px] text-gray-500 italic mt-0.5">(Ký, ghi rõ họ tên)</p>
+                <div className="h-20"></div>
+                <p className="font-bold text-gray-900 text-[13px]">{creatorName}</p>
               </div>
               <div>
-                <p className="font-bold">Thủ kho</p>
-                <p className="text-[10.5px] text-gray-500 italic">(Ký, ghi rõ họ tên)</p>
-                <div className="h-16"></div>
-                <p className="font-bold text-gray-900">Nguyễn Văn Kho</p>
-              </div>
-              <div>
-                <p className="font-bold">Giám đốc / Kế toán trưởng</p>
-                <p className="text-[10.5px] text-gray-500 italic">(Ký, đóng dấu)</p>
-                <div className="h-16"></div>
-                <p className="font-bold text-gray-900">{businessName}</p>
+                <p className="font-bold text-[13px] uppercase">Người kiểm duyệt / Chủ cửa hàng</p>
+                <p className="text-[10.5px] text-gray-500 italic mt-0.5">(Ký, xác nhận biên bản)</p>
+                <div className="h-20"></div>
+                <p className="font-bold text-gray-900 text-[13px]">{businessName}</p>
               </div>
             </div>
           </div>

@@ -525,7 +525,7 @@ export function ProductInventoryPage() {
       {/* MODAL XEM TRƯỚC PHIẾU KIỂM KÊ KHO A4 */}
       {showVoucherModal && (
         <OpeningStockVoucherModal
-          voucherCode={`PKK-${new Date().getFullYear()}-${template?.code?.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "001"}`}
+          voucherCode={`PKK-${new Date().getFullYear()}-${template?.code ? template.code.replace(/^TMP-/, "") : "001"}`}
           businessName={profile?.business?.name || "CỬA HÀNG ERP"}
           businessAddress={profile?.business?.address || "Việt Nam"}
           businessPhone={profile?.business?.phone || "0900000000"}

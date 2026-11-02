@@ -255,50 +255,54 @@ export function BarcodePrintModal({
                 <p>Chưa chọn số lượng tem để in. Vui lòng tăng số lượng ở cột bên trái.</p>
               </div>
             ) : (
-              <div className="flex flex-wrap gap-4 justify-start">
+              <div className="flex flex-wrap gap-5 justify-start">
                 {printableItems.map((item, idx) => (
                   <div
                     key={`${item.id}-${idx}`}
                     className={[
-                      "bg-white shadow-md border border-gray-200 rounded flex flex-col justify-between items-center text-center p-2 text-black transition-transform hover:scale-105",
-                      labelSize === "50x30" ? "w-[240px] h-[155px]" : "w-[200px] h-[130px]",
+                      "bg-white shadow-md border-2 border-dashed border-gray-300 hover:border-[#4f46e5] rounded-xl flex flex-col justify-between items-center text-center p-3 text-black transition-all hover:scale-[1.02]",
+                      labelSize === "50x30" ? "w-[260px] min-h-[165px]" : "w-[210px] min-h-[135px]",
                     ].join(" ")}
                   >
                     {/* Header tem */}
-                    <div className="w-full truncate border-b border-gray-200 pb-0.5">
+                    <div className="w-full border-b border-gray-200 pb-1">
                       {showShopName && (
-                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-800 truncate">
+                        <p className="text-[9.5px] font-black uppercase tracking-wider text-gray-700 truncate">
                           {shopName}
                         </p>
                       )}
-                      <p className="text-[11.5px] font-bold text-gray-900 truncate">
+                      <p className="text-[12px] font-black text-gray-900 truncate mt-0.5" title={item.templateName}>
                         {item.templateName}
                       </p>
-                      <p className="text-[10px] text-gray-600 truncate font-semibold">
-                        {item.attributeText}
-                      </p>
+                      {item.attributeText && (
+                        <div className="mt-1 flex items-center justify-center gap-1">
+                          <span className="inline-block bg-gray-100 text-gray-900 border border-gray-300 px-2 py-0.5 rounded text-[10px] font-black tracking-wide">
+                            {item.attributeText}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Vạch Barcode thật quét được 100% */}
-                    <div className="w-full flex justify-center my-0.5">
+                    <div className="w-full flex justify-center items-center my-1.5 px-1 overflow-hidden">
                       <BarcodeSvg
                         value={item.barcode || item.sku}
                         width={labelSize === "50x30" ? 1.4 : 1.1}
-                        height={labelSize === "50x30" ? 36 : 28}
-                        fontSize={labelSize === "50x30" ? 11 : 9}
+                        height={labelSize === "50x30" ? 34 : 26}
+                        fontSize={labelSize === "50x30" ? 10.5 : 8.5}
                         displayValue={true}
                       />
                     </div>
 
                     {/* Footer tem: SKU và Giá */}
-                    <div className="w-full flex items-center justify-between border-t border-gray-200 pt-0.5 text-[10px]">
+                    <div className="w-full flex items-center justify-between border-t border-gray-200 pt-1 text-[10.5px]">
                       {showSku && (
-                        <span className="font-mono text-gray-600 font-semibold truncate max-w-[100px]">
+                        <span className="font-mono text-gray-700 font-bold truncate max-w-[110px]" title={item.sku}>
                           {item.sku}
                         </span>
                       )}
                       {showPrice && (
-                        <span className="font-extrabold text-[#d92d20] text-[12px] ml-auto">
+                        <span className="font-black text-[#d92d20] text-[13px] ml-auto">
                           {vnd(item.price)}
                         </span>
                       )}

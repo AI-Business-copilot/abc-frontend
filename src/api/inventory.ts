@@ -37,22 +37,30 @@ export type OpeningStockSheetSummary = {
   code: string;
   note: string | null;
   status: string;
-  appliedAt: string | null;
+  createdByName: string;
   createdAt: string;
-  createdByUser: { fullName: string; email: string };
-  totalLines: number;
-  totalQuantity: number;
+  appliedAt: string | null;
+  itemCount: number;
+  totalQty: number;
   totalValue: number;
 };
 
 export type OpeningStockListResponse = {
-  rows: OpeningStockSheetSummary[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  statusStats: { draft: number; applied: number; cancelled: number };
-  totals: { totalQuantity: number; totalValue: number; totalSku: number };
+  items: OpeningStockSheetSummary[];
+  stats: {
+    totalSheets: number;
+    appliedSheets: number;
+    draftSheets: number;
+    loadedSkuCount: number;
+    totalSkuCount: number;
+    totalOpeningValue: number;
+  };
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 };
 
 export const inventoryApi = {
@@ -83,4 +91,3 @@ export const inventoryApi = {
     });
   },
 };
-
