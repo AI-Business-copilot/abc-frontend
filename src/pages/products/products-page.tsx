@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { CatalogHeader } from '@/pages/products/catalog-header';
 import { Icon } from '@/pages/products/ui-icon';
 import { getPrimaryImage } from '@/lib/image-utils';
+import { BarcodeScannerModal } from '@/pages/products/barcode-scanner-modal';
 
 const vnd = (value: number) => new Intl.NumberFormat('vi-VN').format(Math.round(value || 0)) + ' đ';
 const compactVnd = (value: number) => {
@@ -258,6 +259,7 @@ export default function ProductsPage() {
   // Modal Xóa sản phẩm
   const [deletingProduct, setDeletingProduct] = useState<ProductItem | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [showScannerModal, setShowScannerModal] = useState(false);
 
   // Debounce gọi server ở mức thấp (100ms) để không spam network
   useEffect(() => {
@@ -387,7 +389,11 @@ export default function ProductsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white text-[#4f46e5] text-[12.5px] font-semibold hover:bg-[#f6f7ff]">
+            <button
+              type="button"
+              onClick={() => setShowScannerModal(true)}
+              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white text-[#4f46e5] text-[12.5px] font-semibold hover:bg-[#eef0ff] shadow-sm transition-colors"
+            >
               <Icon name="qr_code_scanner" className="text-[18px]" />
               Quét mã vạch
             </button>
@@ -684,6 +690,14 @@ export default function ProductsPage() {
       </main>
 
       {selected && <SkuModal product={selected} onClose={() => setSelected(null)} />}
+
+      {showScannerModal && (
+        <BarcodeScannerModal
+          products={rawItems}
+          onClose={() => setShowScannerModal(false)}
+          onSelectProduct={(p) => setSelected(p)}
+        />
+      )}
 
       {/* MODAL XÁC NHẬN XÓA SẢN PHẨM CHA */}
       {deletingProduct && (

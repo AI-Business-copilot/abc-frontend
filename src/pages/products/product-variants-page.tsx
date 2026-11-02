@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { productWizardApi, type TemplateDetail } from "@/api/product-wizard";
 import { CatalogHeader } from "@/pages/products/catalog-header";
+import { useAuth } from "@/hooks/use-auth";
+import { BarcodePrintModal } from "@/pages/products/barcode-print-modal";
 import { Icon } from "@/pages/products/ui-icon";
 import { getPrimaryImage } from "@/lib/image-utils";
 
@@ -66,6 +68,8 @@ function loadTemplateWithVariants(templateId: string, selections: Selection[]): 
 export function ProductVariantsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { profile } = useAuth();
+  const businessName = profile?.business?.name || "DOANH NGHIỆP ERP";
   const templateId = searchParams.get("templateId") || "";
 
   const [keyword, setKeyword] = useState("");
@@ -76,6 +80,7 @@ export function ProductVariantsPage() {
   const [margin, setMargin] = useState(48.5);
   const [skuPrefix, setSkuPrefix] = useState("");
   const [showPrefixHelper, setShowPrefixHelper] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -465,7 +470,7 @@ export function ProductVariantsPage() {
                 <Icon name="filter_alt" className="mr-1 align-middle text-[15px]" />
                 {dimensionCount} chiều thuộc tính
               </span>
-              <button onClick={() => window.print()} className="rounded-lg bg-[#f2f4f7] px-3 py-2 text-[11px] text-[#667085]">
+              <button type="button" onClick={() => setShowPrintModal(true)} className="rounded-lg bg-[#eef0ff] border border-[#c7cbff] px-3.5 py-2 text-[11.5px] font-bold text-[#4f46e5] hover:bg-[#e0e7ff] shadow-sm flex items-center gap-1.5">
                 <Icon name="print" className="mr-1 align-middle text-[15px]" />
                 In tem mã vạch
               </button>
@@ -604,6 +609,21 @@ export function ProductVariantsPage() {
           </div>
         </div>
       </footer>
+
+      {showPrintModal && (
+        <BarcodePrintModal
+          shopName={businessName}
+          variants={rows.map((r) => ({
+            id: r.id,
+            sku: r.sku,
+            barcode: r.barcode,
+            templateName: template?.name || "Sản phẩm",
+            attributeText: r.attributeText,
+            price: r.price,
+          }))}
+          onClose={() => setShowPrintModal(false)}
+        />
+      )}
     </div>
   );
 }
