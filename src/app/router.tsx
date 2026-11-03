@@ -1,5 +1,5 @@
 import { Navigate, Outlet, createBrowserRouter, useLocation } from "react-router-dom";
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 
 import { LoadingScreen } from "@/components/common/loading-screen";
 import { Alert } from "@/components/ui/alert";
@@ -37,6 +37,9 @@ import { AuditItemDetailPage } from "@/pages/inventory/audit/audit-item-detail-p
 import { LotsPage } from "@/pages/inventory/scrap/lots-page";
 import { ScrapListPage } from "@/pages/inventory/scrap/scrap-list-page";
 import { ScrapDetailPage } from "@/pages/inventory/scrap/scrap-detail-page";
+import { OrdersOperationsPage } from "@/pages/purchases/orders-operations-page";
+const PurchasesPage = lazy(() => import("@/pages/purchases/purchases-page").then((module) => ({ default: module.PurchasesPage })));
+const SalesPage = lazy(() => import("@/pages/sales/sales-page").then((module) => ({ default: module.SalesPage })));
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -44,6 +47,11 @@ function RequireSession({ children }: { children: ReactNode }) {
   if (loading) return <LoadingScreen />;
   if (!session) return <Navigate replace state={{ from: location.pathname }} to="/login" />;
   return <>{children}</>;
+}
+
+function LegacyPurchaseRedirect() {
+  const location = useLocation();
+  return <Navigate replace to={`${location.pathname.replace(/^\/app\/orders/, "/purchases")}${location.search}${location.hash}`} />;
 }
 
 function RequireProfile() {
@@ -261,10 +269,17 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "/purchases/*",
+        element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><PurchasesPage /></Suspense></RequireBusiness>,
+      },
+      { path: "/sales/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><SalesPage /></Suspense></RequireBusiness> },
+      {
         path: "/app",
         children: [
           { index: true, element: <AppIndex /> },
           { path: "products", element: <OperationsPage /> },
+          { path: "orders", element: <RequireBusiness><OrdersOperationsPage /></RequireBusiness> },
+          { path: "orders/*", element: <RequireBusiness><LegacyPurchaseRedirect /></RequireBusiness> },
           { path: "team", element: <TeamPage /> },
           { path: "business", element: <BusinessPage /> },
           { path: "security", element: <SecurityPage /> },

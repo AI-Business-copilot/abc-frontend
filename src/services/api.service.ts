@@ -1,16 +1,15 @@
 import { supabase } from "@/lib/supabase";
-import type { ApiErrorPayload } from "@/types/auth.types";
 
-const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const apiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") || "http://localhost:5000/api";
 
-export async function apiRequest<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+interface ApiErrorPayload {
+  error?: string;
+  message?: string;
+}
+
+export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const { data, error: sessionError } = await supabase.auth.getSession();
+  const session = data?.session;
   if (sessionError) {
     throw sessionError;
   }
