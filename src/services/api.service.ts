@@ -20,13 +20,15 @@ export async function apiRequest<T>(
 
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${session.access_token}`);
-  if (init.body && !headers.has("Content-Type")) {
+  // FormData must go out without a Content-Type so the browser adds the multipart boundary itself.
+  if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
   const response = await fetch(`${apiBaseUrl}${path}`, { ...init, headers });
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as ApiErrorPayload;
+    // Most modules reply with { error }, the inventory controller replies with { message }.
     throw new Error(payload.error || payload.message || `Yêu cầu thất bại (${response.status}).`);
   }
 

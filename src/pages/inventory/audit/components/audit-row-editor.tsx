@@ -1,0 +1,261 @@
+import { useEffect, useState } from 'react';
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Spinner } from '../../../../components/ui/spinner';
+import { auditApi, type BusinessMember } from '../../../../api/audit';
+import type { VariantLot, VariantOption } from '../../../../types/audit';
+import { emptyRow, type AuditRowDraft } from '../audit-rows';
+
+const selectClass =
+  'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100';
+
+const formatDate = (value: string | Date) => new Date(value).toLocaleDateString();
+
+interface VariantSearchProps {
+  value: VariantOption | null;
+  onChange: (variant: VariantOption | null) => void;
+  disabled?: boolean;
+}
+
+/** Search-as-you-type SKU picker backed by GET /inventory/variants?search=. */
+function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<VariantOption[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        setSearching(true);
+        const data = await auditApi.searchVariants(query, 10);
+        if (!cancelled) setResults(data.items);
+      } catch {
+        if (!cancelled) setResults([]);
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, open]);
+
+  if (value) {
+    return (
+      <div className="mt-1 flex items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm">
+        <div className="min-w-0">
+          <p className="truncate font-medium text-gray-900">{value.productName}</p>
+          <p className="truncate font-mono text-xs text-gray-500">
+            {value.sku}
+            {value.attributeText ? ` • ${value.attributeText}` : ''}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled}
+          onClick={() => {
+            onChange(null);
+            setQuery('');
+          }}
+        >
+          Change
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <Input
+        type="text"
+        placeholder="Search SKU or product name"
+        value={query}
+        disabled={disabled}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        className="mt-1"
+      />
+      {open && (
+        <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+          {searching ? (
+            <div className="flex justify-center py-3">
+              <Spinner className="h-4 w-4" />
+            </div>
+          ) : results.length === 0 ? (
+            <p className="px-3 py-3 text-sm text-gray-500">No SKU found</p>
+          ) : (
+            results.map((variant) => (
+              <button
+                key={variant.id}
+                type="button"
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-blue-50"
+                onClick={() => {
+                  onChange(variant);
+                  setOpen(false);
+                }}
+              >
+                <span className="block truncate font-medium text-gray-900">{variant.productName}</span>
+                <span className="block truncate font-mono text-xs text-gray-500">
+                  {variant.sku}
+                  {variant.attributeText ? ` • ${variant.attributeText}` : ''}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface RowLotSelectProps {
+  variantId: string;
+  lotId: string;
+  onChange: (lotId: string) => void;
+  disabled?: boolean;
+}
+
+/** Optional lot picker. A chosen lot shows its number and expiry read-only. */
+function RowLotSelect({ variantId, lotId, onChange, disabled }: RowLotSelectProps) {
+  const [lots, setLots] = useState<VariantLot[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const data = await auditApi.getLots(variantId);
+        if (!cancelled) setLots(data.items);
+      } catch {
+        if (!cancelled) setLots([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [variantId]);
+
+  const selected = lots.find((lot) => lot.id === lotId);
+
+  return (
+    <div>
+      <select
+        value={lotId}
+        disabled={disabled || loading}
+        onChange={(e) => onChange(e.target.value)}
+        className={selectClass}
+      >
+        <option value="">Leave empty (the employee picks an existing lot or enters a new lot)</option>
+        {lots.map((lot) => (
+          <option key={lot.id} value={lot.id}>
+            {lot.lotNumber} • exp {formatDate(lot.expirationDate)} • on hand {lot.onHand}
+          </option>
+        ))}
+      </select>
+      {selected && (
+        <p className="mt-1 text-xs text-gray-600">
+          Lot number <span className="font-mono">{selected.lotNumber}</span> and expiry{' '}
+          {formatDate(selected.expirationDate)} are filled in automatically.
+        </p>
+      )}
+    </div>
+  );
+}
+
+interface AuditRowEditorProps {
+  rows: AuditRowDraft[];
+  onChange: (rows: AuditRowDraft[]) => void;
+  members: BusinessMember[];
+  disabled?: boolean;
+}
+
+export function AuditRowEditor({ rows, onChange, members, disabled }: AuditRowEditorProps) {
+  const updateRow = (key: string, patch: Partial<AuditRowDraft>) => {
+    onChange(rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+  };
+
+  const removeRow = (key: string) => {
+    onChange(rows.filter((row) => row.key !== key));
+  };
+
+  // A new row starts with the same employee as the previous one, which speeds up data entry.
+  const addRow = () => {
+    onChange([...rows, emptyRow(rows[rows.length - 1]?.assignedToUserId ?? '')]);
+  };
+
+  return (
+    <div className="space-y-3">
+      {rows.map((row, index) => (
+        <div key={row.key} className="space-y-3 rounded-lg border border-gray-200 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-700">Row {index + 1}</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={disabled}
+              onClick={() => removeRow(row.key)}
+            >
+              Remove
+            </Button>
+          </div>
+
+          <div>
+            <Label className="text-xs font-medium">Employee</Label>
+            <select
+              value={row.assignedToUserId}
+              disabled={disabled}
+              onChange={(e) => updateRow(row.key, { assignedToUserId: e.target.value })}
+              className={selectClass}
+            >
+              <option value="">Select employee</option>
+              {members.map((member) => (
+                <option key={member.user.id} value={member.user.id}>
+                  {member.user.fullName} ({member.user.email})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label className="text-xs font-medium">SKU</Label>
+            <VariantSearch
+              value={row.variant}
+              disabled={disabled}
+              onChange={(variant) => updateRow(row.key, { variant, lotId: '' })}
+            />
+          </div>
+
+          {row.variant && (
+            <div>
+              <Label className="text-xs font-medium">Lot (optional)</Label>
+              <RowLotSelect
+                variantId={row.variant.id}
+                lotId={row.lotId}
+                disabled={disabled}
+                onChange={(lotId) => updateRow(row.key, { lotId })}
+              />
+            </div>
+          )}
+        </div>
+      ))}
+
+      <Button type="button" variant="outline" disabled={disabled} onClick={addRow}>
+        + Add row
+      </Button>
+    </div>
+  );
+}

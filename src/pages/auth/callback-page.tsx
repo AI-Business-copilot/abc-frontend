@@ -12,11 +12,22 @@ export function CallbackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState("");
+  // At the start of finishAuthentication, right after searchParams is available
 
   useEffect(() => {
     let active = true;
     async function finishAuthentication() {
       try {
+        const hash = new URLSearchParams(window.location.hash.slice(1));
+        const accessToken = hash.get("access_token");
+        const refreshToken = hash.get("refresh_token");
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+        }
+
         const authError = searchParams.get("error_description") ?? searchParams.get("error");
         if (authError) throw new Error(authError);
 

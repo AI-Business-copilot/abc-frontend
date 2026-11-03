@@ -30,6 +30,15 @@ import { InventoryPage } from "@/pages/inventory/inventory-page";
 import { InventoryCreatePage } from "@/pages/inventory/inventory-create-page";
 import { StockLogPage } from "@/pages/inventory/stock-log-page";
 import { OrdersOperationsPage } from "@/pages/purchases/orders-operations-page";
+import { AuditListPage } from "@/pages/inventory/audit/audit-list-page";
+import { AuditCreatePage } from "@/pages/inventory/audit/audit-create-page";
+import { AuditDetailPage } from "@/pages/inventory/audit/audit-detail-page";
+import { AuditCountPage } from "@/pages/inventory/audit/audit-count-page";
+import { AuditItemDetailPage } from "@/pages/inventory/audit/audit-item-detail-page";
+import { LotsPage } from "@/pages/inventory/scrap/lots-page";
+import { ScrapListPage } from "@/pages/inventory/scrap/scrap-list-page";
+import { ScrapDetailPage } from "@/pages/inventory/scrap/scrap-detail-page";
+
 const PurchasesPage = lazy(() => import("@/pages/purchases/purchases-page").then((module) => ({ default: module.PurchasesPage })));
 const SalesPage = lazy(() => import("@/pages/sales/sales-page").then((module) => ({ default: module.SalesPage })));
 
@@ -201,6 +210,70 @@ export const router = createBrowserRouter([
         element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><PurchasesPage /></Suspense></RequireBusiness>,
       },
       { path: "/sales/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><SalesPage /></Suspense></RequireBusiness> },
+      {
+        path: "/inventory/lots",
+        element: (
+          <RequireBusiness>
+            <LotsPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/scrap",
+        element: (
+          <RequireBusiness>
+            <ScrapListPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/scrap/:orderId",
+        element: (
+          <RequireBusiness>
+            <ScrapDetailPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit",
+        element: (
+          <RequireBusiness>
+            <AuditListPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit/create",
+        element: (
+          <RequireBusiness>
+            <AuditCreatePage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit/:auditId",
+        element: (
+          <RequireBusiness>
+            <AuditDetailPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit/:auditId/items/:itemId",
+        element: (
+          <RequireBusiness>
+            <AuditItemDetailPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/audit/:auditId/count",
+        element: (
+          <RequireBusiness>
+            <AuditCountPage />
+          </RequireBusiness>
+        ),
+      },
       {
         path: "/app",
         children: [
