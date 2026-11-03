@@ -25,7 +25,6 @@ export function PurchasesPage() {
     <div className="purchase-workspace" key={profile?.business?.id}>
       <CatalogHeader active={active} mode="purchases" keyword={keyword} onKeywordChange={setKeyword} onSearch={search} />
       <main className="purchases">
-        <div className="purchase-breadcrumb"><Link to="/app/orders">Đơn hàng &amp; thanh toán</Link><span>›</span><strong>Mua hàng NCC</strong></div>
         {!allowed ? <div className="purchase-error" role="alert">Bạn cần quyền xem tồn kho và xem tài chính để sử dụng luồng mua hàng.</div> : (
           <Routes key={`${profile?.business?.id}:${location.search}`}>
             <Route index element={<OrderList />} />
