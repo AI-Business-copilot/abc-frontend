@@ -122,7 +122,36 @@ export function ProductVariantsPage() {
         setTemplate(detail);
         const mapped = mapRows(detail, selections);
         setRows(mapped);
-        setSelectedIds(mapped.map((row) => row.id));
+
+        // Khôi phục danh sách biến thể được tích chọn (để loại bỏ biến thể không mong muốn sang bước 4)
+        const savedActive = sessionStorage.getItem(`abc:wizard:active_variants:${templateId}`);
+        if (savedActive) {
+          try {
+            const parsed = JSON.parse(savedActive);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const valid = parsed.filter((id: string) => mapped.some((m) => m.id === id));
+              setSelectedIds(valid.length > 0 ? valid : mapped.map((row) => row.id));
+            } else {
+              setSelectedIds(mapped.map((row) => row.id));
+            }
+          } catch {
+            setSelectedIds(mapped.map((row) => row.id));
+          }
+        } else {
+          setSelectedIds(mapped.map((row) => row.id));
+        }
+
+        // Khôi phục tiền tố SKU đã lưu hoặc suy luận từ SKU đầu tiên
+        const savedPrefix = sessionStorage.getItem(`abc:wizard:prefix:${templateId}`);
+        if (savedPrefix) {
+          setSkuPrefix(savedPrefix);
+        } else if (mapped[0]?.sku) {
+          const parts = mapped[0].sku.split("-");
+          if (parts.length >= 2) {
+            setSkuPrefix(parts.slice(0, 2).join("-"));
+          }
+        }
+
         const firstWithCost = mapped.find((row) => row.cost > 0);
         if (firstWithCost) {
           setBaseCost(firstWithCost.cost);
@@ -198,6 +227,7 @@ export function ProductVariantsPage() {
       setError("Vui lòng nhập tiền tố (ví dụ: ABC-TSHIRT hoặc TENANT-DANHMUC).");
       return;
     }
+    sessionStorage.setItem(`abc:wizard:prefix:${templateId}`, prefix);
     const target = selectedIds.length ? selectedIds : rows.map((row) => row.id);
     setRows((current) =>
       current.map((row, idx) => {
@@ -269,6 +299,7 @@ export function ProductVariantsPage() {
     setError("");
     try {
       await persistPrices();
+      sessionStorage.setItem(`abc:wizard:active_variants:${templateId}`, JSON.stringify(selectedIds));
       navigate(`/products/new/inventory?templateId=${templateId}`);
     } catch (err) {
       setError((err as Error).message);
@@ -278,7 +309,9 @@ export function ProductVariantsPage() {
   };
 
   const toggleAll = () => {
-    setSelectedIds((current) => (current.length === rows.length ? [] : rows.map((row) => row.id)));
+    const next = selectedIds.length === rows.length ? [] : rows.map((row) => row.id);
+    setSelectedIds(next);
+    sessionStorage.setItem(`abc:wizard:active_variants:${templateId}`, JSON.stringify(next));
   };
 
   if (loading) {
@@ -502,9 +535,13 @@ export function ProductVariantsPage() {
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(row.id)}
-                          onChange={(event) =>
-                            setSelectedIds((current) => (event.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id)))
-                          }
+                          onChange={(event) => {
+                            const next = event.target.checked
+                              ? [...selectedIds, row.id]
+                              : selectedIds.filter((id) => id !== row.id);
+                            setSelectedIds(next);
+                            sessionStorage.setItem(`abc:wizard:active_variants:${templateId}`, JSON.stringify(next));
+                          }}
                         />
                       </td>
                       <td className="px-2 py-3">

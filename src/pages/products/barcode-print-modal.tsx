@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "@/pages/products/ui-icon";
 import { BarcodeSvg } from "@/components/barcode/barcode-svg";
 
@@ -73,330 +74,409 @@ export function BarcodePrintModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      {/* Vùng xem trước và cấu hình trên màn hình */}
-      <div className="flex h-[92vh] w-full max-w-6xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden print:hidden">
-        {/* Header Modal */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 bg-gray-50">
-          <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white">
-              <Icon name="print" className="text-[22px]" />
-            </span>
-            <div>
-              <h2 className="text-[18px] font-bold text-gray-900">
-                In Tem Mã Vạch Sản Phẩm (Barcode Label Print)
-              </h2>
-              <p className="text-[12px] text-gray-500">
-                Chuẩn mã vạch Code-128 / EAN-13 quét được 100% bằng máy quét súng laser và camera điện thoại
-              </p>
+    <>
+      {/* 1. Màn hình Xem trước & Cấu hình (Ẩn hoàn toàn khi in) */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:hidden">
+        <div className="flex h-[92vh] w-full max-w-6xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden">
+          {/* Header Modal */}
+          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 bg-gray-50">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white">
+                <Icon name="print" className="text-[22px]" />
+              </span>
+              <div>
+                <h2 className="text-[18px] font-bold text-gray-900">
+                  In Tem Mã Vạch Barcode (Chuẩn Code128 / EAN-13 Quét Cực Nhạy)
+                </h2>
+                <p className="text-[12px] text-gray-500">
+                  Hỗ trợ cả máy in nhiệt cuộn (Xprinter, Zebra) và máy in văn phòng giấy decal A4
+                </p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
+            >
+              <Icon name="close" className="text-[22px]" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
-          >
-            <Icon name="close" className="text-[22px]" />
-          </button>
-        </div>
 
-        {/* Nội dung 2 cột: Cột cấu hình & Cột xem trước tem in */}
-        <div className="grid flex-1 grid-cols-[340px_1fr] overflow-hidden">
-          {/* CỘT TRÁI: CẤU HÌNH IN */}
-          <aside className="border-r border-gray-200 bg-[#f9fafb] p-5 overflow-y-auto space-y-5">
-            <div>
-              <label className="text-[12.5px] font-bold text-gray-700 uppercase tracking-wide">
-                1. Khổ giấy in tem decal
-              </label>
-              <div className="mt-2 space-y-2">
-                <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2.5 text-[13px] font-medium cursor-pointer hover:border-[#4f46e5]">
-                  <input
-                    type="radio"
-                    name="labelsize"
-                    checked={labelSize === "50x30"}
-                    onChange={() => setLabelSize("50x30")}
-                  />
-                  <span><b>Khổ 1 tem: 50mm × 30mm</b> (Phổ biến nhất)</span>
-                </label>
-                <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2.5 text-[13px] font-medium cursor-pointer hover:border-[#4f46e5]">
-                  <input
-                    type="radio"
-                    name="labelsize"
-                    checked={labelSize === "35x22"}
-                    onChange={() => setLabelSize("35x22")}
-                  />
-                  <span><b>Khổ 2 tem: 35mm × 22mm</b> (Máy in Xprinter)</span>
-                </label>
-                <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2.5 text-[13px] font-medium cursor-pointer hover:border-[#4f46e5]">
-                  <input
-                    type="radio"
-                    name="labelsize"
-                    checked={labelSize === "a4"}
-                    onChange={() => setLabelSize("a4")}
-                  />
-                  <span><b>Khổ A4</b> (Nhiều tem trên 1 trang giấy)</span>
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[12.5px] font-bold text-gray-700 uppercase tracking-wide">
-                2. Nội dung hiển thị trên tem
-              </label>
-              <div className="mt-2 space-y-2 text-[13px]">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={showShopName}
-                    onChange={(e) => setShowShopName(e.target.checked)}
-                    className="rounded text-[#4f46e5]"
-                  />
-                  <span>Hiện tên cửa hàng ({shopName})</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={showSku}
-                    onChange={(e) => setShowSku(e.target.checked)}
-                    className="rounded text-[#4f46e5]"
-                  />
-                  <span>Hiện mã SKU ERP</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={showPrice}
-                    onChange={(e) => setShowPrice(e.target.checked)}
-                    className="rounded text-[#4f46e5]"
-                  />
-                  <span>Hiện giá bán lẻ niêm yết (VNĐ)</span>
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
+          {/* Nội dung 2 cột: Cột cấu hình & Cột xem trước tem in */}
+          <div className="grid flex-1 grid-cols-[340px_1fr] overflow-hidden">
+            {/* CỘT TRÁI: CẤU HÌNH IN */}
+            <aside className="border-r border-gray-200 bg-[#f9fafb] p-5 overflow-y-auto space-y-5">
+              <div>
                 <label className="text-[12.5px] font-bold text-gray-700 uppercase tracking-wide">
-                  3. Số lượng tem in ({printableItems.length} tem)
+                  1. Chọn Máy in &amp; Khổ tem decal
                 </label>
-              </div>
-              <div className="mt-2 flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setAllQuantities(1)}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
-                >
-                  Mỗi loại 1
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAllQuantities(2)}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
-                >
-                  Mỗi loại 2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAllQuantities(5)}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
-                >
-                  Mỗi loại 5
-                </button>
-              </div>
-
-              <div className="mt-3 max-h-56 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 text-[12px]">
-                {variants.map((v) => (
-                  <div key={v.id} className="flex items-center justify-between border-b border-gray-100 pb-1.5 last:border-none">
-                    <div className="truncate pr-2">
-                      <p className="font-semibold text-gray-800 truncate">{v.attributeText || v.sku}</p>
-                      <p className="font-mono text-[10.5px] text-gray-500">{v.barcode || v.sku}</p>
-                    </div>
+                <div className="mt-2 space-y-2">
+                  <label className={["flex items-center gap-2 rounded-lg border p-2.5 text-[12.5px] font-medium cursor-pointer transition-colors", labelSize === "50x30" ? "border-[#4f46e5] bg-indigo-50/50 text-[#4f46e5]" : "border-gray-200 bg-white hover:border-gray-300"].join(" ")}>
                     <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={quantities[v.id] ?? 1}
-                      onChange={(e) => updateQuantity(v.id, Number(e.target.value))}
-                      className="w-14 rounded border border-gray-300 px-1.5 py-1 text-center font-bold text-[#4f46e5] outline-none"
+                      type="radio"
+                      name="labelsize"
+                      checked={labelSize === "50x30"}
+                      onChange={() => setLabelSize("50x30")}
+                      className="accent-[#4f46e5]"
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="button"
-                disabled={printableItems.length === 0}
-                onClick={handlePrint}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4f46e5] py-3.5 text-[14px] font-bold text-white shadow-lg shadow-indigo-200 hover:bg-[#4338ca] disabled:opacity-50"
-              >
-                <Icon name="print" className="text-[20px]" />
-                In {printableItems.length} con tem ngay
-              </button>
-              <p className="mt-2 text-center text-[11px] text-gray-400">
-                Phím tắt: Nhấn Ctrl + P sau khi mở hộp thoại
-              </p>
-            </div>
-          </aside>
-
-          {/* CỘT PHẢI: XEM TRƯỚC BẢN IN (PRINT PREVIEW) */}
-          <main className="flex-1 overflow-y-auto bg-gray-100 p-6">
-            <div className="mb-3 flex items-center justify-between text-[13px] text-gray-600">
-              <span className="font-medium">
-                Xem trước trang in: Tổng cộng <b>{printableItems.length}</b> con tem decal
-              </span>
-              <span className="rounded bg-indigo-50 px-2.5 py-1 text-[12px] font-bold text-[#4f46e5]">
-                Định dạng: {labelSize === "50x30" ? "50 × 30 mm" : labelSize === "35x22" ? "35 × 22 mm" : "Khổ A4"}
-              </span>
-            </div>
-
-            {printableItems.length === 0 ? (
-              <div className="grid h-80 place-items-center rounded-2xl border-2 border-dashed border-gray-300 bg-white text-gray-400">
-                <p>Chưa chọn số lượng tem để in. Vui lòng tăng số lượng ở cột bên trái.</p>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-5 justify-start">
-                {printableItems.map((item, idx) => (
-                  <div
-                    key={`${item.id}-${idx}`}
-                    className={[
-                      "bg-white shadow-md border-2 border-dashed border-gray-300 hover:border-[#4f46e5] rounded-xl flex flex-col justify-between items-center text-center p-3 text-black transition-all hover:scale-[1.02]",
-                      labelSize === "50x30" ? "w-[260px] min-h-[165px]" : "w-[210px] min-h-[135px]",
-                    ].join(" ")}
-                  >
-                    {/* Header tem */}
-                    <div className="w-full border-b border-gray-200 pb-1">
-                      {showShopName && (
-                        <p className="text-[9.5px] font-black uppercase tracking-wider text-gray-700 truncate">
-                          {shopName}
-                        </p>
-                      )}
-                      <p className="text-[12px] font-black text-gray-900 truncate mt-0.5" title={item.templateName}>
-                        {item.templateName}
-                      </p>
-                      {item.attributeText && (
-                        <div className="mt-1 flex items-center justify-center gap-1">
-                          <span className="inline-block bg-gray-100 text-gray-900 border border-gray-300 px-2 py-0.5 rounded text-[10px] font-black tracking-wide">
-                            {item.attributeText}
-                          </span>
-                        </div>
-                      )}
+                    <div>
+                      <b className="block">Decal cuộn: 50mm × 30mm</b>
+                      <span className="text-[11px] text-gray-500">Máy in nhiệt Xprinter / Bixolon 1 hàng</span>
                     </div>
+                  </label>
 
-                    {/* Vạch Barcode thật quét được 100% */}
-                    <div className="w-full flex justify-center items-center my-1.5 px-1 overflow-hidden">
-                      <BarcodeSvg
-                        value={item.barcode || item.sku}
-                        width={labelSize === "50x30" ? 1.4 : 1.1}
-                        height={labelSize === "50x30" ? 34 : 26}
-                        fontSize={labelSize === "50x30" ? 10.5 : 8.5}
-                        displayValue={true}
+                  <label className={["flex items-center gap-2 rounded-lg border p-2.5 text-[12.5px] font-medium cursor-pointer transition-colors", labelSize === "35x22" ? "border-[#4f46e5] bg-indigo-50/50 text-[#4f46e5]" : "border-gray-200 bg-white hover:border-gray-300"].join(" ")}>
+                    <input
+                      type="radio"
+                      name="labelsize"
+                      checked={labelSize === "35x22"}
+                      onChange={() => setLabelSize("35x22")}
+                      className="accent-[#4f46e5]"
+                    />
+                    <div>
+                      <b className="block">Decal cuộn: 35mm × 22mm</b>
+                      <span className="text-[11px] text-gray-500">Máy in nhiệt khổ nhỏ (mỹ phẩm, phụ kiện)</span>
+                    </div>
+                  </label>
+
+                  <label className={["flex items-center gap-2 rounded-lg border p-2.5 text-[12.5px] font-medium cursor-pointer transition-colors", labelSize === "a4" ? "border-[#4f46e5] bg-indigo-50/50 text-[#4f46e5]" : "border-gray-200 bg-white hover:border-gray-300"].join(" ")}>
+                    <input
+                      type="radio"
+                      name="labelsize"
+                      checked={labelSize === "a4"}
+                      onChange={() => setLabelSize("a4")}
+                      className="accent-[#4f46e5]"
+                    />
+                    <div>
+                      <b className="block">Tờ Decal A4 (Tomy 145 / Grid)</b>
+                      <span className="text-[11px] text-gray-500">In lưới nhiều tem trên máy in văn phòng A4 / PDF</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[12.5px] font-bold text-gray-700 uppercase tracking-wide">
+                  2. Thông tin hiển thị trên tem
+                </label>
+                <div className="mt-2 space-y-2 text-[13px]">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showShopName}
+                      onChange={(e) => setShowShopName(e.target.checked)}
+                      className="rounded accent-[#4f46e5]"
+                    />
+                    <span>Hiện tên doanh nghiệp ({shopName})</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showSku}
+                      onChange={(e) => setShowSku(e.target.checked)}
+                      className="rounded accent-[#4f46e5]"
+                    />
+                    <span>Hiện mã SKU nội bộ</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showPrice}
+                      onChange={(e) => setShowPrice(e.target.checked)}
+                      className="rounded accent-[#4f46e5]"
+                    />
+                    <span>Hiện giá bán lẻ niêm yết (VNĐ)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="text-[12.5px] font-bold text-gray-700 uppercase tracking-wide">
+                    3. Số lượng tem ({printableItems.length} con tem)
+                  </label>
+                </div>
+                <div className="mt-2 flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setAllQuantities(1)}
+                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    Mỗi loại 1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllQuantities(2)}
+                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    Mỗi loại 2
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllQuantities(5)}
+                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    Mỗi loại 5
+                  </button>
+                </div>
+
+                <div className="mt-3 max-h-56 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 text-[12px]">
+                  {variants.map((v) => (
+                    <div key={v.id} className="flex items-center justify-between border-b border-gray-100 pb-1.5 last:border-none">
+                      <div className="truncate pr-2">
+                        <p className="font-semibold text-gray-800 truncate">{v.attributeText || v.sku}</p>
+                        <p className="font-mono text-[10.5px] text-gray-500">{v.barcode || v.sku}</p>
+                      </div>
+                      <input
+                        type="number"
+                        min={0}
+                        max={500}
+                        value={quantities[v.id] ?? 1}
+                        onChange={(e) => updateQuantity(v.id, Number(e.target.value))}
+                        className="w-14 rounded border border-gray-300 px-1.5 py-1 text-center font-bold text-[#4f46e5] outline-none"
                       />
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    {/* Footer tem: SKU và Giá */}
-                    <div className="w-full flex items-center justify-between border-t border-gray-200 pt-1 text-[10.5px]">
-                      {showSku && (
-                        <span className="font-mono text-gray-700 font-bold truncate max-w-[110px]" title={item.sku}>
-                          {item.sku}
-                        </span>
-                      )}
-                      {showPrice && (
-                        <span className="font-black text-[#d92d20] text-[13px] ml-auto">
-                          {vnd(item.price)}
-                        </span>
-                      )}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  disabled={printableItems.length === 0}
+                  onClick={handlePrint}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4f46e5] py-3.5 text-[14px] font-bold text-white shadow-lg shadow-indigo-200 hover:bg-[#4338ca] disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  <Icon name="print" className="text-[20px]" />
+                  In {printableItems.length} con tem ngay
+                </button>
+                <p className="mt-2 text-center text-[11px] text-gray-400">
+                  {labelSize === "a4" ? "Chế độ A4: In trên giấy Tomy nhiều tem" : "Chế độ cuộn: Mỗi tem 1 trang giấy nhiệt"}
+                </p>
+              </div>
+            </aside>
+
+            {/* CỘT PHẢI: XEM TRƯỚC BẢN IN */}
+            <main className="flex-1 overflow-y-auto bg-gray-100 p-6">
+              <div className="mb-3 flex items-center justify-between text-[13px] text-gray-600">
+                <span className="font-medium">
+                  Xem trước: Tổng cộng <b>{printableItems.length}</b> con tem
+                </span>
+                <span className="rounded bg-indigo-50 px-2.5 py-1 text-[12px] font-bold text-[#4f46e5]">
+                  {labelSize === "50x30" ? "Cuộn 50 × 30 mm" : labelSize === "35x22" ? "Cuộn 35 × 22 mm" : "Tờ A4 Tomy Grid"}
+                </span>
+              </div>
+
+              {printableItems.length === 0 ? (
+                <div className="grid h-80 place-items-center rounded-2xl border-2 border-dashed border-gray-300 bg-white text-gray-400">
+                  <p>Chưa chọn số lượng tem để in. Vui lòng tăng số lượng ở cột bên trái.</p>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-4 justify-start">
+                  {printableItems.map((item, idx) => (
+                    <div
+                      key={`${item.id}-${idx}`}
+                      className="bg-white shadow-sm border border-gray-300 rounded-xl flex flex-col justify-between items-center text-center p-2.5 text-black w-[240px] h-[155px] overflow-hidden"
+                    >
+                      {/* Header tem */}
+                      <div className="w-full border-b border-gray-200 pb-1 leading-tight">
+                        {showShopName && (
+                          <p className="text-[9px] font-black uppercase tracking-wider text-gray-600 truncate">
+                            {shopName}
+                          </p>
+                        )}
+                        <p className="text-[11px] font-bold text-gray-900 truncate mt-0.5" title={item.templateName}>
+                          {item.templateName}
+                        </p>
+                        {item.attributeText && (
+                          <span className="inline-block bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-[9.5px] font-semibold mt-0.5 truncate max-w-full">
+                            {item.attributeText}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Barcode SVG quét cực nhạy */}
+                      <div className="w-full flex justify-center items-center my-1 px-1 overflow-hidden">
+                        <BarcodeSvg
+                          value={item.barcode || item.sku}
+                          width={1.3}
+                          height={30}
+                          fontSize={9.5}
+                          displayValue={true}
+                        />
+                      </div>
+
+                      {/* Footer tem: SKU và Giá không bị ngắt dòng */}
+                      <div className="w-full flex items-center justify-between border-t border-gray-200 pt-1 text-[10px] leading-none">
+                        {showSku && (
+                          <span className="font-mono text-gray-700 font-semibold truncate max-w-[110px]" title={item.sku}>
+                            {item.sku}
+                          </span>
+                        )}
+                        {showPrice && (
+                          <span className="font-bold text-[#d92d20] text-[11.5px] ml-auto whitespace-nowrap">
+                            {vnd(item.price)}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </main>
+                  ))}
+                </div>
+              )}
+            </main>
+          </div>
         </div>
       </div>
 
-      {/* ========================================================= */}
-      {/* KHUNG IN THỰC TẾ TRÌNH DUYỆT BẮT ĐẦU KHI GỌI WINDOW.PRINT() */}
-      {/* ========================================================= */}
-      <div className="hidden print:block print:w-full print:m-0 print:p-0">
-        <style dangerouslySetInnerHTML={{ __html: `
-          @media print {
-            body { margin: 0 !important; padding: 0 !important; background: white !important; }
-            @page {
-              margin: 0;
-              size: auto;
+      {/* 2. Portal in ấn chuyên dụng vào document.body */}
+      {createPortal(
+        <div id="printable-barcode-portal">
+          <style>{`
+            @media screen {
+              #printable-barcode-portal {
+                display: none !important;
+              }
             }
-            .thermal-label {
-              page-break-inside: avoid;
-              page-break-after: always;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              align-items: center;
-              box-sizing: border-box;
-              text-align: center;
-              color: black;
-              background: white;
-              overflow: hidden;
-            }
-            .label-50x30 {
-              width: 50mm;
-              height: 30mm;
-              padding: 1.5mm;
-            }
-            .label-35x22 {
-              width: 35mm;
-              height: 22mm;
-              padding: 1mm;
-            }
-          }
-        `}} />
+            @media print {
+              html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                width: 100% !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              body > *:not(#printable-barcode-portal) {
+                display: none !important;
+              }
+              #printable-barcode-portal {
+                display: block !important;
+                position: static !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+              }
 
-        <div className="print:flex print:flex-wrap">
-          {printableItems.map((item, idx) => (
-            <div
-              key={`print-${item.id}-${idx}`}
-              className={[
-                "thermal-label",
-                labelSize === "50x30" ? "label-50x30" : "label-35x22",
-              ].join(" ")}
-            >
-              <div style={{ width: "100%", overflow: "hidden", lineHeight: 1.1 }}>
-                {showShopName && (
-                  <div style={{ fontSize: "7pt", fontWeight: "bold", textTransform: "uppercase" }}>
-                    {shopName}
+              /* A4 GRID MODE */
+              ${labelSize === "a4" ? `
+                @page {
+                  size: A4 portrait;
+                  margin: 6mm 5mm 6mm 5mm;
+                }
+                .barcode-print-grid {
+                  display: grid !important;
+                  grid-template-columns: repeat(4, 1fr) !important;
+                  gap: 3mm !important;
+                  width: 100% !important;
+                }
+                .barcode-print-card {
+                  border: 1px dashed #666666 !important;
+                  border-radius: 3px !important;
+                  width: 100% !important;
+                  height: 31mm !important;
+                  max-height: 31mm !important;
+                  padding: 1.5mm 2mm !important;
+                  box-sizing: border-box !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  justify-content: space-between !important;
+                  align-items: center !important;
+                  text-align: center !important;
+                  background: #ffffff !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  overflow: hidden !important;
+                }
+              ` : `
+                /* ROLL THERMAL PRINTER MODE */
+                @page {
+                  size: ${labelSize === "50x30" ? "50mm 30mm" : "35mm 22mm"};
+                  margin: 0 !important;
+                }
+                .barcode-print-grid {
+                  display: block !important;
+                  width: 100% !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                }
+                .barcode-print-card {
+                  width: ${labelSize === "50x30" ? "50mm" : "35mm"} !important;
+                  height: ${labelSize === "50x30" ? "30mm" : "22mm"} !important;
+                  max-width: ${labelSize === "50x30" ? "50mm" : "35mm"} !important;
+                  max-height: ${labelSize === "50x30" ? "30mm" : "22mm"} !important;
+                  padding: 1mm 1.5mm !important;
+                  box-sizing: border-box !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  justify-content: space-between !important;
+                  align-items: center !important;
+                  text-align: center !important;
+                  background: #ffffff !important;
+                  page-break-after: always !important;
+                  break-after: page !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  overflow: hidden !important;
+                }
+              `}
+
+              .price-tag {
+                white-space: nowrap !important;
+                font-weight: bold !important;
+              }
+            }
+          `}</style>
+
+          <div className="barcode-print-grid">
+            {printableItems.map((item, idx) => (
+              <div key={`print-${item.id}-${idx}`} className="barcode-print-card">
+                {/* Header nhãn tem */}
+                <div style={{ width: "100%", overflow: "hidden", lineHeight: 1.15 }}>
+                  {showShopName && (
+                    <div style={{ fontSize: "6.5pt", fontWeight: "bold", textTransform: "uppercase", color: "#333", whiteSpace: "nowrap", overflow: "hidden" }}>
+                      {shopName}
+                    </div>
+                  )}
+                  <div style={{ fontSize: labelSize === "35x22" ? "6.5pt" : "7.5pt", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {item.templateName}
                   </div>
-                )}
-                <div style={{ fontSize: "8pt", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden" }}>
-                  {item.templateName}
+                  {item.attributeText && (
+                    <div style={{ fontSize: "6pt", whiteSpace: "nowrap", overflow: "hidden", color: "#444" }}>
+                      {item.attributeText}
+                    </div>
+                  )}
                 </div>
-                <div style={{ fontSize: "7pt", whiteSpace: "nowrap", overflow: "hidden" }}>
-                  {item.attributeText}
+
+                {/* Vạch Barcode thật quét cực nhạy */}
+                <div style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", margin: "0.5mm 0" }}>
+                  <BarcodeSvg
+                    value={item.barcode || item.sku}
+                    width={labelSize === "35x22" ? 0.95 : 1.25}
+                    height={labelSize === "35x22" ? 20 : 28}
+                    fontSize={labelSize === "35x22" ? 7 : 8.5}
+                    displayValue={true}
+                  />
+                </div>
+
+                {/* Footer nhãn tem: SKU & Giá bán không ngắt dòng */}
+                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "6.5pt", lineHeight: 1 }}>
+                  {showSku && (
+                    <span style={{ fontFamily: "monospace", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", maxWidth: "60%" }}>
+                      {item.sku}
+                    </span>
+                  )}
+                  {showPrice && (
+                    <span className="price-tag" style={{ fontSize: labelSize === "35x22" ? "7.5pt" : "8.5pt", marginLeft: "auto" }}>
+                      {vnd(item.price)}
+                    </span>
+                  )}
                 </div>
               </div>
-
-              <div style={{ width: "100%", display: "flex", justifyContent: "center", margin: "1mm 0" }}>
-                <BarcodeSvg
-                  value={item.barcode || item.sku}
-                  width={labelSize === "50x30" ? 1.3 : 1.0}
-                  height={labelSize === "50x30" ? 30 : 22}
-                  fontSize={8}
-                  displayValue={true}
-                />
-              </div>
-
-              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "7pt" }}>
-                {showSku && <span style={{ fontFamily: "monospace" }}>{item.sku}</span>}
-                {showPrice && (
-                  <span style={{ fontWeight: "bold", fontSize: "9pt", marginLeft: "auto" }}>
-                    {vnd(item.price)}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+            ))}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

@@ -72,5 +72,16 @@ export function BarcodeSvg({
     return <span className="text-[11px] text-gray-400 italic">Chưa có mã</span>;
   }
 
-  return <svg ref={svgRef} className={className} style={{ maxWidth: "100%", height: "auto", display: "block" }} />;
+  return (
+    <svg
+      ref={svgRef}
+      className={className}
+      style={{
+        maxWidth: "100%",
+        height: "auto",
+        display: "block",
+        shapeRendering: "crispEdges",
+      }}
+    />
+  );
 }

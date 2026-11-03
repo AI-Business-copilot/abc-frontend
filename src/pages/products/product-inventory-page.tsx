@@ -62,9 +62,31 @@ export function ProductInventoryPage() {
           return;
         }
         setTemplate(detail);
+
+        // Lọc danh sách biến thể được tích chọn ở Bước 3 (Bỏ tích ở Bước 3 thì KHÔNG hiển thị ở Bước 4)
+        const savedActive = sessionStorage.getItem(`abc:wizard:active_variants:${templateId}`);
+        let activeVariantIds: string[] | null = null;
+        if (savedActive) {
+          try {
+            const parsed = JSON.parse(savedActive);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              activeVariantIds = parsed;
+            }
+          } catch {}
+        }
+
+        const filteredVariants = activeVariantIds
+          ? detail.productVariants.filter((v) => activeVariantIds.includes(v.id))
+          : detail.productVariants;
+
         setRows(
-          detail.productVariants.map((variant) => {
+          filteredVariants.map((variant) => {
             const values = variant.variantAttributeValues || [];
+            // Lấy số lượng tồn kho thực tế đã có trong CSDL nếu đang cập nhật sản phẩm cũ
+            const existingOnHand = ((variant as any).inventoryBalances || []).reduce(
+              (sum: number, b: any) => sum + (Number(b.quantityOnHand) || 0),
+              0,
+            );
             return {
               id: variant.id,
               sku: variant.sku,
@@ -72,7 +94,7 @@ export function ProductInventoryPage() {
               groupValue: values[0]?.attributeValue.value || "Khác",
               cost: Number(variant.costPrice) || 0,
               safety: variant.safetyStockQty || 0,
-              quantity: 0,
+              quantity: existingOnHand,
               lotNumber: "",
               manufacturingDate: "",
               expirationDate: "",
@@ -525,7 +547,7 @@ export function ProductInventoryPage() {
       {/* MODAL XEM TRƯỚC PHIẾU KIỂM KÊ KHO A4 */}
       {showVoucherModal && (
         <OpeningStockVoucherModal
-          voucherCode={`PKK-${new Date().getFullYear()}-${template?.code ? template.code.replace(/^TMP-/, "") : "001"}`}
+          voucherCode={`PKK-${new Date().getFullYear()}-${template?.code ? template.code.replace(/^TMP-/, "").replace(/^\d{4}-/, "") : "001"}`}
           businessName={profile?.business?.name || "CỬA HÀNG ERP"}
           businessAddress={profile?.business?.address || "Việt Nam"}
           businessPhone={profile?.business?.phone || "0900000000"}

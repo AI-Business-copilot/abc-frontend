@@ -13,6 +13,7 @@ import { CatalogHeader } from '@/pages/products/catalog-header';
 import { Icon } from '@/pages/products/ui-icon';
 import { getAllImages } from '@/lib/image-utils';
 import { BarcodeScannerModal } from '@/pages/products/barcode-scanner-modal';
+import { BarcodePrintModal, type PrintableVariant } from '@/pages/products/barcode-print-modal';
 
 const vnd = (value: number) => new Intl.NumberFormat('vi-VN').format(Math.round(value || 0)) + ' đ';
 const compactVnd = (value: number) => {
@@ -81,12 +82,14 @@ function ProductCard({
   onEdit,
   onDelete,
   onQuickCategory,
+  onPrintBarcode,
 }: {
   product: ProductItem;
   onView: (p: ProductItem) => void;
   onEdit: (p: ProductItem) => void;
   onDelete: (p: ProductItem) => void;
   onQuickCategory: (p: ProductItem) => void;
+  onPrintBarcode: (p: ProductItem) => void;
 }) {
   const missingCategory = !product.categoryId;
   const images = useMemo(() => getAllImages(product.imageUrl), [product.imageUrl]);
@@ -151,6 +154,17 @@ function ProductCard({
           {product.isActive ? 'Active' : 'Ngừng bán'}
         </span>
 
+        {/* Cảnh báo tồn kho thấp hoặc hết hàng */}
+        {product.stockQty === 0 ? (
+          <span className="absolute top-9 left-2.5 inline-flex items-center gap-1 bg-red-600/95 text-white px-2 h-[20px] rounded-md text-[10.5px] font-bold shadow-sm">
+            Hết hàng
+          </span>
+        ) : product.stockQty <= 10 ? (
+          <span className="absolute top-9 left-2.5 inline-flex items-center gap-1 bg-amber-500/95 text-white px-2 h-[20px] rounded-md text-[10.5px] font-bold shadow-sm">
+            <Icon name="warning" className="text-[12px]" /> Tồn thấp ({product.stockQty})
+          </span>
+        ) : null}
+
         <span className="absolute top-2.5 right-2.5 inline-flex items-center h-[22px] px-2.5 rounded-md bg-[#4f46e5] text-white text-[11px] font-semibold shadow-sm">
           {product.variantCount} Biến thể SKU
         </span>
@@ -213,6 +227,16 @@ function ProductCard({
               </button>
             )}
 
+            {/* Nút In tem mã vạch Barcode */}
+            <button
+              type="button"
+              onClick={() => onPrintBarcode(product)}
+              title="In tem mã vạch Barcode cho sản phẩm này"
+              className="w-8 h-8 grid place-items-center rounded-md border border-[#d7d9e6] text-[#475467] hover:bg-[#eef2ff] hover:text-[#4f46e5] transition-colors"
+            >
+              <Icon name="print" className="text-[15px]" />
+            </button>
+
             {/* Nút Chỉnh sửa hoạt động */}
             <button
               onClick={() => onEdit(product)}
@@ -237,13 +261,21 @@ function ProductCard({
   );
 }
 
-function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => void }) {
+function SkuModal({
+  product,
+  onClose,
+  onPrintVariants,
+}: {
+  product: ProductItem;
+  onClose: () => void;
+  onPrintVariants: (variants: PrintableVariant[]) => void;
+}) {
   const images = useMemo(() => getAllImages(product.imageUrl), [product.imageUrl]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#101828]/50 backdrop-blur-sm grid place-items-center p-4" onClick={onClose}>
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-[#eaecf0] flex items-start justify-between gap-4 bg-gray-50/50">
           <div>
             <div className="flex items-center gap-2">
@@ -254,13 +286,56 @@ function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => v
             </div>
             <h3 className="text-[18px] font-extrabold text-[#101828] mt-1">{product.name}</h3>
             <p className="text-[12px] text-[#667085] mt-0.5">
-              Danh sách {product.variantCount} biến thể SKU • Có ảnh chụp và thuộc tính tương ứng
+              Danh sách {product.variantCount} biến thể SKU • Có ảnh chụp theo nhiều góc và mã vạch riêng biệt
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-[#f2f4f7] text-[#667085]">
-            <Icon name="close" className="text-[20px]" />
-          </button>
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                const printable: PrintableVariant[] = product.skus.map((s, i) => ({
+                  id: s.id,
+                  sku: s.sku,
+                  barcode: s.barcode || s.sku,
+                  templateName: product.name,
+                  attributeText: `Biến thể #${i + 1}`,
+                  price: s.basePrice,
+                }));
+                onPrintVariants(printable);
+              }}
+              className="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-[#4f46e5] text-white text-[12px] font-bold shadow-xs hover:bg-[#4338ca] transition-colors"
+            >
+              <Icon name="print" className="text-[16px]" />
+              In {product.variantCount} tem mã vạch
+            </button>
+            <button onClick={onClose} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-[#f2f4f7] text-[#667085]">
+              <Icon name="close" className="text-[20px]" />
+            </button>
+          </div>
         </div>
+
+        {/* Thư viện góc chụp đa chiều (Multi-angle photos) */}
+        {images.length > 0 && (
+          <div className="px-6 py-2.5 bg-indigo-50/30 border-b border-gray-100 flex items-center gap-3 overflow-x-auto">
+            <span className="text-[11.5px] font-bold text-gray-700 shrink-0 flex items-center gap-1">
+              <Icon name="photo_camera" className="text-[15px] text-[#4f46e5]" />
+              Các góc chụp ({images.length}):
+            </span>
+            <div className="flex items-center gap-2">
+              {images.map((img, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setPreviewImage(img)}
+                  className="w-10 h-10 rounded-lg border-2 border-white shadow-xs overflow-hidden hover:border-[#4f46e5] transition-all hover:scale-105 shrink-0"
+                  title={`Bấm để xem ảnh phóng to góc chụp #${i + 1}`}
+                >
+                  <img src={img} alt={`Góc chụp #${i + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="max-h-[460px] overflow-auto p-4">
           <table className="w-full text-[12.5px]">
@@ -272,11 +347,13 @@ function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => v
                 <th className="text-right font-semibold px-3 py-2.5">Giá vốn</th>
                 <th className="text-right font-semibold px-3 py-2.5">Giá bán</th>
                 <th className="text-right font-semibold px-4 py-2.5">Tồn kho</th>
+                <th className="text-center font-semibold px-3 py-2.5 w-16">In tem</th>
               </tr>
             </thead>
             <tbody>
               {product.skus.map((sku: ProductSku, idx: number) => {
                 const variantImg = images[idx % images.length] || images[0] || null;
+                const isLowStock = sku.stockQty <= 5;
                 return (
                   <tr key={sku.id} className="border-b border-[#f2f4f7] hover:bg-[#fafbff] transition-colors">
                     <td className="px-3 py-2">
@@ -311,7 +388,31 @@ function SkuModal({ product, onClose }: { product: ProductItem; onClose: () => v
                     </td>
                     <td className="px-3 py-2 text-right text-[#475467]">{vnd(sku.costPrice)}</td>
                     <td className="px-3 py-2 text-right font-bold text-[#4f46e5]">{vnd(sku.basePrice)}</td>
-                    <td className="px-4 py-2 text-right font-bold text-gray-900">{sku.stockQty} {product.unitOfMeasure}</td>
+                    <td className="px-4 py-2 text-right">
+                      <span className={["font-bold", isLowStock ? "text-red-600 bg-red-50 px-2 py-0.5 rounded text-[11.5px]" : "text-gray-900"].join(" ")}>
+                        {sku.stockQty} {product.unitOfMeasure}
+                      </span>
+                      {isLowStock && <span className="block text-[10px] text-red-500 font-semibold mt-0.5">Tồn thấp</span>}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onPrintVariants([{
+                            id: sku.id,
+                            sku: sku.sku,
+                            barcode: sku.barcode || sku.sku,
+                            templateName: product.name,
+                            attributeText: `Biến thể #${idx + 1}`,
+                            price: sku.basePrice,
+                          }]);
+                        }}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-[#4f46e5] hover:bg-indigo-50 transition-colors"
+                        title="In tem mã vạch cho riêng biến thể này"
+                      >
+                        <Icon name="print" className="text-[16px]" />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -446,6 +547,7 @@ export default function ProductsPage() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [quickCategoryProduct, setQuickCategoryProduct] = useState<ProductItem | null>(null);
+  const [barcodeVariants, setBarcodeVariants] = useState<PrintableVariant[] | null>(null);
 
   // Debounce gọi server ở mức thấp (100ms) để không spam network
   useEffect(() => {
@@ -555,6 +657,40 @@ export default function ProductsPage() {
     }
   };
 
+  const handlePrintAll = () => {
+    const allVariants: PrintableVariant[] = items.flatMap((p) =>
+      p.skus.map((s, idx) => ({
+        id: s.id,
+        sku: s.sku,
+        barcode: s.barcode || s.sku,
+        templateName: p.name,
+        attributeText: `Biến thể #${idx + 1}`,
+        price: s.basePrice,
+      })),
+    );
+    if (allVariants.length === 0) {
+      setError('Chưa có sản phẩm hoặc biến thể nào để in tem mã vạch.');
+      return;
+    }
+    setBarcodeVariants(allVariants);
+  };
+
+  const handlePrintProduct = (product: ProductItem) => {
+    const printable: PrintableVariant[] = product.skus.map((s, idx) => ({
+      id: s.id,
+      sku: s.sku,
+      barcode: s.barcode || s.sku,
+      templateName: product.name,
+      attributeText: `Biến thể #${idx + 1}`,
+      price: s.basePrice,
+    }));
+    if (printable.length === 0) {
+      setError(`Sản phẩm “${product.name}” chưa có biến thể nào.`);
+      return;
+    }
+    setBarcodeVariants(printable);
+  };
+
   return (
     <div className="abc-products min-h-screen bg-[#f5f6fa] text-[#101828]">
       <CatalogHeader active="products" keyword={keyword} onKeywordChange={setKeyword} />
@@ -582,6 +718,14 @@ export default function ProductsPage() {
               <Icon name="receipt_long" className="text-[18px]" />
               Phiếu kiểm kê kho
             </Link>
+            <button
+              type="button"
+              onClick={handlePrintAll}
+              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white text-[#4f46e5] text-[12.5px] font-semibold hover:bg-[#eef0ff] shadow-sm transition-colors"
+            >
+              <Icon name="print" className="text-[18px]" />
+              In tem mã vạch
+            </button>
             <button
               type="button"
               onClick={() => setShowScannerModal(true)}
@@ -754,6 +898,7 @@ export default function ProductsPage() {
                 onEdit={handleEditProduct}
                 onDelete={handleOpenDelete}
                 onQuickCategory={(p) => setQuickCategoryProduct(p)}
+                onPrintBarcode={handlePrintProduct}
               />
             ))}
           </div>
@@ -815,6 +960,13 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => handlePrintProduct(product)}
+                          title="In tem mã vạch Barcode"
+                          className="w-7 h-7 grid place-items-center rounded border border-[#d7d9e6] text-[#475467] hover:bg-[#eef2ff] hover:text-[#4f46e5]"
+                        >
+                          <Icon name="print" className="text-[14px]" />
+                        </button>
                         <button
                           onClick={() => handleEditProduct(product)}
                           title="Chỉnh sửa sản phẩm"
@@ -895,7 +1047,22 @@ export default function ProductsPage() {
         </div>
       </main>
 
-      {selected && <SkuModal product={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <SkuModal
+          product={selected}
+          onClose={() => setSelected(null)}
+          onPrintVariants={(v) => setBarcodeVariants(v)}
+        />
+      )}
+
+      {/* MODAL IN TEM MÃ VẠCH TẬP TRUNG */}
+      {barcodeVariants && (
+        <BarcodePrintModal
+          shopName={business?.name || "CỬA HÀNG ERP"}
+          variants={barcodeVariants}
+          onClose={() => setBarcodeVariants(null)}
+        />
+      )}
 
       {showScannerModal && (
         <BarcodeScannerModal

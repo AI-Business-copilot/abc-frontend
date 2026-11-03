@@ -27,6 +27,7 @@ export type AttributeRecord = {
 };
 
 export type TemplatePayload = {
+  code?: string | null;
   name?: string;
   categoryId?: string | null;
   unitOfMeasure?: string;

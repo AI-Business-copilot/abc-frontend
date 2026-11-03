@@ -25,6 +25,7 @@ const readFileAsDataUrl = (file: File) =>
   });
 
 type FormDraft = {
+  code?: string;
   name: string;
   categoryId: string;
   unit: string;
@@ -57,6 +58,7 @@ export function ProductCreatePage() {
   const [keyword, setKeyword] = useState("");
   const [categories, setCategories] = useState<CategoryListResponse | null>(null);
   const [template, setTemplate] = useState<TemplateRecord | null>(null);
+  const [customCode, setCustomCode] = useState(initialDraft.code || "");
   const [name, setName] = useState(initialDraft.name || "");
   const [categoryId, setCategoryId] = useState(initialDraft.categoryId || "");
   const [unit, setUnit] = useState(initialDraft.unit || "Chai (Bottle)");
@@ -77,6 +79,7 @@ export function ProductCreatePage() {
   // Tự động lưu bản nháp vào sessionStorage mỗi khi thông tin thay đổi
   useEffect(() => {
     const draft: FormDraft = {
+      code: customCode,
       name,
       categoryId,
       unit,
@@ -89,7 +92,7 @@ export function ProductCreatePage() {
     try {
       sessionStorage.setItem(draftKey, JSON.stringify(draft));
     } catch {}
-  }, [draftKey, name, categoryId, unit, manageExpiry, description, images, activeAfterCreate, industry]);
+  }, [draftKey, customCode, name, categoryId, unit, manageExpiry, description, images, activeAfterCreate, industry]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,6 +120,7 @@ export function ProductCreatePage() {
         if (savedDraft) {
           try {
             const parsed = JSON.parse(savedDraft);
+            setCustomCode(parsed.code ?? (result.code || ""));
             setName(parsed.name ?? result.name);
             setCategoryId(parsed.categoryId ?? (result.categoryId || ""));
             setUnit(parsed.unit ?? (result.unitOfMeasure || "Cái"));
@@ -129,6 +133,7 @@ export function ProductCreatePage() {
         }
 
         // Nếu chưa có nháp, nạp dữ liệu chuẩn từ database
+        setCustomCode(result.code || "");
         setName(result.name);
         setCategoryId(result.categoryId || "");
         setUnit(result.unitOfMeasure || "Cái");
@@ -183,6 +188,7 @@ export function ProductCreatePage() {
   };
 
   const formPayload = () => ({
+    code: customCode.trim() ? customCode.trim().toUpperCase() : null,
     name: name.trim(),
     categoryId: categoryId || null,
     unitOfMeasure: unit,
@@ -203,9 +209,12 @@ export function ProductCreatePage() {
       sessionStorage.removeItem(`abc:wizard:draft:${templateId}`);
       sessionStorage.removeItem(`abc:wizard:industry:${templateId}`);
       sessionStorage.removeItem(`abc:wizard:selections:${templateId}`);
+      sessionStorage.removeItem(`abc:wizard:active_variants:${templateId}`);
+      sessionStorage.removeItem(`abc:wizard:prefix:${templateId}`);
     }
     sessionStorage.removeItem("abc:wizard:active_template_id");
     sessionStorage.removeItem("abc:wizard:active_template_name");
+    setCustomCode("");
     setName("");
     setCategoryId("");
     setDescription("");
@@ -261,6 +270,7 @@ export function ProductCreatePage() {
       setTemplate(record);
       sessionStorage.setItem("abc:wizard:industry:" + record.id, industry);
       sessionStorage.setItem(`abc:wizard:draft:${record.id}`, JSON.stringify({
+        code: record.code || customCode,
         name: name.trim(),
         categoryId,
         unit,
@@ -540,9 +550,51 @@ export function ProductCreatePage() {
                 </span>
               </h2>
               <span className="text-[12px] text-[#667085]">
-                ID Mẫu:{" "}
-                <b className="rounded bg-[#eef0ff] px-1.5 py-1 font-mono text-[#4338ca]">{template?.code || "Tự động cấp"}</b>
+                Mã hiện tại:{" "}
+                <b className="rounded bg-[#eef0ff] px-1.5 py-1 font-mono text-[#4338ca]">{customCode || template?.code || "Tự động cấp"}</b>
               </span>
+            </div>
+
+            {/* Mã định danh Template Code (Người dùng có thể tự đặt hoặc để tự sinh) */}
+            <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3.5">
+              <div className="flex items-center justify-between">
+                <label htmlFor="product-code" className="text-[12px] font-bold text-gray-800 flex items-center gap-1.5">
+                  <Icon name="tag" className="text-[16px] text-[#4f46e5]" />
+                  <span>Mã Mẫu Sản Phẩm (Template Code)</span>
+                </label>
+                <span className="text-[11px] text-gray-500">Tùy chỉnh mã gợi nhớ cho kho</span>
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  id="product-code"
+                  value={customCode}
+                  placeholder="Ví dụ: AOHOODIE-NU-02 (để trống hệ thống sẽ tự sinh TMP-...)"
+                  onChange={(e) => setCustomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))}
+                  className="h-10 flex-1 rounded-lg border border-gray-300 bg-white px-3 font-mono text-[13px] font-bold text-[#4338ca] uppercase outline-none focus:border-[#4f46e5] focus:ring-1 focus:ring-[#4f46e5]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const year = new Date().getFullYear();
+                    const rand = Math.floor(1000 + Math.random() * 9000);
+                    setCustomCode(`TMP-${year}-${rand}`);
+                  }}
+                  className="h-10 px-3 inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-white text-[12px] font-semibold text-[#4f46e5] hover:bg-indigo-50 shadow-xs"
+                >
+                  <Icon name="autorenew" className="text-[16px]" />
+                  Tự sinh mã
+                </button>
+                {customCode && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomCode("")}
+                    title="Xóa mã tùy chỉnh để hệ thống tự sinh mã tuần tự"
+                    className="h-10 px-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 text-[12px]"
+                  >
+                    Mặc định
+                  </button>
+                )}
+              </div>
             </div>
 
             <label className="mt-4 block text-[12px] font-semibold">
