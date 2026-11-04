@@ -467,52 +467,63 @@ export function StockInModal({ onClose, onSuccess }: StockInModalProps) {
                 )}
               </div>
 
-              {/* Footer Modal: Ghi chú, Tổng tiền & Nút hành động */}
-              <div className="border-t border-gray-200 p-4 bg-gray-50 flex items-center justify-between gap-4">
-                <div className="flex-1 max-w-md">
+              {/* Footer Modal: Ghi chú Diễn giải in phiếu, Tổng tiền & Nút hành động */}
+              <div className="border-t border-gray-200 p-4 bg-gray-50/90 space-y-3">
+                {/* Dòng 1: Diễn giải / Căn cứ in phiếu A4 rõ ràng, rộng rãi */}
+                <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
+                  <span className="flex items-center gap-1.5 text-[12px] font-bold text-gray-700 shrink-0">
+                    <Icon name="description" className="text-[17px] text-[#4f46e5]" />
+                    Diễn giải in phiếu A4:
+                  </span>
                   <input
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="Diễn giải / Căn cứ phiếu kiểm kê nạp tồn..."
-                    className="h-9 w-full rounded-lg border border-gray-300 bg-white px-3 text-[12px] outline-none focus:border-[#4f46e5]"
+                    placeholder="VD: Nhập tồn kho đợt hàng mới, Kiểm kê đầu kỳ tháng 11/2026..."
+                    className="flex-1 text-[13px] text-gray-800 outline-none font-medium placeholder:text-gray-400"
                   />
+                  <span className="text-[11px] text-gray-400 shrink-0 italic">
+                    (Nội dung này sẽ hiển thị ở mục "Diễn giải / Căn cứ" khi in biên bản A4)
+                  </span>
                 </div>
 
-                <div className="text-right text-[12.5px] mr-2">
-                  <span className="text-gray-500">Tổng tồn: <b className="text-gray-900">{totals.qty.toLocaleString("vi-VN")} cái</b></span>
-                  <span className="mx-2 text-gray-300">•</span>
-                  <span className="text-gray-500">Tổng tiền: <b className="text-[#4f46e5] font-bold">{vnd(totals.val)}</b></span>
-                </div>
+                {/* Dòng 2: Tổng tồn & Các nút hành động */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="text-[13px]">
+                    <span className="text-gray-500">Tổng tồn: <b className="text-gray-900">{totals.qty.toLocaleString("vi-VN")} cái</b></span>
+                    <span className="mx-2.5 text-gray-300">•</span>
+                    <span className="text-gray-500">Tổng giá trị: <b className="text-[#4f46e5] font-black">{vnd(totals.val)}</b></span>
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={selectedLines.length === 0}
-                    onClick={() => setShowVoucherPreview(true)}
-                    className="h-9 px-3 rounded-lg border border-indigo-200 bg-white text-[12.5px] font-bold text-[#4f46e5] hover:bg-indigo-50 shadow-xs flex items-center gap-1 disabled:opacity-40"
-                  >
-                    <Icon name="receipt_long" className="text-[16px]" />
-                    Xem trước A4
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={selectedLines.length === 0}
+                      onClick={() => setShowVoucherPreview(true)}
+                      className="h-10 px-3.5 rounded-xl border border-indigo-200 bg-white text-[12.5px] font-bold text-[#4f46e5] hover:bg-indigo-50 shadow-xs flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                    >
+                      <Icon name="receipt_long" className="text-[18px]" />
+                      Xem trước phiếu A4
+                    </button>
 
-                  <button
-                    type="button"
-                    disabled={saving || selectedLines.length === 0}
-                    onClick={() => void handleSubmit(false)}
-                    className="h-9 px-4 rounded-lg border border-gray-300 bg-white text-[12.5px] font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Lưu bản nháp
-                  </button>
+                    <button
+                      type="button"
+                      disabled={saving || selectedLines.length === 0}
+                      onClick={() => void handleSubmit(false)}
+                      className="h-10 px-4 rounded-xl border border-gray-300 bg-white text-[12.5px] font-bold text-gray-700 hover:bg-gray-50 shadow-xs disabled:opacity-40 cursor-pointer"
+                    >
+                      Lưu bản nháp
+                    </button>
 
-                  <button
-                    type="button"
-                    disabled={saving || selectedLines.length === 0}
-                    onClick={() => void handleSubmit(true)}
-                    className="h-9 px-5 rounded-lg bg-[#4f46e5] text-[13px] font-bold text-white shadow-md hover:bg-[#4338ca] disabled:opacity-40 flex items-center gap-1.5"
-                  >
-                    <Icon name="check_circle" className="text-[17px]" />
-                    {saving ? "Đang xử lý..." : "Lưu & Áp dụng ngay"}
-                  </button>
+                    <button
+                      type="button"
+                      disabled={saving || selectedLines.length === 0}
+                      onClick={() => void handleSubmit(true)}
+                      className="h-10 px-5 rounded-xl bg-[#4f46e5] text-[13px] font-bold text-white shadow-md hover:bg-[#4338ca] disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Icon name="check_circle" className="text-[18px]" />
+                      {saving ? "Đang xử lý..." : "Lưu & Áp dụng ngay"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </main>
@@ -542,3 +553,4 @@ export function StockInModal({ onClose, onSuccess }: StockInModalProps) {
     </>
   );
 }
+

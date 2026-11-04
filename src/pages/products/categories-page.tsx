@@ -167,22 +167,32 @@ function CategoryTable({
                   <td className="px-2 py-2.5 align-middle">
                     <div className="flex items-center gap-2">
                       {isChild ? (
-                        <Icon name="subdirectory_arrow_right" className="text-[16px] text-[#98a2b3]" />
-                      ) : (
+                        <Icon name="subdirectory_arrow_right" className="text-[16px] text-[#98a2b3] ml-1" />
+                      ) : (node.children && node.children.length > 0) ? (
                         <button
                           type="button"
                           onClick={() => onToggleCollapse(node.id)}
-                          className="w-6 h-6 grid place-items-center rounded-md text-[#667085] hover:bg-[#f2f4f7]"
+                          className="w-6 h-6 grid place-items-center rounded-md text-[#667085] hover:bg-[#f2f4f7] transition-transform"
+                          title={isCollapsed ? `Mở rộng (${node.children.length} con)` : `Thu gọn (${node.children.length} con)`}
                           aria-label={isCollapsed ? "Mở rộng danh mục" : "Thu gọn danh mục"}
                         >
                           <Icon name={isCollapsed ? "chevron_right" : "expand_more"} className="text-[18px]" />
                         </button>
+                      ) : (
+                        <span className="w-6 h-6 inline-block shrink-0" />
                       )}
                       <span className={`cat-icon tone-${tone} ${isChild ? "sm" : ""}`}>
                         <Icon name={icon} className="text-[17px]" />
                       </span>
                       <div className="leading-tight">
-                        <div className={isChild ? "font-medium text-[#344054]" : "font-semibold"}>{node.name}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={isChild ? "font-medium text-[#344054]" : "font-semibold"}>{node.name}</span>
+                          {!isChild && node.children && node.children.length > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-50 border border-indigo-100 text-[#4f46e5] font-bold">
+                              {node.children.length} con
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-[#98a2b3] font-mono mt-0.5">{node.code}</div>
                       </div>
                     </div>
@@ -334,13 +344,16 @@ export default function CategoriesPage() {
   }, [data]);
 
   const rows = useMemo<FlatRow[]>(() => {
-    const query = keyword.trim();
+    const query = keyword.trim().toLowerCase();
     const flat: FlatRow[] = [];
     filteredRoots.forEach((root) => {
       const style = styleByRootId.get(root.id) ?? ROOT_STYLES[0];
       flat.push({ node: root, parentName: null, tone: style.tone, icon: style.icon });
-      if (!query && collapsed.has(root.id)) return;
+      if (collapsed.has(root.id)) return;
       for (const child of root.children) {
+        if (query && !child.name.toLowerCase().includes(query) && !child.code.toLowerCase().includes(query) && !root.name.toLowerCase().includes(query) && !root.code.toLowerCase().includes(query)) {
+          continue;
+        }
         flat.push({ node: child, parentName: root.name, tone: style.tone, icon: "label" });
       }
     });

@@ -9,16 +9,20 @@ interface BarcodeSvgProps {
   fontSize?: number;
   displayValue?: boolean;
   className?: string;
+  margin?: number;
+  textMargin?: number;
 }
 
 export function BarcodeSvg({
   value,
   format,
-  width = 1.6,
-  height = 42,
-  fontSize = 12,
+  width = 1.3,
+  height = 30,
+  fontSize = 10,
   displayValue = true,
   className = "",
+  margin = 2,
+  textMargin = 1,
 }: BarcodeSvgProps) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -38,8 +42,8 @@ export function BarcodeSvg({
         height,
         displayValue,
         fontSize,
-        textMargin: 3,
-        margin: 6,
+        textMargin,
+        margin,
         font: "monospace",
         fontOptions: "bold",
         lineColor: "#000000",
@@ -55,8 +59,8 @@ export function BarcodeSvg({
             height,
             displayValue,
             fontSize,
-            textMargin: 3,
-            margin: 6,
+            textMargin,
+            margin,
             font: "monospace",
             lineColor: "#000000",
             background: "#ffffff",
@@ -66,7 +70,7 @@ export function BarcodeSvg({
         // ignore
       }
     }
-  }, [value, format, width, height, fontSize, displayValue]);
+  }, [value, format, width, height, fontSize, displayValue, margin, textMargin]);
 
   if (!value) {
     return <span className="text-[11px] text-gray-400 italic">Chưa có mã</span>;

@@ -7,6 +7,7 @@ import {
 import { Icon } from "@/pages/products/ui-icon";
 import type { ProductItem, ProductSku } from "@/api/products-list";
 import { BarcodeSvg } from "@/components/barcode/barcode-svg";
+import { inventoryApi } from "@/api/inventory";
 
 // Thiết lập định tuyến file WebAssembly cục bộ từ public folder
 setZXingModuleOverrides({
@@ -134,8 +135,8 @@ export function BarcodeScannerModal({
     return list;
   }, [products]);
 
-  // Xử lý khi bắt được mã (Thực thi tức thì < 5ms)
-  const handleBarcodeDetected = (rawCode: string) => {
+  // Xử lý khi bắt được mã (Thực thi tức thì < 5ms, tự tra cứu kho Backend nếu không ở trang 1)
+  const handleBarcodeDetected = async (rawCode: string) => {
     const startT = performance.now();
     const code = rawCode.trim().toUpperCase();
     if (!code) return;
@@ -154,12 +155,58 @@ export function BarcodeScannerModal({
     const found = barcodeDirectory.get(code);
     if (found) {
       setMatchResult(found);
+      const elapsed = Math.round((performance.now() - startT) * 10) / 10;
+      setScanLatencyMs(Math.max(1, elapsed));
     } else {
-      setMatchResult(null);
-    }
+      // Tìm kiếm trực tiếp toàn bộ danh mục sản phẩm từ Backend
+      try {
+        const res = await inventoryApi.searchVariants({ search: code });
+        const match = res.items?.find(
+          (it) => it.barcode?.trim().toUpperCase() === code || it.sku.trim().toUpperCase() === code
+        ) || res.items?.[0];
 
-    const elapsed = Math.round((performance.now() - startT) * 10) / 10;
-    setScanLatencyMs(Math.max(1, elapsed));
+        if (match) {
+          const synthesizedProduct: ProductItem = {
+            id: match.id,
+            name: match.productName,
+            code: match.sku,
+            description: null,
+            isActive: true,
+            hasLotTracking: Boolean(match.hasLotTracking),
+            categoryId: match.categoryId,
+            categoryName: match.categoryName,
+            categoryPath: match.categoryName,
+            variantCount: 1,
+            stockQty: match.onHand,
+            stockValue: match.onHand * match.costPrice,
+            retailValue: match.onHand * match.basePrice,
+            avgCost: match.costPrice,
+            avgPrice: match.basePrice,
+            unitOfMeasure: match.unit || "Cái",
+            imageUrl: match.imageUrl,
+            skus: [{
+              id: match.id,
+              sku: match.sku,
+              barcode: match.barcode || code,
+              basePrice: match.basePrice,
+              costPrice: match.costPrice,
+              stockQty: match.onHand,
+            }],
+          };
+          setMatchResult({
+            product: synthesizedProduct,
+            sku: synthesizedProduct.skus[0],
+          });
+        } else {
+          setMatchResult(null);
+        }
+      } catch {
+        setMatchResult(null);
+      } finally {
+        const elapsed = Math.round((performance.now() - startT) * 10) / 10;
+        setScanLatencyMs(Math.max(1, elapsed));
+      }
+    }
 
     setTimeout(() => {
       setIsDetected(false);

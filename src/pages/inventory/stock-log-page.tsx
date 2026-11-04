@@ -13,10 +13,12 @@ const compactVnd = (value: number) => {
   return new Intl.NumberFormat("vi-VN").format(Math.round(value)) + " đ";
 };
 
-const mapTypeName = (type: string) => {
-  switch (type) {
+const mapTypeName = (type?: string, isPositive?: boolean) => {
+  if (!type) return isPositive ? "Nhập kho (+)" : "Xuất kho (-)";
+  const normalized = String(type).toUpperCase();
+  switch (normalized) {
     case "OPENING_STOCK":
-      return "Tồn đầu kỳ";
+      return "Nhập tồn đầu kỳ (F02)";
     case "PURCHASE_RECEIPT":
     case "PURCHASE_ORDER":
       return "Nhập mua PO";
@@ -24,15 +26,19 @@ const mapTypeName = (type: string) => {
     case "SALE":
       return "Bán hàng POS";
     case "ADJUSTMENT":
-      return "Cân chỉnh kiểm kê";
+    case "STOCK_ADJUSTMENT_IN":
+      return "Cân chỉnh tăng";
+    case "STOCK_ADJUSTMENT_OUT":
+      return "Cân chỉnh giảm";
     case "SCRAP":
+    case "SCRAP_DISPOSAL":
       return "Xuất hủy hàng hỏng";
     case "CUSTOMER_RETURN":
       return "Khách trả hàng";
     case "VENDOR_RETURN":
       return "Trả hàng NCC";
     default:
-      return type || "Biến động";
+      return type;
   }
 };
 
@@ -276,16 +282,20 @@ export function StockLogPage() {
                     const dateObj = new Date(row.createdAt);
                     const timeStr = dateObj.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
                     const dateStr = dateObj.toLocaleDateString("vi-VN");
+                    const rawType = (row as any).transactionType || (row as any).type || (row as any).typeLabel;
+                    const labelText = mapTypeName(rawType, isPositive);
+                    const voucherCode = (row as any).sheetCode || (row as any).reference || (row as any).sheet_code;
 
                     return (
                       <tr key={row.id} className="hover:bg-indigo-50/20 transition-colors">
                         <td className="px-5 py-3.5">
                           <span className="font-mono font-bold text-gray-900">{timeStr}</span>{" "}
                           <span className="text-gray-400 text-[11px]">{dateStr}</span>
-                          {row.sheetCode && (
-                            <code className="mt-1 block font-mono font-bold text-[#4f46e5] text-[11px]">
-                              {row.sheetCode}
-                            </code>
+                          {voucherCode && (
+                            <div className="mt-1.5 flex items-center gap-1 font-mono font-bold text-[#4f46e5] text-[11px] bg-indigo-50/80 border border-indigo-100 rounded px-1.5 py-0.5 w-fit">
+                              <Icon name="receipt" className="text-[13px]" />
+                              <span>{voucherCode}</span>
+                            </div>
                           )}
                         </td>
                         <td className="px-4 py-3.5">
@@ -304,15 +314,16 @@ export function StockLogPage() {
                         <td className="px-4 py-3.5 text-center">
                           <span
                             className={[
-                              "inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold",
-                              row.transactionType === "OPENING_STOCK"
+                              "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold",
+                              String(rawType).toUpperCase() === "OPENING_STOCK"
                                 ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
                                 : isPositive
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                 : "bg-amber-50 text-amber-700 border border-amber-200",
                             ].join(" ")}
                           >
-                            ● {mapTypeName(row.transactionType)}
+                            <span className="text-[8px]">●</span>
+                            <span>{labelText}</span>
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-right">

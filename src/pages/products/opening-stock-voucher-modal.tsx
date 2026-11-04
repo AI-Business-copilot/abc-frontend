@@ -157,16 +157,16 @@ export function OpeningStockVoucherModal({
       <table className="w-full border-collapse border border-black text-[10.5px] voucher-table">
         <thead>
           <tr className="bg-gray-100 text-black font-bold text-center">
-            <th className="border border-black p-1.5 w-8">STT</th>
-            <th className="border border-black p-1.5 text-left">Tên sản phẩm &amp; Biến thể</th>
-            <th className="border border-black p-1.5 w-24 text-left font-mono">Mã SKU</th>
+            <th className="border border-black p-1.5" style={{ width: "5%" }}>STT</th>
+            <th className="border border-black p-1.5 text-left" style={{ width: hasLotTracking ? "28%" : "35%" }}>Tên sản phẩm &amp; Biến thể</th>
+            <th className="border border-black p-1.5 text-left font-mono" style={{ width: hasLotTracking ? "15%" : "18%" }}>Mã SKU</th>
             {hasLotTracking && (
-              <th className="border border-black p-1.5 w-20 text-center">Lô / HSD</th>
+              <th className="border border-black p-1.5 text-center" style={{ width: "14%" }}>Lô / HSD</th>
             )}
-            <th className="border border-black p-1.5 w-12 text-center">ĐVT</th>
-            <th className="border border-black p-1.5 w-14 text-right">SL Tồn</th>
-            <th className="border border-black p-1.5 w-20 text-right">Đơn giá vốn</th>
-            <th className="border border-black p-1.5 w-24 text-right">Thành tiền</th>
+            <th className="border border-black p-1.5 text-center" style={{ width: "6%" }}>ĐVT</th>
+            <th className="border border-black p-1.5 text-right" style={{ width: "8%" }}>SL Tồn</th>
+            <th className="border border-black p-1.5 text-right" style={{ width: "12%" }}>Đơn giá vốn</th>
+            <th className="border border-black p-1.5 text-right" style={{ width: "16%" }}>Thành tiền</th>
           </tr>
         </thead>
         <tbody>
@@ -345,8 +345,8 @@ export function OpeningStockVoucherModal({
             }
             @media print {
               @page {
-                size: A4 portrait;
-                margin: 8mm 12mm 8mm 12mm;
+                size: A4 auto;
+                margin: 8mm 10mm 8mm 10mm;
               }
               html, body {
                 margin: 0 !important;
@@ -367,7 +367,7 @@ export function OpeningStockVoucherModal({
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0 !important;
-                padding: 0 3mm !important;
+                padding: 0 !important;
                 box-sizing: border-box !important;
                 background: #ffffff !important;
               }
@@ -382,10 +382,10 @@ export function OpeningStockVoucherModal({
                 page-break-inside: avoid !important;
               }
               .voucher-table {
-                width: 99.6% !important;
-                margin: 0 auto !important;
+                width: 100% !important;
+                table-layout: fixed !important;
                 border-collapse: collapse !important;
-                border: 1px solid #000000 !important;
+                border: 1.5px solid #000000 !important;
                 box-sizing: border-box !important;
               }
               .voucher-table th, .voucher-table td {
@@ -393,9 +393,11 @@ export function OpeningStockVoucherModal({
                 font-size: 10px !important;
                 border: 1px solid #000000 !important;
                 box-sizing: border-box !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
               }
               .voucher-table th:last-child, .voucher-table td:last-child {
-                border-right: 1px solid #000000 !important;
+                border-right: 1.5px solid #000000 !important;
               }
             }
           `}</style>

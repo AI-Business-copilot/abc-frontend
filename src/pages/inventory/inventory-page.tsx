@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import { CatalogHeader } from "@/pages/products/catalog-header";
 import { Icon } from "@/pages/products/ui-icon";
@@ -19,7 +18,6 @@ const vnd = (value: number) =>
   new Intl.NumberFormat("vi-VN").format(Math.round(value || 0)) + " đ";
 
 export function InventoryPage() {
-  const navigate = useNavigate();
   const { profile } = useAuth();
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -132,17 +130,10 @@ export function InventoryPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowStockInModal(true)}
-              className="rounded-lg bg-[#4f46e5] px-5 py-2.5 text-[13.5px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.25)] hover:bg-[#4338ca] transition-colors flex items-center gap-1.5"
+              className="rounded-lg bg-[#4f46e5] px-5 py-2.5 text-[13.5px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.25)] hover:bg-[#4338ca] transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Icon name="add_circle" className="text-[18px]" />
               Nạp tồn kho mới
-            </button>
-            <button
-              onClick={() => navigate("/products/new")}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-            >
-              <Icon name="add" className="text-[18px]" />
-              Tạo sản phẩm mới
             </button>
           </div>
         </div>

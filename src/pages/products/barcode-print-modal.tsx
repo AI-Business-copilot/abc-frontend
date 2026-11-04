@@ -393,18 +393,16 @@ export function BarcodePrintModal({
                   margin: 6mm 6mm 6mm 6mm;
                 }
                 .barcode-print-grid {
-                  display: flex !important;
-                  flex-wrap: wrap !important;
-                  gap: 3mm !important;
+                  display: grid !important;
+                  grid-template-columns: ${a4Orientation === "landscape" ? "repeat(5, 1fr)" : "repeat(4, 1fr)"} !important;
+                  gap: 2.5mm !important;
                   width: 100% !important;
-                  justify-content: flex-start !important;
-                  align-content: flex-start !important;
+                  box-sizing: border-box !important;
                 }
                 .barcode-print-card {
                   border: 1px dashed #777777 !important;
                   border-radius: 3px !important;
-                  width: ${a4Orientation === "landscape" ? "calc(20% - 2.5mm)" : "calc(25% - 2.3mm)"} !important;
-                  max-width: ${a4Orientation === "landscape" ? "calc(20% - 2.5mm)" : "calc(25% - 2.3mm)"} !important;
+                  width: 100% !important;
                   height: 31mm !important;
                   max-height: 31mm !important;
                   padding: 1.5mm 2mm !important;
@@ -417,7 +415,6 @@ export function BarcodePrintModal({
                   background: #ffffff !important;
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
-                  margin-bottom: 2.5mm !important;
                   overflow: hidden !important;
                 }
               ` : `
@@ -466,51 +463,52 @@ export function BarcodePrintModal({
                 {/* Header nhãn tem */}
                 <div style={{ width: "100%", overflow: "hidden", lineHeight: 1.15 }}>
                   {showShopName && (
-                    <div style={{ fontSize: "6.5pt", fontWeight: "bold", textTransform: "uppercase", color: "#333", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ fontSize: labelSize === "35x22" ? "5.5pt" : "6.5pt", fontWeight: "bold", textTransform: "uppercase", color: "#333", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {shopName}
                     </div>
                   )}
                   <div
                     style={{
-                      fontSize: item.templateName.length > 22 ? (labelSize === "35x22" ? "5.5pt" : "6.8pt") : (labelSize === "35x22" ? "6.5pt" : "7.5pt"),
+                      fontSize: labelSize === "35x22" ? "5.5pt" : item.templateName.length > 22 ? "6.5pt" : "7.2pt",
                       fontWeight: "bold",
                       lineHeight: 1.15,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
+                      whiteSpace: "nowrap",
                       overflow: "hidden",
-                      maxHeight: "2.3em",
+                      textOverflow: "ellipsis",
                     }}
+                    title={item.templateName}
                   >
                     {item.templateName}
                   </div>
                   {item.attributeText && (
-                    <div style={{ fontSize: labelSize === "35x22" ? "5.5pt" : "6pt", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#444", marginTop: "0.5mm" }}>
+                    <div style={{ fontSize: labelSize === "35x22" ? "5pt" : "5.8pt", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#555" }}>
                       {item.attributeText}
                     </div>
                   )}
                 </div>
 
                 {/* Vạch Barcode thật quét cực nhạy */}
-                <div style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", margin: labelSize === "35x22" ? "0.3mm 0" : "0.8mm 0" }}>
+                <div style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", margin: labelSize === "35x22" ? "0.2mm 0" : "0.5mm 0" }}>
                   <BarcodeSvg
                     value={item.barcode || item.sku}
-                    width={labelSize === "35x22" ? 0.95 : 1.25}
-                    height={labelSize === "35x22" ? 18 : 28}
-                    fontSize={labelSize === "35x22" ? 6.5 : 8.5}
+                    width={labelSize === "35x22" ? 0.9 : 1.15}
+                    height={labelSize === "35x22" ? 15 : 21}
+                    fontSize={labelSize === "35x22" ? 6 : 7.5}
                     displayValue={true}
+                    margin={1}
+                    textMargin={1}
                   />
                 </div>
 
                 {/* Footer nhãn tem: SKU & Giá bán có khoảng cách rõ ràng, không bao giờ đè chữ */}
-                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px", fontSize: "6.5pt", lineHeight: 1 }}>
+                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "4px", fontSize: "6.5pt", lineHeight: 1 }}>
                   {showSku && (
-                    <span style={{ fontFamily: "monospace", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 auto", minWidth: 0, textAlign: "left" }}>
+                    <span style={{ fontFamily: "monospace", fontWeight: "bold", fontSize: labelSize === "35x22" ? "5.5pt" : "6.2pt", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 auto", minWidth: 0, textAlign: "left" }}>
                       {item.sku}
                     </span>
                   )}
                   {showPrice && (
-                    <span className="price-tag" style={{ fontSize: labelSize === "35x22" ? "7pt" : "8.5pt", fontWeight: "900", color: "#000", whiteSpace: "nowrap", flex: "0 0 auto", marginLeft: "auto" }}>
+                    <span className="price-tag" style={{ fontSize: labelSize === "35x22" ? "6.8pt" : "8pt", fontWeight: "900", color: "#000", whiteSpace: "nowrap", flex: "0 0 auto", marginLeft: "auto" }}>
                       {vnd(item.price)}
                     </span>
                   )}
