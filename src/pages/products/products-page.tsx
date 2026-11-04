@@ -14,6 +14,7 @@ import { Icon } from '@/pages/products/ui-icon';
 import { getAllImages } from '@/lib/image-utils';
 import { BarcodeScannerModal } from '@/pages/products/barcode-scanner-modal';
 import { BarcodePrintModal, type PrintableVariant } from '@/pages/products/barcode-print-modal';
+import { ProductEditModal } from '@/pages/products/product-edit-modal';
 
 const vnd = (value: number) => new Intl.NumberFormat('vi-VN').format(Math.round(value || 0)) + ' đ';
 const compactVnd = (value: number) => {
@@ -273,6 +274,31 @@ function SkuModal({
   const images = useMemo(() => getAllImages(product.imageUrl), [product.imageUrl]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+  // Ánh xạ ảnh biến thể cụ thể đã gán (lấy từ localStorage hoặc mặc định)
+  const [variantImages, setVariantImages] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const sku of product.skus) {
+      const saved = localStorage.getItem(`variant_img_${sku.id}`) || localStorage.getItem(`variant_img_${sku.sku}`);
+      if (saved) map[sku.id] = saved;
+    }
+    return map;
+  });
+
+  const [assigningSku, setAssigningSku] = useState<ProductSku | null>(null);
+
+  const handleAssignImage = (skuId: string, imgUrl: string) => {
+    setVariantImages((prev) => {
+      const next = { ...prev, [skuId]: imgUrl };
+      if (imgUrl) {
+        localStorage.setItem(`variant_img_${skuId}`, imgUrl);
+      } else {
+        localStorage.removeItem(`variant_img_${skuId}`);
+      }
+      return next;
+    });
+    setAssigningSku(null);
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-[#101828]/50 backdrop-blur-sm grid place-items-center p-4" onClick={onClose}>
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -352,25 +378,36 @@ function SkuModal({
             </thead>
             <tbody>
               {product.skus.map((sku: ProductSku, idx: number) => {
-                const variantImg = images[idx % images.length] || images[0] || null;
-                const isLowStock = sku.stockQty <= 5;
+                const variantImg = variantImages[sku.id] || images[0] || null;
+                const isLowStock = sku.stockQty <= (sku.safetyStockQty || 5);
                 return (
                   <tr key={sku.id} className="border-b border-[#f2f4f7] hover:bg-[#fafbff] transition-colors">
                     <td className="px-3 py-2">
-                      {variantImg ? (
+                      <div className="relative group w-10 h-10">
+                        {variantImg ? (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImage(variantImg)}
+                            className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 hover:border-[#4f46e5] shadow-xs block transition-transform group-hover:scale-105"
+                            title="Bấm để xem ảnh phóng to"
+                          >
+                            <img src={variantImg} alt={sku.sku} className="w-full h-full object-cover" />
+                          </button>
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 grid place-items-center text-gray-400">
+                            <Icon name="image" className="text-[18px]" />
+                          </div>
+                        )}
+                        {/* Nút gán ảnh cho biến thể trên hover */}
                         <button
                           type="button"
-                          onClick={() => setPreviewImage(variantImg)}
-                          className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 hover:border-[#4f46e5] shadow-xs block transition-transform hover:scale-105"
-                          title="Bấm để xem ảnh phóng to"
+                          onClick={() => setAssigningSku(sku)}
+                          className="absolute inset-0 bg-black/60 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center text-white text-[10px]"
+                          title="Đổi/Gán ảnh đúng góc chụp cho biến thể này"
                         >
-                          <img src={variantImg} alt={sku.sku} className="w-full h-full object-cover" />
+                          <Icon name="photo_camera" className="text-[15px]" />
                         </button>
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 grid place-items-center text-gray-400">
-                          <Icon name="image" className="text-[18px]" />
-                        </div>
-                      )}
+                      </div>
                     </td>
                     <td className="px-3 py-2">
                       <div className="font-mono text-[12px] font-bold text-gray-900">{sku.sku}</div>
@@ -392,7 +429,11 @@ function SkuModal({
                       <span className={["font-bold", isLowStock ? "text-red-600 bg-red-50 px-2 py-0.5 rounded text-[11.5px]" : "text-gray-900"].join(" ")}>
                         {sku.stockQty} {product.unitOfMeasure}
                       </span>
-                      {isLowStock && <span className="block text-[10px] text-red-500 font-semibold mt-0.5">Tồn thấp</span>}
+                      {isLowStock && (
+                        <span className="block text-[10px] text-red-500 font-semibold mt-0.5">
+                          Tồn thấp (≤ {sku.safetyStockQty || 5})
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-center">
                       <button
@@ -419,6 +460,69 @@ function SkuModal({
             </tbody>
           </table>
         </div>
+
+        {/* Modal con gán ảnh cho biến thể trong SkuModal */}
+        {assigningSku && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-100">
+              <div className="flex items-center justify-between border-b pb-3">
+                <div>
+                  <h3 className="text-[15px] font-bold text-gray-900">
+                    Chọn ảnh cho biến thể
+                  </h3>
+                  <p className="font-mono text-[12px] text-[#4f46e5] font-bold mt-0.5">{assigningSku.sku}</p>
+                </div>
+                <button
+                  onClick={() => setAssigningSku(null)}
+                  className="rounded p-1 text-gray-400 hover:bg-gray-100"
+                >
+                  <Icon name="close" className="text-[20px]" />
+                </button>
+              </div>
+
+              <div className="mt-3">
+                <p className="text-[12px] text-gray-600">Chọn ảnh góc chụp tương ứng với biến thể này:</p>
+                <div className="mt-2.5 grid grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-1">
+                  {images.map((img, i) => {
+                    const isSelected = variantImages[assigningSku.id] === img;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleAssignImage(assigningSku.id, img)}
+                        className={["relative h-18 w-full rounded-xl border-2 overflow-hidden hover:scale-105 transition-all", isSelected ? "border-[#4f46e5] shadow-md ring-2 ring-indigo-200" : "border-gray-200"].join(" ")}
+                      >
+                        <img src={img} alt={`Góc #${i + 1}`} className="w-full h-full object-cover" />
+                        {isSelected && (
+                          <span className="absolute top-1 right-1 bg-[#4f46e5] text-white rounded-full p-0.5">
+                            <Icon name="check" className="text-[12px]" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between border-t pt-3">
+                <button
+                  type="button"
+                  onClick={() => handleAssignImage(assigningSku.id, "")}
+                  className="text-[12px] text-gray-500 hover:text-gray-800"
+                >
+                  Dùng ảnh chính sản phẩm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAssigningSku(null)}
+                  className="rounded-lg bg-gray-200 px-3.5 py-1.5 text-[12px] font-bold text-gray-700 hover:bg-gray-300"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Phóng to ảnh biến thể */}
         {previewImage && (
@@ -544,6 +648,7 @@ export default function ProductsPage() {
 
   // Modal Xóa sản phẩm
   const [deletingProduct, setDeletingProduct] = useState<ProductItem | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [quickCategoryProduct, setQuickCategoryProduct] = useState<ProductItem | null>(null);
@@ -634,7 +739,7 @@ export default function ProductsPage() {
   // MỤC 9: HÀNH ĐỘNG CHỈNH SỬA & XÓA SẢN PHẨM
   // ==========================================
   const handleEditProduct = (product: ProductItem) => {
-    navigate(`/products/new?templateId=${product.id}`);
+    setEditingProduct(product);
   };
 
   const handleOpenDelete = (product: ProductItem) => {
@@ -1069,6 +1174,20 @@ export default function ProductsPage() {
           products={rawItems}
           onClose={() => setShowScannerModal(false)}
           onSelectProduct={(p) => setSelected(p)}
+        />
+      )}
+
+      {/* MODAL CHỈNH SỬA NHANH SẢN PHẨM & BIẾN THỂ */}
+      {editingProduct && (
+        <ProductEditModal
+          product={editingProduct}
+          categories={categories}
+          onClose={() => setEditingProduct(null)}
+          onSaved={() => {
+            setNotice(`Đã cập nhật thông tin sản phẩm “${editingProduct.name}”.`);
+            setEditingProduct(null);
+            void fetchProducts();
+          }}
         />
       )}
 

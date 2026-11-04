@@ -7,6 +7,7 @@ export type ProductSku = {
   basePrice: number;
   costPrice: number;
   stockQty: number;
+  safetyStockQty?: number;
 };
 
 export type ProductItem = {

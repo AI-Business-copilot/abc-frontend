@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { categoriesApi, type CategoryListResponse } from "@/api/categories";
 import { productWizardApi, type TemplateRecord } from "@/api/product-wizard";
-import { getAllImages, serializeImages } from "@/lib/image-utils";
+import { getAllImages, serializeImages, uploadImageToStorage } from "@/lib/image-utils";
 import { CatalogHeader } from "@/pages/products/catalog-header";
 import { Icon } from "@/pages/products/ui-icon";
 
@@ -15,14 +15,6 @@ const steps = [
 ];
 
 const units = ["Chai (Bottle)", "Cái (Piece)", "Hộp (Box)", "Đôi (Pair)", "Gói (Pack)", "Tuýp (Tube)", "Lọ (Jar)", "ml"];
-
-const readFileAsDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Không thể đọc tệp ảnh."));
-    reader.readAsDataURL(file);
-  });
 
 type FormDraft = {
   code?: string;
@@ -307,8 +299,8 @@ export function ProductCreatePage() {
       validFiles.push(file);
     }
     try {
-      const dataUrls = await Promise.all(validFiles.map(readFileAsDataUrl));
-      setImages((current) => [...current, ...dataUrls]);
+      const uploadedUrls = await Promise.all(validFiles.map(uploadImageToStorage));
+      setImages((current) => [...current, ...uploadedUrls]);
       setError("");
     } catch (err) {
       setError((err as Error).message);

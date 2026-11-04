@@ -284,6 +284,8 @@ export default function CategoriesPage() {
 
   const [mode, setMode] = useState<"list" | "create">("list");
   const [editing, setEditing] = useState<CategoryNode | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<CategoryNode | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -442,20 +444,24 @@ export default function CategoriesPage() {
     }
   };
 
-  const removeCategory = async (node: CategoryNode) => {
-    const confirmed = window.confirm(
-      `Xoá danh mục "${node.name}"? Hành động này không thể hoàn tác.`,
-    );
-    if (!confirmed) return;
+  const removeCategory = (node: CategoryNode) => {
+    setDeletingCategory(node);
+  };
 
+  const handleConfirmDeleteCategory = async () => {
+    if (!deletingCategory) return;
+    setDeleteBusy(true);
     setError("");
     setNotice("");
     try {
-      await categoriesApi.remove(node.id);
-      setNotice(`Đã xoá danh mục "${node.name}".`);
+      await categoriesApi.remove(deletingCategory.id);
+      setNotice(`Đã xoá danh mục "${deletingCategory.name}". Các sản phẩm liên quan đã được chuyển về "Chưa phân loại" để bạn dễ dàng gán lại đồng loạt.`);
+      setDeletingCategory(null);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không xoá được danh mục.");
+    } finally {
+      setDeleteBusy(false);
     }
   };
 
@@ -729,6 +735,42 @@ export default function CategoriesPage() {
           </div>
         )}
       </main>
+
+      {/* MODAL XÁC NHẬN XÓA DANH MỤC THIẾT KẾ ĐỒNG BỘ (KHÔNG DÙNG POPUP TRÌNH DUYỆT LOCALHOST) */}
+      {deletingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 mb-4">
+              <Icon name="delete_forever" className="text-[26px]" />
+            </div>
+            <h3 className="text-[18px] font-bold text-gray-900">Xóa danh mục sản phẩm</h3>
+            <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
+              Bạn có chắc chắn muốn xóa danh mục <b className="text-gray-900 font-semibold">“{deletingCategory.name}”</b> ({deletingCategory.code})?
+            </p>
+            <div className="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 p-3 text-[12px] text-indigo-900 leading-relaxed">
+              💡 <b>Tự động hỗ trợ gán lại đồng loạt:</b> Nếu danh mục này đang gán cho các sản phẩm, hệ thống sẽ tự động gỡ bỏ danh mục (chuyển về trạng thái <i>Chưa phân loại</i>) để bạn dễ dàng gán lại danh mục mới cho toàn bộ sản phẩm ở trang Sản phẩm.
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={deleteBusy}
+                onClick={() => setDeletingCategory(null)}
+                className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-[13px] font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={deleteBusy}
+                onClick={() => void handleConfirmDeleteCategory()}
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-[13px] font-bold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleteBusy ? "Đang xóa..." : "Xác nhận xóa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

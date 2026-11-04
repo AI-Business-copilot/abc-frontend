@@ -97,6 +97,28 @@ export type LedgerListResponse = {
   };
 };
 
+export type SearchVariantItem = {
+  id: string;
+  sku: string;
+  barcode: string | null;
+  productName: string;
+  imageUrl: string | null;
+  unit: string;
+  hasLotTracking: boolean;
+  categoryId: string | null;
+  categoryName: string | null;
+  costPrice: number;
+  basePrice: number;
+  onHand: number;
+  attributeText: string;
+};
+
+export type SearchVariantsResponse = {
+  total: number;
+  items: SearchVariantItem[];
+  categories: Array<{ id: string; name: string; count: number }>;
+};
+
 export const inventoryApi = {
   listSheets: (params: { search?: string; status?: string; month?: string; page?: number; pageSize?: number } = {}) => {
     const sp = new URLSearchParams();
@@ -107,6 +129,33 @@ export const inventoryApi = {
     if (params.pageSize) sp.set("pageSize", String(params.pageSize));
     const qs = sp.toString();
     return apiJson<OpeningStockListResponse>(`/inventory/opening-sheets${qs ? `?${qs}` : ""}`);
+  },
+
+  searchVariants: (params: { search?: string; categoryId?: string; limit?: number } = {}) => {
+    const sp = new URLSearchParams();
+    if (params.search) sp.set("search", params.search);
+    if (params.categoryId) sp.set("categoryId", params.categoryId);
+    if (params.limit) sp.set("limit", String(params.limit));
+    const qs = sp.toString();
+    return apiJson<SearchVariantsResponse>(`/inventory/variants${qs ? `?${qs}` : ""}`);
+  },
+
+  createSheet: (payload: {
+    note?: string;
+    apply?: boolean;
+    items: Array<{
+      variantId: string;
+      quantity: number;
+      unitCost: number;
+      lotNumber?: string;
+      manufacturingDate?: string;
+      expirationDate?: string;
+    }>;
+  }) => {
+    return apiJson<OpeningStockSheetDetail>("/inventory/opening-sheets", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
 
   getLedger: (params: { search?: string; type?: string; from?: string; to?: string; page?: number; pageSize?: number } = {}) => {

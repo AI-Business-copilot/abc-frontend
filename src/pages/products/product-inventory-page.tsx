@@ -47,6 +47,10 @@ export function ProductInventoryPage() {
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [showBarcodePrintModal, setShowBarcodePrintModal] = useState(false);
 
+  // Cấu hình biểu đồ Donut phân tích tồn kho
+  const [chartBreakdown, setChartBreakdown] = useState<"attribute" | "sku">("attribute");
+  const [chartMetric, setChartMetric] = useState<"quantity" | "value">("quantity");
+
   useEffect(() => {
     if (!templateId) {
       navigate("/products/new", { replace: true });
@@ -120,15 +124,16 @@ export function ProductInventoryPage() {
   const groups = useMemo(() => {
     const map = new Map<string, { quantity: number; value: number }>();
     for (const row of rows) {
-      const current = map.get(row.groupValue) || { quantity: 0, value: 0 };
+      const key = chartBreakdown === "sku" ? row.sku : row.groupValue;
+      const current = map.get(key) || { quantity: 0, value: 0 };
       current.quantity += row.quantity;
       current.value += row.quantity * row.cost;
-      map.set(row.groupValue, current);
+      map.set(key, current);
     }
     return [...map.entries()]
-      .filter(([, group]) => group.quantity > 0)
+      .filter(([, group]) => (chartMetric === "value" ? group.value > 0 : group.quantity > 0))
       .map(([label, group], index) => ({ label, ...group, color: palette[index % palette.length] }));
-  }, [rows]);
+  }, [rows, chartBreakdown, chartMetric]);
 
   const voucherItems: VoucherItem[] = useMemo(() => {
     if (!template) return [];
@@ -168,15 +173,17 @@ export function ProductInventoryPage() {
   }, [template, rows]);
 
   const gradient = useMemo(() => {
-    if (totals.quantity === 0) return "#eef2f7";
+    const total = chartMetric === "value" ? totals.value : totals.quantity;
+    if (total <= 0) return "#eef2f7";
     let cursor = 0;
     const parts = groups.map((group) => {
+      const metricVal = chartMetric === "value" ? group.value : group.quantity;
       const start = cursor;
-      cursor += (group.quantity / totals.quantity) * 100;
+      cursor += (metricVal / total) * 100;
       return `${group.color} ${start}% ${cursor}%`;
     });
     return `conic-gradient(${parts.join(", ")})`;
-  }, [groups, totals.quantity]);
+  }, [groups, totals, chartMetric]);
 
   const updateRow = (id: string, patch: Partial<StockRow>) => {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -421,27 +428,82 @@ export function ProductInventoryPage() {
 
         <div className="mt-4 grid grid-cols-[0.8fr_1.5fr] gap-4">
           <section className="rounded-xl bg-white p-4">
-            <h2 className="font-bold">◉ Cơ Cấu Giá Trị Theo Phân Loại</h2>
-            <p className="mt-1 text-[10px] uppercase text-[#667085]">THEO THUỘC TÍNH ĐẦU TIÊN</p>
-            <div className="mx-auto my-4 grid h-36 w-36 place-items-center rounded-full" style={{ background: gradient }}>
-              <div className="grid h-24 w-24 place-items-center rounded-full bg-white text-center text-[11px]">
-                TỔNG TỒN
-                <br />
-                <b className="text-[20px]">{totals.quantity}</b>
-                <br />
-                {unit}
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-[14px]">◉ Cơ Cấu Tồn Kho</h2>
+              <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => setChartMetric("quantity")}
+                  className={["px-2 py-0.5 rounded font-bold transition-all", chartMetric === "quantity" ? "bg-white text-[#4f46e5] shadow-xs" : "text-gray-500"].join(" ")}
+                >
+                  Số lượng
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartMetric("value")}
+                  className={["px-2 py-0.5 rounded font-bold transition-all", chartMetric === "value" ? "bg-white text-[#4f46e5] shadow-xs" : "text-gray-500"].join(" ")}
+                >
+                  Giá trị
+                </button>
               </div>
             </div>
-            {groups.map((group) => (
-              <p key={group.label} className="flex items-center justify-between text-[11px] text-[#667085]">
-                <span>
-                  <span className="mr-1.5 inline-block h-2 w-2 rounded-sm" style={{ background: group.color }} />
-                  {group.label} ({group.quantity} {unit})
-                </span>
-                <b>{totals.quantity ? ((group.quantity / totals.quantity) * 100).toFixed(1) : "0.0"}%</b>
-              </p>
-            ))}
-            {groups.length === 0 && <p className="text-[11px] text-[#98a2b3]">Nhập số lượng tồn đầu kỳ để xem cơ cấu giá trị.</p>}
+
+            <div className="mt-2 flex items-center justify-between border-b border-gray-100 pb-2">
+              <span className="text-[10px] uppercase font-bold text-[#667085]">Phân nhóm:</span>
+              <div className="flex items-center gap-2 text-[11px]">
+                <label className="flex items-center gap-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="breakdown"
+                    checked={chartBreakdown === "attribute"}
+                    onChange={() => setChartBreakdown("attribute")}
+                    className="accent-[#4f46e5]"
+                  />
+                  <span>Thuộc tính</span>
+                </label>
+                <label className="flex items-center gap-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="breakdown"
+                    checked={chartBreakdown === "sku"}
+                    onChange={() => setChartBreakdown("sku")}
+                    className="accent-[#4f46e5]"
+                  />
+                  <span>Từng SKU</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="mx-auto my-4 grid h-36 w-36 place-items-center rounded-full" style={{ background: gradient }}>
+              <div className="grid h-24 w-24 place-items-center rounded-full bg-white text-center text-[10px] leading-tight px-1">
+                <span className="text-gray-400 font-bold uppercase">{chartMetric === "value" ? "GIÁ TRỊ VỐN" : "TỔNG TỒN"}</span>
+                <b className="text-[14px] text-gray-900 mt-0.5">
+                  {chartMetric === "value" ? vnd(totals.value) : totals.quantity.toLocaleString("vi-VN")}
+                </b>
+                <span className="text-gray-500">{chartMetric === "value" ? "Net" : unit}</span>
+              </div>
+            </div>
+
+            <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+              {groups.map((group) => {
+                const total = chartMetric === "value" ? totals.value : totals.quantity;
+                const metricVal = chartMetric === "value" ? group.value : group.quantity;
+                const pct = total > 0 ? ((metricVal / total) * 100).toFixed(1) : "0.0";
+                return (
+                  <p key={group.label} className="flex items-center justify-between text-[11px] text-[#667085]">
+                    <span className="truncate pr-2">
+                      <span className="mr-1.5 inline-block h-2 w-2 rounded-sm shrink-0" style={{ background: group.color }} />
+                      <span className="font-medium text-gray-700">{group.label}</span>
+                      <span className="text-gray-400 text-[10px] ml-1">
+                        ({chartMetric === "value" ? vnd(group.value) : `${group.quantity} ${unit}`})
+                      </span>
+                    </span>
+                    <b className="text-gray-900 shrink-0 font-mono">{pct}%</b>
+                  </p>
+                );
+              })}
+              {groups.length === 0 && <p className="text-[11px] text-[#98a2b3]">Nhập số lượng tồn đầu kỳ để xem cơ cấu giá trị.</p>}
+            </div>
           </section>
 
           <section className="rounded-xl bg-white p-4">

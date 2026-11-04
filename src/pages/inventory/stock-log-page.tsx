@@ -79,13 +79,13 @@ export function StockLogPage() {
   }, [debouncedKeyword, selectedType, page, pageSize]);
 
   const items = data?.items || [];
-  const stats = data?.stats || {
-    totalRecords: 0,
-    positiveQuantity: 0,
-    negativeQuantity: 0,
-    totalIncreaseValue: 0,
-    totalDecreaseValue: 0,
-  };
+  const rawStats = ((data as any)?.stats || {}) as Record<string, any>;
+  const totalEntries = Number(rawStats.totalEntries ?? rawStats.totalRecords ?? 0);
+  const increaseQty = Number(rawStats.increaseQty ?? rawStats.positiveQuantity ?? 0);
+  const decreaseQty = Number(rawStats.decreaseQty ?? rawStats.negativeQuantity ?? 0);
+  const totalIncreaseValue = Number(rawStats.totalIncreaseValue ?? 0);
+  const totalDecreaseValue = Number(rawStats.totalDecreaseValue ?? 0);
+
   const pagination = data?.pagination || { page: 1, pageSize: 20, total: 0, totalPages: 1 };
 
   return (
@@ -136,7 +136,7 @@ export function StockLogPage() {
                   TỔNG LƯỢT BIẾN ĐỘNG LEDGER
                 </p>
                 <p className="mt-2 text-[30px] font-black text-gray-900 leading-none">
-                  {stats.totalRecords.toLocaleString("vi-VN")}
+                  {totalEntries.toLocaleString("vi-VN")}
                 </p>
               </div>
               <span className="grid h-12 w-12 place-items-center rounded-xl bg-indigo-50 text-[#4f46e5]">
@@ -155,7 +155,7 @@ export function StockLogPage() {
                   TỔNG SẢN PHẨM NHẬP KHO (+)
                 </p>
                 <p className="mt-2 text-[30px] font-black text-emerald-600 leading-none">
-                  +{stats.positiveQuantity.toLocaleString("vi-VN")}
+                  +{increaseQty.toLocaleString("vi-VN")}
                 </p>
               </div>
               <span className="grid h-12 w-12 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -163,7 +163,7 @@ export function StockLogPage() {
               </span>
             </div>
             <p className="mt-3 text-[11.5px] text-emerald-700 font-medium">
-              Giá trị nhập: <b>+{compactVnd(stats.totalIncreaseValue)}</b>
+              Giá trị nhập: <b>+{compactVnd(totalIncreaseValue)}</b>
             </p>
           </div>
 
@@ -174,7 +174,7 @@ export function StockLogPage() {
                   TỔNG SẢN PHẨM XUẤT KHO (-)
                 </p>
                 <p className="mt-2 text-[30px] font-black text-rose-600 leading-none">
-                  -{stats.negativeQuantity.toLocaleString("vi-VN")}
+                  -{decreaseQty.toLocaleString("vi-VN")}
                 </p>
               </div>
               <span className="grid h-12 w-12 place-items-center rounded-xl bg-rose-50 text-rose-600">
@@ -182,7 +182,7 @@ export function StockLogPage() {
               </span>
             </div>
             <p className="mt-3 text-[11.5px] text-rose-700 font-medium">
-              Giá trị xuất: <b>-{compactVnd(stats.totalDecreaseValue)}</b>
+              Giá trị xuất: <b>-{compactVnd(totalDecreaseValue)}</b>
             </p>
           </div>
         </div>
@@ -233,7 +233,7 @@ export function StockLogPage() {
                 </span>
               </h2>
               <p className="mt-0.5 text-[11.5px] text-gray-500">
-                Hiển thị {items.length} trong tổng số {pagination.total.toLocaleString("vi-VN")} bản ghi
+                Hiển thị {items.length} trong tổng số {Number(pagination.total ?? 0).toLocaleString("vi-VN")} bản ghi
               </p>
             </div>
             <span className="text-[12px] text-gray-500">
@@ -326,7 +326,7 @@ export function StockLogPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-right font-mono font-bold text-gray-900">
-                          {row.balanceAfter.toLocaleString("vi-VN")}
+                          {Number(row.balanceAfter ?? 0).toLocaleString("vi-VN")}
                         </td>
                         <td className="px-4 py-3.5 text-right font-mono text-gray-800">
                           {vnd(row.totalCostValue)}

@@ -216,8 +216,8 @@ export function OpeningStockVoucherModal({
               </tr>
             );
           })}
-        </tbody>
-        <tfoot>
+
+          {/* Dòng TỔNG CỘNG đặt trong tbody ở cuối cùng để tránh bị trình duyệt ngắt và in lặp lại qua từng trang */}
           <tr className="bg-gray-100 font-bold text-black avoid-break">
             <td
               colSpan={hasLotTracking ? 4 : 3}
@@ -234,7 +234,7 @@ export function OpeningStockVoucherModal({
               {vnd(totals.value)}
             </td>
           </tr>
-        </tfoot>
+        </tbody>
       </table>
 
       {/* Số tiền viết bằng chữ */}
@@ -367,16 +367,35 @@ export function OpeningStockVoucherModal({
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0 !important;
-                padding: 0 !important;
+                padding: 0 3mm !important;
+                box-sizing: border-box !important;
                 background: #ffffff !important;
+              }
+              thead {
+                display: table-row-group !important;
+              }
+              tfoot {
+                display: none !important;
               }
               .avoid-break {
                 break-inside: avoid !important;
                 page-break-inside: avoid !important;
               }
+              .voucher-table {
+                width: 99.6% !important;
+                margin: 0 auto !important;
+                border-collapse: collapse !important;
+                border: 1px solid #000000 !important;
+                box-sizing: border-box !important;
+              }
               .voucher-table th, .voucher-table td {
                 padding: 3.5px 5px !important;
                 font-size: 10px !important;
+                border: 1px solid #000000 !important;
+                box-sizing: border-box !important;
+              }
+              .voucher-table th:last-child, .voucher-table td:last-child {
+                border-right: 1px solid #000000 !important;
               }
             }
           `}</style>

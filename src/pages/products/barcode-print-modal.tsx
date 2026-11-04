@@ -37,6 +37,7 @@ export function BarcodePrintModal({
   });
 
   const [labelSize, setLabelSize] = useState<LabelSize>("50x30");
+  const [a4Orientation, setA4Orientation] = useState<"portrait" | "landscape">("landscape");
   const [showShopName, setShowShopName] = useState(true);
   const [showPrice, setShowPrice] = useState(true);
   const [showSku, setShowSku] = useState(true);
@@ -151,6 +152,34 @@ export function BarcodePrintModal({
                       <span className="text-[11px] text-gray-500">In lưới nhiều tem trên máy in văn phòng A4 / PDF</span>
                     </div>
                   </label>
+
+                  {labelSize === "a4" && (
+                    <div className="ml-6 flex items-center gap-4 text-[12px] bg-white p-2 rounded-lg border border-gray-200">
+                      <span className="text-gray-500 font-medium">Hướng in:</span>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="a4_orient"
+                          value="landscape"
+                          checked={a4Orientation === "landscape"}
+                          onChange={() => setA4Orientation("landscape")}
+                          className="accent-[#4f46e5]"
+                        />
+                        <span>Khổ ngang (Landscape - 5 cột)</span>
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="a4_orient"
+                          value="portrait"
+                          checked={a4Orientation === "portrait"}
+                          onChange={() => setA4Orientation("portrait")}
+                          className="accent-[#4f46e5]"
+                        />
+                        <span>Khổ dọc (4 cột)</span>
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -305,15 +334,15 @@ export function BarcodePrintModal({
                         />
                       </div>
 
-                      {/* Footer tem: SKU và Giá không bị ngắt dòng */}
-                      <div className="w-full flex items-center justify-between border-t border-gray-200 pt-1 text-[10px] leading-none">
+                      {/* Footer tem: SKU và Giá có khoảng cách rõ ràng */}
+                      <div className="w-full flex items-center justify-between gap-2 border-t border-gray-200 pt-1 text-[10px] leading-none">
                         {showSku && (
-                          <span className="font-mono text-gray-700 font-semibold truncate max-w-[110px]" title={item.sku}>
+                          <span className="font-mono text-gray-700 font-semibold truncate flex-1 min-w-0 text-left" title={item.sku}>
                             {item.sku}
                           </span>
                         )}
                         {showPrice && (
-                          <span className="font-bold text-[#d92d20] text-[11.5px] ml-auto whitespace-nowrap">
+                          <span className="font-bold text-[#d92d20] text-[11.5px] shrink-0 ml-auto whitespace-nowrap">
                             {vnd(item.price)}
                           </span>
                         )}
@@ -360,19 +389,22 @@ export function BarcodePrintModal({
               /* A4 GRID MODE */
               ${labelSize === "a4" ? `
                 @page {
-                  size: A4 portrait;
-                  margin: 6mm 5mm 6mm 5mm;
+                  size: A4 ${a4Orientation};
+                  margin: 6mm 6mm 6mm 6mm;
                 }
                 .barcode-print-grid {
-                  display: grid !important;
-                  grid-template-columns: repeat(4, 1fr) !important;
+                  display: flex !important;
+                  flex-wrap: wrap !important;
                   gap: 3mm !important;
                   width: 100% !important;
+                  justify-content: flex-start !important;
+                  align-content: flex-start !important;
                 }
                 .barcode-print-card {
-                  border: 1px dashed #666666 !important;
+                  border: 1px dashed #777777 !important;
                   border-radius: 3px !important;
-                  width: 100% !important;
+                  width: ${a4Orientation === "landscape" ? "calc(20% - 2.5mm)" : "calc(25% - 2.3mm)"} !important;
+                  max-width: ${a4Orientation === "landscape" ? "calc(20% - 2.5mm)" : "calc(25% - 2.3mm)"} !important;
                   height: 31mm !important;
                   max-height: 31mm !important;
                   padding: 1.5mm 2mm !important;
@@ -385,6 +417,7 @@ export function BarcodePrintModal({
                   background: #ffffff !important;
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
+                  margin-bottom: 2.5mm !important;
                   overflow: hidden !important;
                 }
               ` : `
@@ -433,40 +466,51 @@ export function BarcodePrintModal({
                 {/* Header nhãn tem */}
                 <div style={{ width: "100%", overflow: "hidden", lineHeight: 1.15 }}>
                   {showShopName && (
-                    <div style={{ fontSize: "6.5pt", fontWeight: "bold", textTransform: "uppercase", color: "#333", whiteSpace: "nowrap", overflow: "hidden" }}>
+                    <div style={{ fontSize: "6.5pt", fontWeight: "bold", textTransform: "uppercase", color: "#333", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {shopName}
                     </div>
                   )}
-                  <div style={{ fontSize: labelSize === "35x22" ? "6.5pt" : "7.5pt", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <div
+                    style={{
+                      fontSize: item.templateName.length > 22 ? (labelSize === "35x22" ? "5.5pt" : "6.8pt") : (labelSize === "35x22" ? "6.5pt" : "7.5pt"),
+                      fontWeight: "bold",
+                      lineHeight: 1.15,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      maxHeight: "2.3em",
+                    }}
+                  >
                     {item.templateName}
                   </div>
                   {item.attributeText && (
-                    <div style={{ fontSize: "6pt", whiteSpace: "nowrap", overflow: "hidden", color: "#444" }}>
+                    <div style={{ fontSize: labelSize === "35x22" ? "5.5pt" : "6pt", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#444", marginTop: "0.5mm" }}>
                       {item.attributeText}
                     </div>
                   )}
                 </div>
 
                 {/* Vạch Barcode thật quét cực nhạy */}
-                <div style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", margin: "0.5mm 0" }}>
+                <div style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", margin: labelSize === "35x22" ? "0.3mm 0" : "0.8mm 0" }}>
                   <BarcodeSvg
                     value={item.barcode || item.sku}
                     width={labelSize === "35x22" ? 0.95 : 1.25}
-                    height={labelSize === "35x22" ? 20 : 28}
-                    fontSize={labelSize === "35x22" ? 7 : 8.5}
+                    height={labelSize === "35x22" ? 18 : 28}
+                    fontSize={labelSize === "35x22" ? 6.5 : 8.5}
                     displayValue={true}
                   />
                 </div>
 
-                {/* Footer nhãn tem: SKU & Giá bán không ngắt dòng */}
-                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "6.5pt", lineHeight: 1 }}>
+                {/* Footer nhãn tem: SKU & Giá bán có khoảng cách rõ ràng, không bao giờ đè chữ */}
+                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px", fontSize: "6.5pt", lineHeight: 1 }}>
                   {showSku && (
-                    <span style={{ fontFamily: "monospace", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", maxWidth: "60%" }}>
+                    <span style={{ fontFamily: "monospace", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 auto", minWidth: 0, textAlign: "left" }}>
                       {item.sku}
                     </span>
                   )}
                   {showPrice && (
-                    <span className="price-tag" style={{ fontSize: labelSize === "35x22" ? "7.5pt" : "8.5pt", marginLeft: "auto" }}>
+                    <span className="price-tag" style={{ fontSize: labelSize === "35x22" ? "7pt" : "8.5pt", fontWeight: "900", color: "#000", whiteSpace: "nowrap", flex: "0 0 auto", marginLeft: "auto" }}>
                       {vnd(item.price)}
                     </span>
                   )}
