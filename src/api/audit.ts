@@ -28,7 +28,7 @@ export type UpdateCountRequest = UpdateAuditItemRequest & { countedQty: number }
 
 export interface AuditItemRequest {
   variantId: string;
-  lotId?: string | null;
+  lotItemId?: string | null;
   countedQty: number;
 }
 
@@ -447,70 +447,6 @@ export const auditApi = {
       }
 
       return response.json();
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  /**
-   * Approve audit (owner action)
-   */
-  async approveAudit(auditId: string): Promise<StockAudit> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/${auditId}/approve`, {
-        method: 'PATCH',
-        headers,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Failed to approve audit (${response.status})`);
-      }
-
-      return response.json();
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  /**
-   * Apply audit (owner action - finalizes and applies to inventory)
-   */
-  async applyAudit(auditId: string): Promise<StockAudit> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/${auditId}/apply`, {
-        method: 'PATCH',
-        headers,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Failed to apply audit (${response.status})`);
-      }
-
-      return response.json();
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  /**
-   * Delete audit (only when not applied)
-   */
-  async deleteAudit(auditId: string): Promise<void> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/${auditId}`, {
-        method: 'DELETE',
-        headers,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Failed to delete audit (${response.status})`);
-      }
     } catch (error) {
       handleApiError(error);
     }

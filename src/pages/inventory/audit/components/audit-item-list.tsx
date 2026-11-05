@@ -118,7 +118,7 @@ export function AuditItemList({
                         {item.expirationDate
                           ? ` (exp ${new Date(item.expirationDate).toLocaleDateString()})`
                           : ''}
-                        {!item.lotId ? ' • new lot' : ''}
+                        {item.isNewLot ? ' • new lot' : ''}
                       </span>
                     </>
                   ) : (

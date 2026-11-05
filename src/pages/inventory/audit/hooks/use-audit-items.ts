@@ -75,7 +75,7 @@ export function useAuditItems(auditId: string | undefined, options: { mine?: boo
       discrepancyReason?: string | null,
       lot?: Pick<
         UpdateAuditItemRequest,
-        'lotId' | 'newLotNumber' | 'newLotExpirationDate' | 'newLotManufacturingDate'
+        'lotItemId' | 'newLotNumber' | 'newLotExpirationDate' | 'newLotManufacturingDate'
       >
     ) => {
       if (!auditId) return;
@@ -119,14 +119,14 @@ export function useAuditItems(auditId: string | undefined, options: { mine?: boo
   );
 
   const recordCount = useCallback(
-    async (variantId: string, countedQty: number, lotId?: string | null) => {
+    async (variantId: string, countedQty: number, lotItemId?: string | null) => {
       if (!auditId) return;
 
       try {
         const item = await auditApi.recordCount(auditId, {
           variantId,
           countedQty,
-          lotId,
+          lotItemId,
         });
 
         setState((prev) => ({

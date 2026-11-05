@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
@@ -13,7 +13,7 @@ export function AuditListPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<AuditStatus | undefined>(undefined);
-  const { audits, total, page, pageSize, totalPages, loading, error, filter, goToPage, updateFilter } = useAudits({
+  const { audits, total, page, totalPages, loading, error, goToPage, updateFilter } = useAudits({
     status: statusFilter,
   });
 
@@ -26,9 +26,11 @@ export function AuditListPage() {
     navigate(`/inventory/audit/${auditId}`);
   };
 
-  const handleCountItems = (auditId: string) => {
-    navigate(`/inventory/audit/${auditId}/count`);
-  };
+  // The backend has no text search, so the header box narrows the loaded page.
+  const needle = keyword.trim().toLowerCase();
+  const visible = needle
+    ? audits.filter((audit) => audit.auditCode.toLowerCase().includes(needle))
+    : audits;
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
@@ -85,13 +87,13 @@ export function AuditListPage() {
             <div key={i} className="h-20 rounded-lg bg-gray-200 animate-pulse" />
           ))}
         </div>
-      ) : audits.length === 0 ? (
+      ) : visible.length === 0 ? (
         <Card className="p-12 text-center">
           <p className="text-gray-600">No audits found</p>
         </Card>
       ) : (
         <div className="space-y-3">
-          {audits.map((audit) => (
+          {visible.map((audit) => (
             <Card key={audit.id} className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">

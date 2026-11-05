@@ -63,9 +63,11 @@ export function AuditCreatePage() {
         <p className="font-semibold mb-2">Before creating an audit:</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
           <li>Create the audit first, then add items on its detail page</li>
-          <li>Each item is one SKU assigned to one employee, with a lot type (new lot or existing lot)</li>
-          <li>For an existing lot, pick it to autofill its number and expiry, or leave it for the employee to pick</li>
-          <li>The employee cannot switch between new lot and existing lot while counting</li>
+          <li>
+            The audit type decides the lots: New lots means every item is a new lot the employee types
+            in; Re-audit means every item uses an existing lot you pick when adding it
+          </li>
+          <li>On a re-audit the employee keeps that lot and can still correct its dates and enter the count</li>
           <li>A lot that does not exist yet is created when you apply the audit</li>
         </ul>
       </div>

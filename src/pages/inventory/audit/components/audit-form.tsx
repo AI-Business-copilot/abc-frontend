@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Button } from '../../../../components/ui/button';
-import { Input } from '../../../../components/ui/input';
 import { Label } from '../../../../components/ui/label';
 import { Card } from '../../../../components/ui/card';
 import { Spinner } from '../../../../components/ui/spinner';
@@ -20,8 +19,7 @@ export function AuditForm({
   error = null,
   submitLabel = 'Create Audit',
 }: AuditFormProps) {
-  const [auditCode, setAuditCode] = useState('');
-  const [auditType, setAuditType] = useState<AuditType>('CATEGORY_AUDIT');
+  const [auditType, setAuditType] = useState<AuditType>('NEW_LOTS');
   const [note, setNote] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -29,14 +27,8 @@ export function AuditForm({
     e.preventDefault();
     setLocalError(null);
 
-    if (!auditCode.trim()) {
-      setLocalError('Audit code is required');
-      return;
-    }
-
     try {
       await onSubmit({
-        auditCode: auditCode.trim(),
         auditType,
         note: note.trim() || undefined,
       });
@@ -55,25 +47,6 @@ export function AuditForm({
         )}
 
         <div>
-          <Label htmlFor="auditCode" className="font-semibold">
-            Audit Code <span className="text-red-600">*</span>
-          </Label>
-          <Input
-            id="auditCode"
-            type="text"
-            placeholder="e.g., AUDIT-2026-10-001"
-            value={auditCode}
-            onChange={(e) => {
-              setAuditCode(e.target.value);
-              setLocalError(null);
-            }}
-            disabled={loading}
-            className="mt-1"
-          />
-          <p className="text-xs text-gray-500 mt-1">Must be unique within your store.</p>
-        </div>
-
-        <div>
           <Label htmlFor="auditType" className="font-semibold">
             Audit Type <span className="text-red-600">*</span>
           </Label>
@@ -84,9 +57,8 @@ export function AuditForm({
             disabled={loading}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
           >
-            <option value="CATEGORY_AUDIT">Category audit</option>
-            <option value="RE_AUDIT">Re-audit (locks the chosen lots)</option>
-            <option value="NEW_LOTS">New lots</option>
+            <option value="RE_AUDIT">Re-audit (existing lots only)</option>
+            <option value="NEW_LOTS">New lots (every item is a new lot)</option>
           </select>
         </div>
 

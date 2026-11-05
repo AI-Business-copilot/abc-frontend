@@ -1,25 +1,25 @@
 import { useEffect, useState } from 'react';
 import { auditApi, type BusinessMember } from '../../../api/audit';
-import type { AuditItemAssignment, VariantOption } from '../../../types/audit';
+import type { AuditItemAssignment, AuditType, VariantOption } from '../../../types/audit';
 
-/** One editable row in the owner's form: employee + variant (+ optional existing lot). */
+/** One editable row in the owner's form: employee + variant (+ lot item on a re-audit). */
 export interface AuditRowDraft {
   key: string;
   assignedToUserId: string;
   variant: VariantOption | null;
-  /** Empty string means the employee chooses an existing lot or a new lot while counting. */
-  lotId: string;
+  /** Lot item id. Required by a re-audit and left empty by a new-lot audit, which the employee fills in later. */
+  lotItemId: string;
 }
 
 let rowCounter = 0;
 
 export function emptyRow(assignedToUserId = ''): AuditRowDraft {
   rowCounter += 1;
-  return { key: `row-${rowCounter}`, assignedToUserId, variant: null, lotId: '' };
+  return { key: `row-${rowCounter}`, assignedToUserId, variant: null, lotItemId: '' };
 }
 
 /** Returns an error message, or null when every row is complete and unique. */
-export function validateRows(rows: AuditRowDraft[]): string | null {
+export function validateRows(rows: AuditRowDraft[], auditType: AuditType): string | null {
   if (rows.length === 0) return 'Add at least one row (employee + SKU).';
 
   const seen = new Set<string>();
@@ -27,8 +27,11 @@ export function validateRows(rows: AuditRowDraft[]): string | null {
     const row = rows[i];
     if (!row.assignedToUserId) return `Row ${i + 1}: choose an employee.`;
     if (!row.variant) return `Row ${i + 1}: choose a SKU.`;
-    if (row.lotId) {
-      const key = `${row.variant.id}:${row.lotId}`;
+    if (auditType === 'RE_AUDIT' && !row.lotItemId) {
+      return `Row ${i + 1}: choose an existing lot. A re-audit keeps the lot you pick.`;
+    }
+    if (row.lotItemId) {
+      const key = `${row.variant.id}:${row.lotItemId}`;
       if (seen.has(key)) return `Row ${i + 1}: duplicate SKU and lot.`;
       seen.add(key);
     }
@@ -40,7 +43,7 @@ export function rowsToAssignments(rows: AuditRowDraft[]): AuditItemAssignment[] 
   return rows.map((row) => ({
     assignedToUserId: row.assignedToUserId,
     variantId: row.variant!.id,
-    lotId: row.lotId || null,
+    lotItemId: row.lotItemId || null,
   }));
 }
 

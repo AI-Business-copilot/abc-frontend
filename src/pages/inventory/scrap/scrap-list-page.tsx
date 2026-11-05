@@ -25,7 +25,7 @@ export function ScrapListPage() {
   const needle = keyword.trim().toLowerCase();
   const visible = needle
     ? orders.filter((order) =>
-        `${order.scrapCode} ${order.variant.template.name} ${order.variant.sku} ${order.lot?.lotNumber ?? ""}`
+        `${order.scrapCode} ${order.variant.template.name} ${order.variant.sku} ${order.lotItem?.lot.lotNumber ?? ""}`
           .toLowerCase()
           .includes(needle))
     : orders;
@@ -97,7 +97,7 @@ export function ScrapListPage() {
                         <div className="font-semibold">{order.variant.template.name}</div>
                         <div className="font-mono text-xs text-slate-500">{order.variant.sku}</div>
                       </td>
-                      <td className="px-4 py-3 font-mono">{order.lot?.lotNumber ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono">{order.lotItem?.lot.lotNumber ?? "—"}</td>
                       <td className="px-4 py-3 font-semibold">{order.scrapQty}</td>
                       <td className="px-4 py-3">{order.createdByUser?.fullName ?? "—"}</td>
                       <td className="px-4 py-3">{order._count.images}</td>

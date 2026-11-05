@@ -4,7 +4,7 @@ import { Input } from '../../../../components/ui/input';
 import { Label } from '../../../../components/ui/label';
 import { Spinner } from '../../../../components/ui/spinner';
 import { auditApi, type BusinessMember } from '../../../../api/audit';
-import type { VariantLot, VariantOption } from '../../../../types/audit';
+import type { AuditType, VariantLot, VariantOption } from '../../../../types/audit';
 import { emptyRow, type AuditRowDraft } from '../audit-rows';
 
 const selectClass =
@@ -120,13 +120,13 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
 
 interface RowLotSelectProps {
   variantId: string;
-  lotId: string;
-  onChange: (lotId: string) => void;
+  lotItemId: string;
+  onChange: (lotItemId: string) => void;
   disabled?: boolean;
 }
 
-/** Optional lot picker. A chosen lot shows its number and expiry read-only. */
-function RowLotSelect({ variantId, lotId, onChange, disabled }: RowLotSelectProps) {
+/** Required lot picker for a re-audit. A chosen lot shows its number and expiry read-only. */
+function RowLotSelect({ variantId, lotItemId, onChange, disabled }: RowLotSelectProps) {
   const [lots, setLots] = useState<VariantLot[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -148,17 +148,19 @@ function RowLotSelect({ variantId, lotId, onChange, disabled }: RowLotSelectProp
     };
   }, [variantId]);
 
-  const selected = lots.find((lot) => lot.id === lotId);
+  const selected = lots.find((lot) => lot.id === lotItemId);
 
   return (
     <div>
       <select
-        value={lotId}
+        value={lotItemId}
         disabled={disabled || loading}
         onChange={(e) => onChange(e.target.value)}
         className={selectClass}
       >
-        <option value="">Leave empty (the employee picks an existing lot or enters a new lot)</option>
+        <option value="" disabled>
+          Select lot
+        </option>
         {lots.map((lot) => (
           <option key={lot.id} value={lot.id}>
             {lot.lotNumber} • exp {formatDate(lot.expirationDate)} • on hand {lot.onHand}
@@ -179,10 +181,11 @@ interface AuditRowEditorProps {
   rows: AuditRowDraft[];
   onChange: (rows: AuditRowDraft[]) => void;
   members: BusinessMember[];
+  auditType: AuditType;
   disabled?: boolean;
 }
 
-export function AuditRowEditor({ rows, onChange, members, disabled }: AuditRowEditorProps) {
+export function AuditRowEditor({ rows, onChange, members, auditType, disabled }: AuditRowEditorProps) {
   const updateRow = (key: string, patch: Partial<AuditRowDraft>) => {
     onChange(rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   };
@@ -235,20 +238,32 @@ export function AuditRowEditor({ rows, onChange, members, disabled }: AuditRowEd
             <VariantSearch
               value={row.variant}
               disabled={disabled}
-              onChange={(variant) => updateRow(row.key, { variant, lotId: '' })}
+              onChange={(variant) => updateRow(row.key, { variant, lotItemId: '' })}
             />
           </div>
 
-          {row.variant && (
+          {row.variant && auditType === 'RE_AUDIT' && (
             <div>
-              <Label className="text-xs font-medium">Lot (optional)</Label>
+              <Label className="text-xs font-medium">
+                Existing lot <span className="text-red-600">*</span>
+              </Label>
               <RowLotSelect
                 variantId={row.variant.id}
-                lotId={row.lotId}
+                lotItemId={row.lotItemId}
                 disabled={disabled}
-                onChange={(lotId) => updateRow(row.key, { lotId })}
+                onChange={(lotItemId) => updateRow(row.key, { lotItemId })}
               />
+              <p className="mt-1 text-xs text-gray-600">
+                The employee cannot change this lot while counting. They can still correct its dates and
+                enter the count.
+              </p>
             </div>
+          )}
+
+          {row.variant && auditType === 'NEW_LOTS' && (
+            <p className="text-xs text-gray-600">
+              New lot: the employee enters the lot number and expiry while counting.
+            </p>
           )}
         </div>
       ))}

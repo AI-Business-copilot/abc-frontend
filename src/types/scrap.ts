@@ -24,7 +24,10 @@ export interface LotVariant {
 }
 
 export interface ExpiringLot {
+  /** Lot item id: one SKU inside a lot. Scrap orders and quarantine act on this. */
   id: string;
+  /** Batch (product_lots) id. The lot number is shared by every SKU in the batch. */
+  lotId: string;
   variantId: string;
   lotNumber: string;
   expirationDate: string;
@@ -35,7 +38,17 @@ export interface ExpiringLot {
   quarantineQty: number | null;
   quarantinedAt: string | null;
   variant: LotVariant;
-  inventoryBalances: { quantityOnHand: number; damagedQuantity: number }[];
+  /** Whole units still sellable in this lot item. */
+  onHand: number;
+  /** Units already marked damaged. */
+  damaged: number;
+}
+
+/** One batch (product_lots row) with only the variant items that matched the filter. */
+export interface LotBatch {
+  id: string;
+  lotNumber: string;
+  items: ExpiringLot[];
 }
 
 export interface ExpiringLotsSummary {
@@ -53,6 +66,12 @@ export interface ExpiringLotsResponse {
   summary: ExpiringLotsSummary;
 }
 
+export interface ExpiringBatchesResponse {
+  lots: LotBatch[];
+  total: number;
+  summary: ExpiringLotsSummary;
+}
+
 export interface ScrapUser {
   id: string;
   fullName: string;
@@ -64,7 +83,8 @@ export interface ScrapOrder {
   scrapCode: string;
   businessId: string;
   variantId: string;
-  lotId: string | null;
+  /** The lot item the scrap is taken from (product_lot_items.id). */
+  lotItemId: string | null;
   scrapQty: number;
   unitCost: string;
   scrapSource: ScrapSource;
@@ -78,12 +98,12 @@ export interface ScrapOrder {
   rejectionReasonCode: RejectionReasonCode | null;
   rejectionNote: string | null;
   variant: { id: string; sku: string; costPrice: string; template: { name: string } };
-  lot: {
+  lotItem: {
     id: string;
-    lotNumber: string;
     expirationDate: string;
     status: LotStatus;
     quarantineQty: number | null;
+    lot: { id: string; lotNumber: string };
   } | null;
   createdByUser: ScrapUser | null;
   approvedByUser: ScrapUser | null;

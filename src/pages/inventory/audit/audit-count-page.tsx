@@ -9,7 +9,8 @@ import { DiscrepancyForm } from './components/discrepancy-form';
 import { LotSection, type LotSelection } from './components/lot-section';
 import { CatalogHeader } from '../../products/catalog-header';
 import { auditApi } from '../../../api/audit';
-import type { StockAuditItem } from '../../../types/audit';
+import { useAudit } from './hooks/use-audit';
+import type { AuditType, StockAuditItem } from '../../../types/audit';
 
 /** Counts one audit item. Opened from the "Count" button on an item in the audit detail page. */
 export function AuditCountPage() {
@@ -29,6 +30,11 @@ export function AuditCountPage() {
   const [discrepancyReason, setDiscrepancyReason] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // The audit type decides what the employee may do with the lot: a re-audit keeps the owner's lot fixed.
+  const { audit } = useAudit(auditId);
+  const auditType: AuditType =
+    audit?.auditType ?? (item?.lotMode === 'EXISTING' ? 'RE_AUDIT' : 'NEW_LOTS');
 
   const backToAudit = (message?: string) =>
     navigate(`/inventory/audit/${auditId}`, message ? { state: { message } } : undefined);
@@ -171,7 +177,12 @@ export function AuditCountPage() {
           )}
 
           <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
-            <LotSection item={item} disabled={saving || !editable} onChange={handleLotChange} />
+            <LotSection
+              item={item}
+              auditType={auditType}
+              disabled={saving || !editable}
+              onChange={handleLotChange}
+            />
 
             <ItemCounter
               snapshotQty={systemQty}

@@ -9,7 +9,6 @@ import { AuditItemList } from './components/audit-item-list';
 import { AssignStaffModal } from './components/assign-staff-modal';
 import { useAudit } from './hooks/use-audit';
 import { useAuditItems } from './hooks/use-audit-items';
-import { useAuditActions } from './hooks/use-audit-actions';
 import { useAuth } from '../../../hooks/use-auth';
 import { usePermissions } from '../../../hooks/use-permissions';
 import { CatalogHeader } from '../../products/catalog-header';
@@ -19,19 +18,21 @@ export function AuditDetailPage() {
   const { auditId } = useParams<{ auditId: string }>();
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
+  const { profile } = useAuth();
+  const { can, isOwner, isStaff } = usePermissions();
+  // Staff only count the items assigned to them, so they can filter the list down to those.
+  const [onlyMine, setOnlyMine] = useState(isStaff);
   const { audit, loading: auditLoading, error: auditError, refetch: refetchAudit } = useAudit(auditId);
   const {
     items,
+    total,
     page,
     totalPages,
     loading: itemsLoading,
     error: itemsError,
     goToPage,
     refetch: refetchItems,
-  } = useAuditItems(auditId);
-  const { loading: actionLoading, approveAudit, applyAudit } = useAuditActions();
-  const { profile } = useAuth();
-  const { can, isOwner } = usePermissions();
+  } = useAuditItems(auditId, { mine: onlyMine });
 
   // Right after an audit is created, the create page sends the owner here with openAddItems set
   const location = useLocation();
@@ -39,35 +40,6 @@ export function AuditDetailPage() {
 
   const [actionMessage, setActionMessage] = useState<string | null>(navState?.message ?? null);
   const [showAssignModal, setShowAssignModal] = useState(Boolean(navState?.openAddItems));
-
-  const handleApprove = async () => {
-    if (!auditId) return;
-    try {
-      await approveAudit(auditId);
-      setActionMessage('Audit approved successfully');
-      setTimeout(() => setActionMessage(null), 3000);
-    } catch (err) {
-      // Error handled by hook
-    }
-  };
-
-  const handleApply = async () => {
-    if (!auditId) return;
-    if (!confirm('Apply this audit? This will update inventory and create ledger entries.')) {
-      return;
-    }
-    try {
-      await applyAudit(auditId);
-      setActionMessage('Audit applied successfully');
-      setTimeout(() => {
-        navigate('/inventory/audit', {
-          state: { message: 'Audit applied successfully' },
-        });
-      }, 2000);
-    } catch (err) {
-      // Error handled by hook
-    }
-  };
 
   if (auditLoading) {
     return (
@@ -105,8 +77,8 @@ export function AuditDetailPage() {
     can('inventory.audit.count') &&
     (isOwner || item.assignedTo?.id === profile?.user.id);
 
-  const canApprove = audit.status === 'IN_PROGRESS';
-  const canApply = audit.status === 'PENDING_APPROVAL';
+  // Older audits may not have a type; they behave like new-lot audits.
+  const auditType = audit.auditType ?? 'NEW_LOTS';
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
@@ -121,6 +93,9 @@ export function AuditDetailPage() {
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-gray-900">{audit.auditCode}</h1>
               <AuditStatusBadge status={audit.status} />
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                {auditType === 'RE_AUDIT' ? 'Re-audit - existing lots' : 'New lots'}
+              </span>
             </div>
             <p className="text-gray-600">
               Items: {audit.itemCount} | Started: {new Date(audit.countStartAt).toLocaleDateString()}
@@ -135,26 +110,6 @@ export function AuditDetailPage() {
               <Button onClick={() => setShowAssignModal(true)}>Add items</Button>
             </PermissionGate>
           )}
-          <PermissionGate permission="inventory.audit.approve" fallback={null}>
-            {canApprove && (
-              <Button
-                onClick={handleApprove}
-                disabled={actionLoading}
-                className="bg-orange-600 hover:bg-orange-700 text-white"
-              >
-                {actionLoading ? 'Approving...' : 'Approve'}
-              </Button>
-            )}
-            {canApply && (
-              <Button
-                onClick={handleApply}
-                disabled={actionLoading}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                {actionLoading ? 'Applying...' : 'Apply Audit'}
-              </Button>
-            )}
-          </PermissionGate>
         </div>
       </div>
 
@@ -170,9 +125,17 @@ export function AuditDetailPage() {
         </Alert>
       )}
 
+      {audit.status === 'IN_PROGRESS' && can('inventory.audit.approve_item') && (
+        <Alert className="bg-blue-50 border-blue-200 text-blue-800 text-sm">
+          Approve each item below. The audit is applied to inventory automatically as soon as the last
+          item is approved, and then it becomes DONE.
+        </Alert>
+      )}
+
       {showAssignModal && auditId && (
         <AssignStaffModal
           auditId={auditId}
+          auditType={auditType}
           existingItems={items}
           onClose={() => setShowAssignModal(false)}
           onAssignSuccess={() => {
@@ -212,7 +175,20 @@ export function AuditDetailPage() {
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Audit Items</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-xl font-bold text-gray-900">Audit Items</h2>
+          {isStaff && (
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={onlyMine}
+                onChange={(e) => setOnlyMine(e.target.checked)}
+              />
+              Only my items ({total})
+            </label>
+          )}
+        </div>
         {itemsLoading ? (
           <div className="flex items-center justify-center py-8">
             <Spinner />
@@ -221,11 +197,15 @@ export function AuditDetailPage() {
           <>
             {items.length === 0 ? (
               <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center space-y-3">
-                <p className="text-gray-700 font-medium">No items yet</p>
-                <p className="text-sm text-gray-500">
-                  Add the SKUs to count, assign each one to an employee, and optionally pick a lot.
+                <p className="text-gray-700 font-medium">
+                  {onlyMine ? 'You have no items assigned in this audit' : 'No items yet'}
                 </p>
-                {audit.status === 'IN_PROGRESS' && (
+                <p className="text-sm text-gray-500">
+                  {onlyMine
+                    ? 'Untick "Only my items" to see everything in this audit.'
+                    : 'Add the SKUs to count and assign each one to an employee. A new-lot audit takes no lot, while a re-audit needs an existing lot per SKU.'}
+                </p>
+                {audit.status === 'IN_PROGRESS' && !onlyMine && (
                   <PermissionGate permission="inventory.audit.create" fallback={null}>
                     <Button onClick={() => setShowAssignModal(true)}>Add items</Button>
                   </PermissionGate>

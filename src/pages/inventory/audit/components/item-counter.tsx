@@ -52,7 +52,7 @@ export function ItemCounter({
 
         <div className="flex flex-col items-center gap-2">
           <Label htmlFor="counted-qty" className="text-sm font-medium">
-            Counted Qty
+            Usable Qty
           </Label>
           <div className="flex items-center gap-2">
             <Button
@@ -90,9 +90,8 @@ export function ItemCounter({
         <div>
           <Label className="text-sm font-medium">Difference</Label>
           <p
-            className={`text-lg font-semibold ${
-              hasDiscrepancy ? 'text-red-600' : 'text-green-600'
-            }`}
+            className={`text-lg font-semibold ${hasDiscrepancy ? 'text-red-600' : 'text-green-600'
+              }`}
           >
             {diffQty >= 0 ? '+' : ''}
             {diffQty}
