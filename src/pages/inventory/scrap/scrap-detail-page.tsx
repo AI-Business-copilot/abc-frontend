@@ -155,8 +155,8 @@ export function ScrapDetailPage() {
                     <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
                       {[
                         ["Sản phẩm", `${order.variant.template.name} (${order.variant.sku})`],
-                        ["Số lô", order.lot?.lotNumber ?? "—"],
-                        ["Hạn sử dụng", formatDate(order.lot?.expirationDate)],
+                        ["Số lô", order.lotItem?.lot.lotNumber ?? "—"],
+                        ["Hạn sử dụng", formatDate(order.lotItem?.expirationDate)],
                         ["Số lượng hủy", String(order.scrapQty)],
                         ["Nguồn tồn kho", order.scrapSource === "DAMAGED_STOCK" ? "Hàng hư hỏng" : "Hàng có thể bán"],
                         ["Giá vốn / sản phẩm", formatMoney(order.unitCost)],

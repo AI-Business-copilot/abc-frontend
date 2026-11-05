@@ -9,12 +9,35 @@ async function loadTs(path, transform = (source) => source) {
   const { outputText } = ts.transpileModule(transform(source), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } });
   return import(`data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`);
 }
-const { total, validateMoney, validateQty, paymentDelta, buildReceiptPayload } = await loadTs("../src/pages/purchases/purchase-input.ts");
+const { formatMoneyInput, parseMoneyInput, moneyInputError, validateDeliveryDate, total, validateMoney, validateQty, paymentDelta, paymentTotal, buildReceiptPayload } = await loadTs("../src/pages/purchases/purchase-input.ts");
 const order = { purchaseOrderItems: [
   { id: "line-lot", remainingQty: 6, variant: { sku: "SERUM", template: { hasLotTracking: true } } },
   { id: "line-plain", remainingQty: 10, variant: { sku: "SHIRT", template: { hasLotTracking: false } } },
 ] };
 const count = (overrides = {}) => ({ key: "row", poItemId: "line-lot", qty: "3", price: "50000", lot: "LOT-A", expiration: "2027-01-01", manufacturing: "", ...overrides });
+
+test("money inputs display Vietnamese grouping and retain plain API values", () => {
+  assert.equal(formatMoneyInput("500000000"), "500.000.000");
+  assert.equal(parseMoneyInput("500.000.000"), "500000000");
+  assert.equal(formatMoneyInput("1234.50"), "1.234,50");
+  assert.equal(parseMoneyInput("1.234,50"), "1234.50");
+  assert.equal(parseMoneyInput("0500000"), "500000");
+  assert.equal(parseMoneyInput(""), "");
+  for (const value of ["-1", "1e3", "abc", "1,234", "1,2,3"]) assert.equal(parseMoneyInput(value), undefined);
+  assert.equal(moneyInputError("500000000", "0", "500000000"), "");
+  assert.match(moneyInputError("500000001", "0", "500000000"), /500\.000\.000/);
+  assert.ok(moneyInputError("0", "0.01"));
+  const payload = buildReceiptPayload(order, "PR-MONEY", parseMoneyInput("1.234,50"), [count({ qty: "1", price: parseMoneyInput("1.234,50") })]);
+  assert.equal(payload.paidAmount, "1234.50");
+  assert.equal(payload.items[0].actualCost, "1234.50");
+});
+
+test("order delivery date is required and cannot precede order date", () => {
+  assert.throws(() => validateDeliveryDate("", "2026-11-03"), /Vui lòng chọn ngày giao dự kiến/);
+  assert.throws(() => validateDeliveryDate("2026-11-02", "2026-11-03"), /không được trước ngày đặt/);
+  assert.equal(validateDeliveryDate("2026-11-03", "2026-11-03"), "2026-11-03");
+  assert.equal(validateDeliveryDate("2026-11-04", "2026-11-03"), "2026-11-04");
+});
 
 test("currency arithmetic retains cents across quantities and large totals", () => {
   assert.equal(total([{ qty: "3", price: "0.1" }, { qty: "1", price: "0.2" }]), "0.50");
@@ -57,6 +80,15 @@ test("payment uses a cumulative amount and enforces the cash transaction limit",
   assert.throws(() => paymentDelta("0", "10000000000", "20000000000"));
 });
 
+test("paying an additional amount calculates the API total exactly and prevents overpayment", () => {
+  assert.equal(paymentTotal("100000.00", "50000", "200000.00"), "150000.00");
+  assert.equal(paymentTotal("0.10", "0.20", "0.30"), "0.30");
+  assert.equal(paymentTotal("100000.00", "100000.00", "200000.00"), "200000.00");
+  for (const amount of ["0", "-1", "", "NaN", "0.001", "100000.01", "10000000000"]) {
+    assert.throws(() => paymentTotal("100000.00", amount, "200000.00"));
+  }
+});
+
 globalThis.purchaseApiCalls = [];
 const stub = `data:text/javascript,${encodeURIComponent('export async function apiRequest(path, init) { globalThis.purchaseApiCalls.push({path, init}); return {}; }')}`;
 const { purchasesApi } = await loadTs("../src/api/purchases.ts", (source) => source.replace('"@/services/api.service"', JSON.stringify(stub)));
@@ -67,6 +99,23 @@ test("API search encodes special characters and skips empty filters", async () =
   assert.equal(url.searchParams.get("search"), "NCC & A/B");
   assert.equal(url.searchParams.get("page"), "2");
   assert.equal(url.searchParams.has("status"), false);
+});
+
+test("supplier catalog and receipt history stay separate and quoted prices retain decimals", async () => {
+  await purchasesApi.supplierProducts("supplier-id", { search: "SKU & A/B", page: 2 }, "history");
+  const url = new URL(globalThis.purchaseApiCalls.at(-1).path, "http://localhost/api");
+  assert.equal(url.pathname, "/purchases/suppliers/supplier-id/products");
+  assert.equal(url.searchParams.get("kind"), "history");
+  assert.equal(url.searchParams.get("search"), "SKU & A/B");
+  assert.equal(url.searchParams.get("page"), "2");
+  await purchasesApi.supplierProducts("supplier-id", {});
+  assert.equal(new URL(globalThis.purchaseApiCalls.at(-1).path, "http://localhost/api").searchParams.get("kind"), "catalog");
+  await purchasesApi.saveSupplierProduct("supplier-id", "variant-id", "123.45");
+  assert.equal(globalThis.purchaseApiCalls.at(-1).init.method, "PUT");
+  assert.deepEqual(JSON.parse(globalThis.purchaseApiCalls.at(-1).init.body), { variantId: "variant-id", supplyPrice: "123.45" });
+  await purchasesApi.removeSupplierProduct("supplier-id", "variant-id");
+  assert.equal(globalThis.purchaseApiCalls.at(-1).path, "/purchases/suppliers/supplier-id/products/variant-id");
+  assert.equal(globalThis.purchaseApiCalls.at(-1).init.method, "DELETE");
 });
 test("confirmation sends the preview token and payment sends the new cumulative amount", async () => {
   await purchasesApi.confirm("po-id", "signed-preview");

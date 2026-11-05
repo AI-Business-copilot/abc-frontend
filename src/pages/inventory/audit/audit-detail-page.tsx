@@ -4,12 +4,11 @@ import { Button } from '../../../components/ui/button';
 import { Alert } from '../../../components/ui/alert';
 import { Spinner } from '../../../components/ui/spinner';
 import { PermissionGate } from '../../../components/common/permission-gate';
-import { AuditStatusBadge } from './components/audit-status-badge';
+import { AuditStatusBadge, AUDIT_STATUS_LABELS } from './components/audit-status-badge';
 import { AuditItemList } from './components/audit-item-list';
 import { AssignStaffModal } from './components/assign-staff-modal';
 import { useAudit } from './hooks/use-audit';
 import { useAuditItems } from './hooks/use-audit-items';
-import { useAuditActions } from './hooks/use-audit-actions';
 import { useAuth } from '../../../hooks/use-auth';
 import { usePermissions } from '../../../hooks/use-permissions';
 import { CatalogHeader } from '../../products/catalog-header';
@@ -19,19 +18,21 @@ export function AuditDetailPage() {
   const { auditId } = useParams<{ auditId: string }>();
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
+  const { profile } = useAuth();
+  const { can, isOwner, isStaff } = usePermissions();
+  // Staff only count the items assigned to them, so they can filter the list down to those.
+  const [onlyMine, setOnlyMine] = useState(isStaff);
   const { audit, loading: auditLoading, error: auditError, refetch: refetchAudit } = useAudit(auditId);
   const {
     items,
+    total,
     page,
     totalPages,
     loading: itemsLoading,
     error: itemsError,
     goToPage,
     refetch: refetchItems,
-  } = useAuditItems(auditId);
-  const { loading: actionLoading, approveAudit, applyAudit } = useAuditActions();
-  const { profile } = useAuth();
-  const { can, isOwner } = usePermissions();
+  } = useAuditItems(auditId, { mine: onlyMine });
 
   // Right after an audit is created, the create page sends the owner here with openAddItems set
   const location = useLocation();
@@ -39,35 +40,6 @@ export function AuditDetailPage() {
 
   const [actionMessage, setActionMessage] = useState<string | null>(navState?.message ?? null);
   const [showAssignModal, setShowAssignModal] = useState(Boolean(navState?.openAddItems));
-
-  const handleApprove = async () => {
-    if (!auditId) return;
-    try {
-      await approveAudit(auditId);
-      setActionMessage('Audit approved successfully');
-      setTimeout(() => setActionMessage(null), 3000);
-    } catch (err) {
-      // Error handled by hook
-    }
-  };
-
-  const handleApply = async () => {
-    if (!auditId) return;
-    if (!confirm('Apply this audit? This will update inventory and create ledger entries.')) {
-      return;
-    }
-    try {
-      await applyAudit(auditId);
-      setActionMessage('Audit applied successfully');
-      setTimeout(() => {
-        navigate('/inventory/audit', {
-          state: { message: 'Audit applied successfully' },
-        });
-      }, 2000);
-    } catch (err) {
-      // Error handled by hook
-    }
-  };
 
   if (auditLoading) {
     return (
@@ -88,10 +60,10 @@ export function AuditDetailPage() {
         <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
         <main className="mx-auto max-w-[1580px] space-y-4 px-5 py-5">
           <Button variant="outline" onClick={() => navigate('/inventory/audit')}>
-            ← Back to Audits
+            ← Quay lại danh sách
           </Button>
           <Alert className="bg-red-50 border-red-200 text-red-700">
-            {auditError || 'Audit not found'}
+            {auditError || 'Không tìm thấy đợt kiểm kê'}
           </Alert>
         </main>
       </div>
@@ -105,8 +77,8 @@ export function AuditDetailPage() {
     can('inventory.audit.count') &&
     (isOwner || item.assignedTo?.id === profile?.user.id);
 
-  const canApprove = audit.status === 'IN_PROGRESS';
-  const canApply = audit.status === 'PENDING_APPROVAL';
+  // Older audits may not have a type; they behave like new-lot audits.
+  const auditType = audit.auditType ?? 'NEW_LOTS';
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
@@ -115,16 +87,19 @@ export function AuditDetailPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={() => navigate('/inventory/audit')}>
-            ← Back
+            ← Quay lại
           </Button>
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-gray-900">{audit.auditCode}</h1>
               <AuditStatusBadge status={audit.status} />
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                {auditType === 'RE_AUDIT' ? 'Kiểm kê lại - lô có sẵn' : 'Lô mới'}
+              </span>
             </div>
             <p className="text-gray-600">
-              Items: {audit.itemCount} | Started: {new Date(audit.countStartAt).toLocaleDateString()}
-              {audit.createdBy ? ` | Created by: ${audit.createdBy.name}` : ''}
+              Số dòng: {audit.itemCount} | Bắt đầu: {new Date(audit.countStartAt).toLocaleDateString('vi-VN')}
+              {audit.createdBy ? ` | Người tạo: ${audit.createdBy.name}` : ''}
             </p>
           </div>
         </div>
@@ -132,29 +107,9 @@ export function AuditDetailPage() {
         <div className="flex gap-2">
           {audit.status === 'IN_PROGRESS' && (
             <PermissionGate permission="inventory.audit.create" fallback={null}>
-              <Button onClick={() => setShowAssignModal(true)}>Add items</Button>
+              <Button onClick={() => setShowAssignModal(true)}>Thêm dòng</Button>
             </PermissionGate>
           )}
-          <PermissionGate permission="inventory.audit.approve" fallback={null}>
-            {canApprove && (
-              <Button
-                onClick={handleApprove}
-                disabled={actionLoading}
-                className="bg-orange-600 hover:bg-orange-700 text-white"
-              >
-                {actionLoading ? 'Approving...' : 'Approve'}
-              </Button>
-            )}
-            {canApply && (
-              <Button
-                onClick={handleApply}
-                disabled={actionLoading}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                {actionLoading ? 'Applying...' : 'Apply Audit'}
-              </Button>
-            )}
-          </PermissionGate>
         </div>
       </div>
 
@@ -170,13 +125,21 @@ export function AuditDetailPage() {
         </Alert>
       )}
 
+      {audit.status === 'IN_PROGRESS' && can('inventory.audit.approve_item') && (
+        <Alert className="bg-blue-50 border-blue-200 text-blue-800 text-sm">
+          Duyệt từng dòng bên dưới. Đợt kiểm kê sẽ được áp dụng vào tồn kho ngay khi dòng cuối cùng được
+          duyệt, sau đó chuyển sang trạng thái Hoàn thành.
+        </Alert>
+      )}
+
       {showAssignModal && auditId && (
         <AssignStaffModal
           auditId={auditId}
+          auditType={auditType}
           existingItems={items}
           onClose={() => setShowAssignModal(false)}
           onAssignSuccess={() => {
-            setActionMessage('Assignments updated');
+            setActionMessage('Đã cập nhật phân công');
             setTimeout(() => setActionMessage(null), 3000);
             refetchItems();
             refetchAudit();
@@ -186,33 +149,46 @@ export function AuditDetailPage() {
 
       <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Trạng thái</p>
           <p className="text-lg font-semibold text-gray-900 mt-1">
-            {audit.status.replace(/_/g, ' ')}
+            {AUDIT_STATUS_LABELS[audit.status]}
           </p>
         </div>
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Items</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Số dòng</p>
           <p className="text-lg font-semibold text-gray-900 mt-1">{audit.itemCount}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Started</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Bắt đầu</p>
           <p className="text-lg font-semibold text-gray-900 mt-1">
-            {new Date(audit.countStartAt).toLocaleDateString()}
+            {new Date(audit.countStartAt).toLocaleDateString('vi-VN')}
           </p>
         </div>
         {audit.completedAt && (
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Completed</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Hoàn thành</p>
             <p className="text-lg font-semibold text-gray-900 mt-1">
-              {new Date(audit.completedAt).toLocaleDateString()}
+              {new Date(audit.completedAt).toLocaleDateString('vi-VN')}
             </p>
           </div>
         )}
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Audit Items</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-xl font-bold text-gray-900">Dòng kiểm kê</h2>
+          {isStaff && (
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={onlyMine}
+                onChange={(e) => setOnlyMine(e.target.checked)}
+              />
+              Chỉ dòng của tôi ({total})
+            </label>
+          )}
+        </div>
         {itemsLoading ? (
           <div className="flex items-center justify-center py-8">
             <Spinner />
@@ -221,13 +197,17 @@ export function AuditDetailPage() {
           <>
             {items.length === 0 ? (
               <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center space-y-3">
-                <p className="text-gray-700 font-medium">No items yet</p>
-                <p className="text-sm text-gray-500">
-                  Add the SKUs to count, assign each one to an employee, and optionally pick a lot.
+                <p className="text-gray-700 font-medium">
+                  {onlyMine ? 'Bạn chưa được giao dòng nào trong đợt kiểm kê này' : 'Chưa có dòng nào'}
                 </p>
-                {audit.status === 'IN_PROGRESS' && (
+                <p className="text-sm text-gray-500">
+                  {onlyMine
+                    ? 'Bỏ chọn "Chỉ dòng của tôi" để xem toàn bộ đợt kiểm kê.'
+                    : 'Thêm các SKU cần kiểm kê và giao từng dòng cho nhân viên. Đợt kiểm kê lô mới không cần lô, còn kiểm kê lại cần một lô có sẵn cho mỗi SKU.'}
+                </p>
+                {audit.status === 'IN_PROGRESS' && !onlyMine && (
                   <PermissionGate permission="inventory.audit.create" fallback={null}>
-                    <Button onClick={() => setShowAssignModal(true)}>Add items</Button>
+                    <Button onClick={() => setShowAssignModal(true)}>Thêm dòng</Button>
                   </PermissionGate>
                 )}
               </div>
@@ -238,7 +218,7 @@ export function AuditDetailPage() {
                   navigate(`/inventory/audit/${auditId}/count?itemId=${item.id}`)
                 }
                 canEditItem={canCountItem}
-                actionLabel="Count"
+                actionLabel="Đếm"
                 onViewDetails={
                   can('inventory.audit.approve_item')
                     ? (item) => navigate(`/inventory/audit/${auditId}/items/${item.id}`)
@@ -253,17 +233,17 @@ export function AuditDetailPage() {
                   onClick={() => goToPage(page - 1)}
                   disabled={page === 1}
                 >
-                  Previous
+                  Trước
                 </Button>
                 <span className="text-sm text-gray-600">
-                  Page {page} of {totalPages}
+                  Trang {page} / {totalPages}
                 </span>
                 <Button
                   variant="outline"
                   onClick={() => goToPage(page + 1)}
                   disabled={page === totalPages}
                 >
-                  Next
+                  Sau
                 </Button>
               </div>
             )}

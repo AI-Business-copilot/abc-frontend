@@ -29,7 +29,7 @@ export function useAudit(auditId: string | undefined) {
       setState({
         audit: null,
         loading: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch audit',
+        error: error instanceof Error ? error.message : 'Không tải được đợt kiểm kê',
       });
     }
   }, [auditId]);

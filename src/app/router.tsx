@@ -29,6 +29,7 @@ import { AttributeValuePage } from "@/pages/products/attribute-value-page";
 import { InventoryPage } from "@/pages/inventory/inventory-page";
 import { InventoryCreatePage } from "@/pages/inventory/inventory-create-page";
 import { StockLogPage } from "@/pages/inventory/stock-log-page";
+import { OrdersOperationsPage } from "@/pages/purchases/orders-operations-page";
 import { AuditListPage } from "@/pages/inventory/audit/audit-list-page";
 import { AuditCreatePage } from "@/pages/inventory/audit/audit-create-page";
 import { AuditDetailPage } from "@/pages/inventory/audit/audit-detail-page";
@@ -37,7 +38,7 @@ import { AuditItemDetailPage } from "@/pages/inventory/audit/audit-item-detail-p
 import { LotsPage } from "@/pages/inventory/scrap/lots-page";
 import { ScrapListPage } from "@/pages/inventory/scrap/scrap-list-page";
 import { ScrapDetailPage } from "@/pages/inventory/scrap/scrap-detail-page";
-import { OrdersOperationsPage } from "@/pages/purchases/orders-operations-page";
+
 const PurchasesPage = lazy(() => import("@/pages/purchases/purchases-page").then((module) => ({ default: module.PurchasesPage })));
 const SalesPage = lazy(() => import("@/pages/sales/sales-page").then((module) => ({ default: module.SalesPage })));
 const ReturnsPage = lazy(() => import("@/pages/returns/returns-page").then((module) => ({ default: module.ReturnsPage })));
@@ -206,6 +207,12 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "/purchases/*",
+        element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><PurchasesPage /></Suspense></RequireBusiness>,
+      },
+      { path: "/sales/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><SalesPage /></Suspense></RequireBusiness> },
+      { path: "/returns/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><ReturnsPage /></Suspense></RequireBusiness> },
+      {
         path: "/inventory/lots",
         element: (
           <RequireBusiness>
@@ -269,12 +276,6 @@ export const router = createBrowserRouter([
           </RequireBusiness>
         ),
       },
-      {
-        path: "/purchases/*",
-        element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><PurchasesPage /></Suspense></RequireBusiness>,
-      },
-      { path: "/sales/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><SalesPage /></Suspense></RequireBusiness> },
-      { path: "/returns/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><ReturnsPage /></Suspense></RequireBusiness> },
       {
         path: "/app",
         children: [

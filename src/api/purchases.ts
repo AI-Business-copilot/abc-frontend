@@ -2,9 +2,12 @@ import { apiRequest } from "@/services/api.service";
 
 export type Money = string;
 export type Page<T> = { items: T[]; pagination: { page: number; pageSize: number; total: number; totalPages: number } };
-export type Supplier = { id: string; name: string; phone: string | null; contactPerson: string | null; debtAmount: Money };
+export type Supplier = { id: string; name: string; phone: string | null; contactPerson: string | null; debtAmount: Money; supplierCode: string | null; email: string | null; address: string | null; taxCode: string | null; note: string | null; isActive: boolean };
 export type Variant = { id: string; sku: string; template: { name: string; unitOfMeasure: string | null; hasLotTracking: boolean } };
 export type StockVariant = { id: string; sku: string; productName: string; costPrice: number; onHand: number; hasLotTracking: boolean };
+export type SupplierCatalog = { supplierSku: string | null; supplierProductName: string | null; minOrderQty: number; orderMultiple: number; leadTimeDays: number | null; isPreferred: boolean; isActive: boolean; note: string | null; priceUpdatedAt: string };
+export type SupplierPayload = Partial<Pick<Supplier, "name" | "phone" | "contactPerson" | "supplierCode" | "email" | "address" | "taxCode" | "note" | "isActive">>;
+export type SupplierProduct = StockVariant & { catalog: SupplierCatalog | null; unitOfMeasure: string | null; isActive: boolean; supplyPrice: Money | null; lastPurchase: { id: string; receiptCode: string; receivedAt: string; actualCost: Money; receivedQty: number } | null };
 export type OrderStatus = "ORDERED" | "PARTIALLY_RECEIVED" | "COMPLETED" | "CLOSED_SHORT" | "CANCELLED";
 export type OrderItem = { id: string; variantId: string; variant: Variant; orderedQty: number; receivedQty: number; remainingQty: number; unitPrice: Money; subtotal: Money };
 export type Receipt = { id: string; receiptCode: string; poId: string; status: "RECEIVED" | "CANCELLED"; receivedAt: string; totalAmount: Money; paidAmount: Money; debtAmount: Money; supplier: Pick<Supplier, "id" | "name">; po?: { id: string; poCode: string } };
@@ -14,10 +17,10 @@ export type ReceiptDetail = Receipt & { purchaseReceiptItems: ReceiptItem[]; inv
 export type PaymentHistory = { paidAmount: Money; recordedPaymentAmount: Money; untrackedPaidAmount: Money; historyComplete: boolean; items: { id: string; amount: Money; createdAt: string; createdByUser: { fullName: string | null } }[] };
 export type Shift = { id: string; status: string; openedAt: string; openingCash: Money };
 export type Reconciliation = { supplierId: string; storedDebtAmount: Money; receiptDebtAmount: Money; vendorReturnCreditAmount: Money; calculatedDebtAmount: Money; difference: Money; applied: boolean };
-export type OrderPayload = { poCode: string; supplierId: string; orderDate: string; expectedDeliveryDate?: string; items: { variantId: string; orderedQty: number; unitPrice: Money }[] };
+export type OrderPayload = { poCode: string; supplierId: string; orderDate: string; expectedDeliveryDate: string; items: { variantId: string; orderedQty: number; unitPrice: Money }[] };
 export type ReceiptPayload = { receiptCode: string; paidAmount: Money; items: { poItemId: string; receivedQty: number; actualCost: Money; lotNumber?: string; expirationDate?: string; manufacturingDate?: string }[] };
 export type Draft = { draftToken: string; expiresAt: string; totalAmount: Money; debtAmount: Money; receipt: ReceiptPayload };
-export type Query = { page?: number; pageSize?: number; search?: string; status?: string; from?: string; to?: string; supplierId?: string };
+export type Query = { page?: number; pageSize?: number; search?: string; status?: string; from?: string; to?: string; supplierId?: string; isActive?: "true" | "false" | "all" };
 
 function query(params: Query) {
   const values = new URLSearchParams();
@@ -41,7 +44,11 @@ export const purchasesApi = {
   payments: (id: string) => read<PaymentHistory>(`/receipts/${id}/payments`),
   correct: (receipt: ReceiptDetail, items: { id: string; receivedQty: number; actualCost: Money; expectedReceivedQty: number; expectedActualCost: Money }[]) => write(`/receipts/${receipt.id}/items`, { expectedTotalAmount: receipt.totalAmount, items }, "PATCH"),
   suppliers: (params: Query) => read<Page<Supplier>>(`/suppliers?${query(params)}`),
-  createSupplier: (body: { name: string; phone?: string; contactPerson?: string }) => write<Supplier>("/suppliers", body),
+  createSupplier: (body: SupplierPayload) => write<Supplier>("/suppliers", body),
+  updateSupplier: (id: string, body: SupplierPayload) => write<Supplier>(`/suppliers/${id}`, body, "PATCH"),
+  supplierProducts: (id: string, params: Query, kind: "catalog" | "history" = "catalog") => read<Page<SupplierProduct> & { supplier: Supplier }>(`/suppliers/${id}/products?${query(params)}&kind=${kind}`),
+  saveSupplierProduct: (id: string, variantId: string, supplyPrice: Money, conditions: Partial<SupplierCatalog> = {}) => write(`/suppliers/${id}/products`, { variantId, supplyPrice, ...conditions }, "PUT"),
+  removeSupplierProduct: (id: string, variantId: string) => apiRequest(`/purchases/suppliers/${id}/products/${variantId}`, { method: "DELETE" }),
   shift: () => read<Shift | null>("/cash-shifts/current"),
   openShift: (openingCash: Money) => write<Shift>("/cash-shifts", { openingCash }),
   reconcile: (id: string) => read<Reconciliation>(`/suppliers/${id}/debt-reconciliation`),

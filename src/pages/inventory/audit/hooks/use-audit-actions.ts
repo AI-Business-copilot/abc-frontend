@@ -7,6 +7,10 @@ export interface UseAuditActionsState {
   error: string | null;
 }
 
+/**
+ * Creating an audit is the only audit-level action left. Closing an audit happens per item:
+ * approving the last item applies it to inventory on the server.
+ */
 export function useAuditActions() {
   const [state, setState] = useState<UseAuditActionsState>({
     loading: false,
@@ -20,45 +24,7 @@ export function useAuditActions() {
       setState({ loading: false, error: null });
       return audit;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create audit';
-      setState({ loading: false, error: message });
-      throw error;
-    }
-  }, []);
-
-  const approveAudit = useCallback(async (auditId: string): Promise<StockAudit> => {
-    try {
-      setState({ loading: true, error: null });
-      const audit = await auditApi.approveAudit(auditId);
-      setState({ loading: false, error: null });
-      return audit;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to approve audit';
-      setState({ loading: false, error: message });
-      throw error;
-    }
-  }, []);
-
-  const applyAudit = useCallback(async (auditId: string): Promise<StockAudit> => {
-    try {
-      setState({ loading: true, error: null });
-      const audit = await auditApi.applyAudit(auditId);
-      setState({ loading: false, error: null });
-      return audit;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to apply audit';
-      setState({ loading: false, error: message });
-      throw error;
-    }
-  }, []);
-
-  const deleteAudit = useCallback(async (auditId: string): Promise<void> => {
-    try {
-      setState({ loading: true, error: null });
-      await auditApi.deleteAudit(auditId);
-      setState({ loading: false, error: null });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete audit';
+      const message = error instanceof Error ? error.message : 'Không tạo được đợt kiểm kê';
       setState({ loading: false, error: message });
       throw error;
     }
@@ -71,9 +37,6 @@ export function useAuditActions() {
   return {
     ...state,
     createAudit,
-    approveAudit,
-    applyAudit,
-    deleteAudit,
     clearError,
   };
 }

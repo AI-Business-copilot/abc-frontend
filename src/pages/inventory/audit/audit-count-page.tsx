@@ -9,7 +9,8 @@ import { DiscrepancyForm } from './components/discrepancy-form';
 import { LotSection, type LotSelection } from './components/lot-section';
 import { CatalogHeader } from '../../products/catalog-header';
 import { auditApi } from '../../../api/audit';
-import type { StockAuditItem } from '../../../types/audit';
+import { useAudit } from './hooks/use-audit';
+import type { AuditType, StockAuditItem } from '../../../types/audit';
 
 /** Counts one audit item. Opened from the "Count" button on an item in the audit detail page. */
 export function AuditCountPage() {
@@ -30,13 +31,18 @@ export function AuditCountPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // The audit type decides what the employee may do with the lot: a re-audit keeps the owner's lot fixed.
+  const { audit } = useAudit(auditId);
+  const auditType: AuditType =
+    audit?.auditType ?? (item?.lotMode === 'EXISTING' ? 'RE_AUDIT' : 'NEW_LOTS');
+
   const backToAudit = (message?: string) =>
     navigate(`/inventory/audit/${auditId}`, message ? { state: { message } } : undefined);
 
   useEffect(() => {
     if (!auditId || !itemId) {
       setLoading(false);
-      setLoadError('No item selected. Open an item from the audit and press Count.');
+      setLoadError('Chưa chọn dòng kiểm kê. Hãy mở một dòng trong đợt kiểm kê và bấm Đếm.');
       return;
     }
 
@@ -53,7 +59,7 @@ export function AuditCountPage() {
         setLotSelection(undefined);
         setDiscrepancyReason(loaded.discrepancyReason || null);
       } catch (err) {
-        if (!cancelled) setLoadError(err instanceof Error ? err.message : 'Failed to load item');
+        if (!cancelled) setLoadError(err instanceof Error ? err.message : 'Không tải được dòng kiểm kê');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -73,9 +79,8 @@ export function AuditCountPage() {
   const saveCurrent = async (): Promise<boolean> => {
     if (!item || !auditId) return false;
 
-    const diffQty = countedQty - systemQty;
-    if (diffQty !== 0 && !discrepancyReason) {
-      setSubmitError('Please provide a reason for the discrepancy');
+    if (!discrepancyReason || !discrepancyReason.trim()) {
+      setSubmitError('Vui lòng nhập lý do chênh lệch.');
       return false;
     }
 
@@ -93,9 +98,9 @@ export function AuditCountPage() {
       setSaving(true);
       setSubmitError(null);
       if (!(await saveCurrent())) return;
-      backToAudit(`${item?.sku} saved`);
+      backToAudit(`${item?.sku} đã được lưu`);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to save item');
+      setSubmitError(err instanceof Error ? err.message : 'Không lưu được dòng kiểm kê');
     } finally {
       setSaving(false);
     }
@@ -109,9 +114,9 @@ export function AuditCountPage() {
       // Save first so the chosen lot and count are what gets submitted
       if (!(await saveCurrent())) return;
       await auditApi.submitAuditItem(auditId, item.id);
-      backToAudit(`${item.sku} submitted for approval`);
+      backToAudit(`${item.sku} đã được gửi duyệt`);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to submit item');
+      setSubmitError(err instanceof Error ? err.message : 'Không gửi duyệt được dòng kiểm kê');
     } finally {
       setSaving(false);
     }
@@ -125,11 +130,11 @@ export function AuditCountPage() {
       <main className="mx-auto max-w-[1580px] space-y-6 px-5 py-5">
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={() => backToAudit()}>
-          ← Back to Audit
+          ← Quay lại kiểm kê
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Count Item</h1>
-          <p className="text-gray-600 mt-1">Record the counted quantity for this item</p>
+          <h1 className="text-3xl font-bold text-gray-900">Đếm hàng</h1>
+          <p className="text-gray-600 mt-1">Ghi nhận số lượng thực đếm cho dòng kiểm kê này</p>
         </div>
       </div>
 
@@ -158,7 +163,7 @@ export function AuditCountPage() {
           {editable && item.rejectionReason && (
             <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-4">
               <p className="text-sm font-semibold text-red-900">
-                Sent back for a recount{item.rejectedBy ? ` by ${item.rejectedBy.name}` : ''}
+                Bị trả lại để đếm lại{item.rejectedBy ? ` bởi ${item.rejectedBy.name}` : ''}
               </p>
               <p className="text-sm text-red-800 mt-1 whitespace-pre-wrap">{item.rejectionReason}</p>
             </div>
@@ -166,42 +171,49 @@ export function AuditCountPage() {
 
           {!editable && (
             <Alert className="mb-4 bg-amber-50 border-amber-200 text-amber-800">
-              This item is no longer in progress, so it cannot be changed.
+              Dòng kiểm kê không còn ở trạng thái đang thực hiện nên không thể sửa.
             </Alert>
           )}
 
           <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
-            <LotSection item={item} disabled={saving || !editable} onChange={handleLotChange} />
+            <LotSection
+              item={item}
+              auditType={auditType}
+              disabled={saving || !editable}
+              onChange={handleLotChange}
+            />
 
             <ItemCounter
               snapshotQty={systemQty}
               initialCountedQty={countedQty}
               onCountChange={setCountedQty}
               disabled={saving || !editable}
+              isNewLot={item.isNewLot}
             />
 
             <DiscrepancyForm
-              diffQty={countedQty - systemQty}
+              diffQty={item.isNewLot ? null : countedQty - systemQty}
               initialReason={discrepancyReason}
               onReasonChange={setDiscrepancyReason}
               disabled={saving || !editable}
+              isNewLot={item.isNewLot}
             />
           </div>
 
           {editable && (
             <div className="flex gap-3 mt-6">
               <Button onClick={() => backToAudit()} variant="outline" disabled={saving}>
-                Cancel
+                Hủy
               </Button>
               <Button onClick={handleSave} disabled={saving} className="flex-1">
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Đang lưu...' : 'Lưu'}
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={saving}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
-                Submit for Review
+                Gửi duyệt
               </Button>
             </div>
           )}
@@ -209,12 +221,12 @@ export function AuditCountPage() {
       )}
 
       <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
-        <p className="font-semibold mb-2">Counting Guidelines:</p>
+        <p className="font-semibold mb-2">Hướng dẫn kiểm kê:</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
-          <li>Count actual quantities on the shelf</li>
-          <li>If count differs from system, a reason is required</li>
-          <li>You can save and come back before submitting</li>
-          <li>Once submitted, the owner will review and approve</li>
+          <li>Đếm số lượng thực tế trên kệ</li>
+          <li>Mọi dòng kiểm kê đều phải nhập lý do</li>
+          <li>Có thể lưu và quay lại trước khi gửi duyệt</li>
+          <li>Sau khi gửi, chủ cửa hàng sẽ xem và phê duyệt</li>
         </ul>
       </div>
       </main>

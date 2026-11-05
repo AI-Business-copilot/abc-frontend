@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Button } from '../../../../components/ui/button';
-import { Input } from '../../../../components/ui/input';
 import { Label } from '../../../../components/ui/label';
 import { Card } from '../../../../components/ui/card';
 import { Spinner } from '../../../../components/ui/spinner';
@@ -18,10 +17,9 @@ export function AuditForm({
   onSubmit,
   loading = false,
   error = null,
-  submitLabel = 'Create Audit',
+  submitLabel = 'Tạo đợt kiểm kê',
 }: AuditFormProps) {
-  const [auditCode, setAuditCode] = useState('');
-  const [auditType, setAuditType] = useState<AuditType>('CATEGORY_AUDIT');
+  const [auditType, setAuditType] = useState<AuditType>('NEW_LOTS');
   const [note, setNote] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -29,19 +27,13 @@ export function AuditForm({
     e.preventDefault();
     setLocalError(null);
 
-    if (!auditCode.trim()) {
-      setLocalError('Audit code is required');
-      return;
-    }
-
     try {
       await onSubmit({
-        auditCode: auditCode.trim(),
         auditType,
         note: note.trim() || undefined,
       });
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to create audit');
+      setLocalError(err instanceof Error ? err.message : 'Không tạo được đợt kiểm kê');
     }
   };
 
@@ -55,27 +47,8 @@ export function AuditForm({
         )}
 
         <div>
-          <Label htmlFor="auditCode" className="font-semibold">
-            Audit Code <span className="text-red-600">*</span>
-          </Label>
-          <Input
-            id="auditCode"
-            type="text"
-            placeholder="e.g., AUDIT-2026-10-001"
-            value={auditCode}
-            onChange={(e) => {
-              setAuditCode(e.target.value);
-              setLocalError(null);
-            }}
-            disabled={loading}
-            className="mt-1"
-          />
-          <p className="text-xs text-gray-500 mt-1">Must be unique within your store.</p>
-        </div>
-
-        <div>
           <Label htmlFor="auditType" className="font-semibold">
-            Audit Type <span className="text-red-600">*</span>
+            Loại kiểm kê <span className="text-red-600">*</span>
           </Label>
           <select
             id="auditType"
@@ -84,19 +57,18 @@ export function AuditForm({
             disabled={loading}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
           >
-            <option value="CATEGORY_AUDIT">Category audit</option>
-            <option value="RE_AUDIT">Re-audit (locks the chosen lots)</option>
-            <option value="NEW_LOTS">New lots</option>
+            <option value="RE_AUDIT">Kiểm kê lại (chỉ dùng lô có sẵn)</option>
+            <option value="NEW_LOTS">Lô mới (mỗi dòng là một lô mới)</option>
           </select>
         </div>
 
         <div>
           <Label htmlFor="note" className="font-semibold">
-            Note (Optional)
+            Ghi chú (không bắt buộc)
           </Label>
           <textarea
             id="note"
-            placeholder="e.g., Monthly inventory check"
+            placeholder="Ví dụ: kiểm kê định kỳ hàng tháng"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             disabled={loading}

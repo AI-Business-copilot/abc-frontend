@@ -30,6 +30,8 @@ Nút **Tạo đơn đặt mua** mở popup ngay trên danh sách. Popup có nút
 
 Danh sách PO/phiếu nhận có tìm kiếm, trạng thái, khoảng ngày và phân trang. Danh sách NCC có tìm kiếm và phân trang. Khi tạo PO, tìm NCC/SKU theo tên hoặc mã cụ thể nếu chưa có trong kết quả đầu.
 
+Các ô nhập tiền trong luồng mua hàng dùng dấu chấm phân cách hàng nghìn và dấu phẩy cho phần thập phân: `500.000.000`, `1.234,50`. State và payload API giữ chuỗi số thuần tương ứng `500000000`, `1234.50`; các phép tính và giới hạn tiền dùng giá trị này.
+
 ## Kiểm tra thủ công với DB thử nghiệm
 
 1. Vào NCC, tạo NCC mới; vào Đơn đặt mua, tạo PO 10 SKU không quản lý lô × 50.000đ. Xác nhận đơn ORDERED, chưa tăng kho/nợ. Sửa giá/ngày khi chưa nhận.
@@ -44,3 +46,21 @@ Danh sách PO/phiếu nhận có tìm kiếm, trạng thái, khoảng ngày và 
 10. Kiểm tra danh sách rỗng, tìm không thấy, API lỗi và tải lại. Khi mất kết nối lúc lưu PO/nhận hàng, tra cứu mã cũ trước khi gửi lại. Bản xem trước nằm trong bộ nhớ trang và mất khi tải lại/chuyển trang; token hết hạn sau 1 giờ.
 
 Kiểm tra tự động: `node --test tests/purchases.test.mjs`; kiểm tra biên dịch và bundle: `npm run build`.
+# Luồng nhận hàng và thanh toán
+
+- Tạo đơn thành công sẽ mở chi tiết đơn, hiển thị ba bước: đặt mua, nhận hàng, thanh toán.
+- Nút Nhận hàng mở popup kiểm đếm ngay trên trang đơn. Tiền trả ngay bằng 0 nghĩa là nhận hàng và trả sau; chỉ cần mở ca khi có trả tiền.
+- Sau khi kiểm tra phiếu, xác nhận để nhập kho và ghi nhận số tiền trả ngay.
+- Mỗi đợt nhận hàng có nút Thanh toán riêng, mở popup thanh toán. Nếu có nhiều phiếu còn nợ, nút Thanh toán trên đơn mở popup chọn phiếu.
+- Nhập số tiền trả lần này hoặc chọn Trả hết. Giao diện tự tính tổng đã trả để gửi API, giữ nguyên hợp đồng thanh toán của backend.
+- Xác nhận nhận hàng hoặc thanh toán xong sẽ đóng popup và cập nhật trang hiện tại. Phiếu đã trả đủ không hiện nút thanh toán.
+
+## Sản phẩm theo nhà cung cấp
+
+- Trong trang NCC, bấm **Xem sản phẩm / SKU** để mở danh sách cung cấp và hàng đã mua; có tìm kiếm, phân trang, tồn hiện tại, giá chào và liên kết phiếu nhập gần nhất.
+- **Thêm SKU cung cấp**: tìm SKU trong danh mục cửa hàng, nhập giá chào và lưu. Có thể cập nhật giá hoặc bỏ cung cấp; lịch sử mua vẫn được giữ.
+- **Hàng đã mua** lấy từ phiếu nhận còn hiệu lực, bao gồm SKU ngừng kinh doanh để tra cứu; không tự coi SKU từng nhập là hàng NCC còn cung cấp.
+- Chọn SKU đang hoạt động, bấm **Tạo đơn mua từ SKU đã chọn**. Popup điền sẵn NCC và các SKU, số lượng ban đầu 1. Giá ưu tiên giá chào, rồi giá nhập gần nhất, rồi giá vốn hiện tại; người dùng kiểm tra/chỉnh lượng và giá trước khi lưu.
+- Đơn mới vẫn khóa mã tự sinh và ngày đặt; ngày giao dự kiến bắt buộc nhập, chỉnh được và không trước ngày đặt. Trường có dấu * và hướng dẫn; bỏ trống khi lưu sẽ hiện thông báo yêu cầu chọn ngày. Sau khi lưu sẽ mở chi tiết đơn để nhận hàng theo luồng hiện có.
+- Tài khoản chỉ đọc có thể xem sản phẩm/lịch sử, không thấy thao tác cập nhật hay tạo đơn.
+- Cần áp dụng migration `20261103090000_supplier_products` ở backend trước khi dùng màn hình này.

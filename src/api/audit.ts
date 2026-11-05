@@ -28,7 +28,7 @@ export type UpdateCountRequest = UpdateAuditItemRequest & { countedQty: number }
 
 export interface AuditItemRequest {
   variantId: string;
-  lotId?: string | null;
+  lotItemId?: string | null;
   countedQty: number;
 }
 
@@ -62,7 +62,7 @@ async function getAuthHeaders() {
   const token = data?.session?.access_token;
 
   if (!token) {
-    throw new Error('Not authenticated');
+    throw new Error('Chưa đăng nhập');
   }
 
   return {
@@ -173,7 +173,7 @@ export const auditApi = {
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('Audit not found');
+          throw new Error('Không tìm thấy đợt kiểm kê');
         }
         throw new Error(`Failed to fetch audit (${response.status})`);
       }
@@ -324,7 +324,7 @@ export const auditApi = {
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('Item not found');
+          throw new Error('Không tìm thấy dòng kiểm kê');
         }
         throw new Error(`Failed to fetch item (${response.status})`);
       }
@@ -447,70 +447,6 @@ export const auditApi = {
       }
 
       return response.json();
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  /**
-   * Approve audit (owner action)
-   */
-  async approveAudit(auditId: string): Promise<StockAudit> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/${auditId}/approve`, {
-        method: 'PATCH',
-        headers,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Failed to approve audit (${response.status})`);
-      }
-
-      return response.json();
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  /**
-   * Apply audit (owner action - finalizes and applies to inventory)
-   */
-  async applyAudit(auditId: string): Promise<StockAudit> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/${auditId}/apply`, {
-        method: 'PATCH',
-        headers,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Failed to apply audit (${response.status})`);
-      }
-
-      return response.json();
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  /**
-   * Delete audit (only when not applied)
-   */
-  async deleteAudit(auditId: string): Promise<void> {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${BASE_URL}/${auditId}`, {
-        method: 'DELETE',
-        headers,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Failed to delete audit (${response.status})`);
-      }
     } catch (error) {
       handleApiError(error);
     }

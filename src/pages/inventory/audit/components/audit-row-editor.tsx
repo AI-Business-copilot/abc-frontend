@@ -4,13 +4,13 @@ import { Input } from '../../../../components/ui/input';
 import { Label } from '../../../../components/ui/label';
 import { Spinner } from '../../../../components/ui/spinner';
 import { auditApi, type BusinessMember } from '../../../../api/audit';
-import type { VariantLot, VariantOption } from '../../../../types/audit';
+import type { AuditType, VariantLot, VariantOption } from '../../../../types/audit';
 import { emptyRow, type AuditRowDraft } from '../audit-rows';
 
 const selectClass =
   'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100';
 
-const formatDate = (value: string | Date) => new Date(value).toLocaleDateString();
+const formatDate = (value: string | Date) => new Date(value).toLocaleDateString('vi-VN');
 
 interface VariantSearchProps {
   value: VariantOption | null;
@@ -65,7 +65,7 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
             setQuery('');
           }}
         >
-          Change
+          Đổi
         </Button>
       </div>
     );
@@ -75,7 +75,7 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
     <div className="relative">
       <Input
         type="text"
-        placeholder="Search SKU or product name"
+        placeholder="Tìm theo SKU hoặc tên sản phẩm"
         value={query}
         disabled={disabled}
         onFocus={() => setOpen(true)}
@@ -92,7 +92,7 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
               <Spinner className="h-4 w-4" />
             </div>
           ) : results.length === 0 ? (
-            <p className="px-3 py-3 text-sm text-gray-500">No SKU found</p>
+            <p className="px-3 py-3 text-sm text-gray-500">Không tìm thấy SKU</p>
           ) : (
             results.map((variant) => (
               <button
@@ -120,13 +120,13 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
 
 interface RowLotSelectProps {
   variantId: string;
-  lotId: string;
-  onChange: (lotId: string) => void;
+  lotItemId: string;
+  onChange: (lotItemId: string) => void;
   disabled?: boolean;
 }
 
-/** Optional lot picker. A chosen lot shows its number and expiry read-only. */
-function RowLotSelect({ variantId, lotId, onChange, disabled }: RowLotSelectProps) {
+/** Required lot picker for a re-audit. A chosen lot shows its number and expiry read-only. */
+function RowLotSelect({ variantId, lotItemId, onChange, disabled }: RowLotSelectProps) {
   const [lots, setLots] = useState<VariantLot[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -148,27 +148,29 @@ function RowLotSelect({ variantId, lotId, onChange, disabled }: RowLotSelectProp
     };
   }, [variantId]);
 
-  const selected = lots.find((lot) => lot.id === lotId);
+  const selected = lots.find((lot) => lot.id === lotItemId);
 
   return (
     <div>
       <select
-        value={lotId}
+        value={lotItemId}
         disabled={disabled || loading}
         onChange={(e) => onChange(e.target.value)}
         className={selectClass}
       >
-        <option value="">Leave empty (the employee picks an existing lot or enters a new lot)</option>
+        <option value="" disabled>
+          Chọn lô
+        </option>
         {lots.map((lot) => (
           <option key={lot.id} value={lot.id}>
-            {lot.lotNumber} • exp {formatDate(lot.expirationDate)} • on hand {lot.onHand}
+            {lot.lotNumber} • HSD {formatDate(lot.expirationDate)} • tồn {lot.onHand}
           </option>
         ))}
       </select>
       {selected && (
         <p className="mt-1 text-xs text-gray-600">
-          Lot number <span className="font-mono">{selected.lotNumber}</span> and expiry{' '}
-          {formatDate(selected.expirationDate)} are filled in automatically.
+          Số lô <span className="font-mono">{selected.lotNumber}</span> và hạn sử dụng{' '}
+          {formatDate(selected.expirationDate)} được điền tự động.
         </p>
       )}
     </div>
@@ -179,10 +181,11 @@ interface AuditRowEditorProps {
   rows: AuditRowDraft[];
   onChange: (rows: AuditRowDraft[]) => void;
   members: BusinessMember[];
+  auditType: AuditType;
   disabled?: boolean;
 }
 
-export function AuditRowEditor({ rows, onChange, members, disabled }: AuditRowEditorProps) {
+export function AuditRowEditor({ rows, onChange, members, auditType, disabled }: AuditRowEditorProps) {
   const updateRow = (key: string, patch: Partial<AuditRowDraft>) => {
     onChange(rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   };
@@ -201,7 +204,7 @@ export function AuditRowEditor({ rows, onChange, members, disabled }: AuditRowEd
       {rows.map((row, index) => (
         <div key={row.key} className="space-y-3 rounded-lg border border-gray-200 p-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-700">Row {index + 1}</p>
+            <p className="text-sm font-semibold text-gray-700">Dòng {index + 1}</p>
             <Button
               type="button"
               variant="outline"
@@ -209,19 +212,19 @@ export function AuditRowEditor({ rows, onChange, members, disabled }: AuditRowEd
               disabled={disabled}
               onClick={() => removeRow(row.key)}
             >
-              Remove
+              Xóa
             </Button>
           </div>
 
           <div>
-            <Label className="text-xs font-medium">Employee</Label>
+            <Label className="text-xs font-medium">Nhân viên</Label>
             <select
               value={row.assignedToUserId}
               disabled={disabled}
               onChange={(e) => updateRow(row.key, { assignedToUserId: e.target.value })}
               className={selectClass}
             >
-              <option value="">Select employee</option>
+              <option value="">Chọn nhân viên</option>
               {members.map((member) => (
                 <option key={member.user.id} value={member.user.id}>
                   {member.user.fullName} ({member.user.email})
@@ -235,26 +238,37 @@ export function AuditRowEditor({ rows, onChange, members, disabled }: AuditRowEd
             <VariantSearch
               value={row.variant}
               disabled={disabled}
-              onChange={(variant) => updateRow(row.key, { variant, lotId: '' })}
+              onChange={(variant) => updateRow(row.key, { variant, lotItemId: '' })}
             />
           </div>
 
-          {row.variant && (
+          {row.variant && auditType === 'RE_AUDIT' && (
             <div>
-              <Label className="text-xs font-medium">Lot (optional)</Label>
+              <Label className="text-xs font-medium">
+                Lô có sẵn <span className="text-red-600">*</span>
+              </Label>
               <RowLotSelect
                 variantId={row.variant.id}
-                lotId={row.lotId}
+                lotItemId={row.lotItemId}
                 disabled={disabled}
-                onChange={(lotId) => updateRow(row.key, { lotId })}
+                onChange={(lotItemId) => updateRow(row.key, { lotItemId })}
               />
+              <p className="mt-1 text-xs text-gray-600">
+                Nhân viên không thể đổi lô này khi đếm. Họ vẫn có thể sửa ngày của lô và nhập số đếm.
+              </p>
             </div>
+          )}
+
+          {row.variant && auditType === 'NEW_LOTS' && (
+            <p className="text-xs text-gray-600">
+              Lô mới: nhân viên nhập số lô và hạn sử dụng khi đếm.
+            </p>
           )}
         </div>
       ))}
 
       <Button type="button" variant="outline" disabled={disabled} onClick={addRow}>
-        + Add row
+        + Thêm dòng
       </Button>
     </div>
   );
