@@ -31,7 +31,7 @@ export function useLoad<T>(read: () => Promise<T>, deps: unknown[]) {
   return { data, error, loading, reload: () => setRevision((value) => value + 1) };
 }
 
-export function useAction() {
+export function useAction(onError?: (message: string) => void) {
   const locked = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +39,7 @@ export function useAction() {
     if (locked.current) return;
     locked.current = true; setBusy(true); setError("");
     try { await action(); }
-    catch (err) { setError(err instanceof Error ? err.message : "Thao tác không thành công."); }
+    catch (err) { const message = err instanceof Error ? err.message : "Thao tác không thành công."; setError(message); onError?.(message); }
     finally { locked.current = false; setBusy(false); }
   };
   return { busy, error, run, setError };
