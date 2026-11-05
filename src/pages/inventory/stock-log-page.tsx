@@ -43,6 +43,84 @@ const mapTypeName = (type?: string, isPositive?: boolean) => {
   }
 };
 
+/**
+ * Định dạng biến động tiền / dòng tiền kế toán theo yêu cầu:
+ * - Hàng tồn / Nhập hàng (OPENING_STOCK, PURCHASE): Dấu TRỪ (-) vì chi tiền vốn nhập hàng.
+ * - Bán hàng (SALE, POS_SALE): Dấu CỘNG (+) vì thu tiền doanh thu về.
+ * - Hàng hỏng / hết hạn (SCRAP): Chỉ trừ số lượng, KHÔNG trừ thêm tiền (tiền đã chi trừ lúc nhập kho).
+ * - Cân chỉnh kiểm kê (ADJUSTMENT): Thừa là (+), thiếu là (-).
+ */
+const getLedgerMoneyDisplay = (type?: string, quantityChanged = 0, totalCostValue = 0) => {
+  const normType = String(type || "").toUpperCase();
+  const absVal = Math.abs(totalCostValue || 0);
+
+  // 1. Hỏng / hết hạn / xuất hủy: Chỉ trừ số lượng, không trừ thêm tiền
+  if (normType.includes("SCRAP")) {
+    return {
+      formatted: "0 đ",
+      subtext: "Đã tính vốn lúc nhập",
+      className: "text-gray-400 font-medium italic",
+    };
+  }
+
+  // 2. Nhập hàng / Nạp tồn đầu kỳ / Nhập PO: Dòng tiền vốn chi ra nhập hàng -> Dấu TRỪ (-)
+  if (normType === "OPENING_STOCK" || normType.includes("PURCHASE") || normType === "PURCHASE_RECEIPT") {
+    return {
+      formatted: `-${vnd(absVal)}`,
+      subtext: "Vốn nhập hàng (-)",
+      className: "text-rose-600 font-bold",
+    };
+  }
+
+  // 3. Bán được hàng (POS_SALE, SALE): Tiền doanh thu thu về -> Dấu CỘNG (+)
+  if (normType.includes("SALE") || normType === "POS_SALE") {
+    return {
+      formatted: `+${vnd(absVal)}`,
+      subtext: "Tiền thu bán (+)",
+      className: "text-emerald-600 font-bold",
+    };
+  }
+
+  // 4. Trả hàng nhà cung cấp (NCC hoàn lại tiền) -> Dấu CỘNG (+)
+  if (normType.includes("VENDOR_RETURN")) {
+    return {
+      formatted: `+${vnd(absVal)}`,
+      subtext: "NCC hoàn tiền (+)",
+      className: "text-emerald-600 font-bold",
+    };
+  }
+
+  // 5. Khách trả hàng (hoàn tiền lại cho khách) -> Dấu TRỪ (-)
+  if (normType.includes("CUSTOMER_RETURN")) {
+    return {
+      formatted: `-${vnd(absVal)}`,
+      subtext: "Hoàn tiền khách (-)",
+      className: "text-rose-600 font-bold",
+    };
+  }
+
+  // 6. Cân chỉnh kiểm kê (ADJUSTMENT)
+  if (quantityChanged > 0) {
+    return {
+      formatted: `+${vnd(absVal)}`,
+      subtext: "Kiểm kê tăng (+)",
+      className: "text-emerald-600 font-bold",
+    };
+  } else if (quantityChanged < 0) {
+    return {
+      formatted: `-${vnd(absVal)}`,
+      subtext: "Hao hụt kiểm kê (-)",
+      className: "text-rose-600 font-bold",
+    };
+  }
+
+  return {
+    formatted: "0 đ",
+    subtext: "",
+    className: "text-gray-500",
+  };
+};
+
 export function StockLogPage() {
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
@@ -292,9 +370,9 @@ export function StockLogPage() {
                     <th className="px-5 py-3.5">Thời gian &amp; Mã phiếu</th>
                     <th className="px-4 py-3.5">Sản phẩm &amp; SKU</th>
                     <th className="px-4 py-3.5 text-center">Loại biến động</th>
-                    <th className="px-4 py-3.5 text-right">Biến động</th>
+                    <th className="px-4 py-3.5 text-right">Biến động (SL)</th>
                     <th className="px-4 py-3.5 text-right">Tồn sau</th>
-                    <th className="px-4 py-3.5 text-right">Giá trị thay đổi</th>
+                    <th className="px-4 py-3.5 text-right">Dòng tiền / Giá trị</th>
                     <th className="px-5 py-3.5">Người thực hiện</th>
                   </tr>
                 </thead>
@@ -367,9 +445,19 @@ export function StockLogPage() {
                           {Number(row.balanceAfter ?? 0).toLocaleString("vi-VN")}
                         </td>
                         <td className="px-4 py-3.5 text-right font-mono font-bold">
-                          <span className={isPositive ? "text-emerald-600" : "text-rose-600"}>
-                            {isPositive ? `+${vnd(row.totalCostValue)}` : `-${vnd(Math.abs(row.totalCostValue))}`}
-                          </span>
+                          {(() => {
+                            const money = getLedgerMoneyDisplay(rawType, row.quantityChanged, row.totalCostValue);
+                            return (
+                              <div>
+                                <span className={money.className}>{money.formatted}</span>
+                                {money.subtext && (
+                                  <div className="text-[10px] text-gray-400 font-normal mt-0.5">
+                                    {money.subtext}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="px-5 py-3.5 text-gray-600 text-[12px]">
                           {row.createdBy || "Hệ thống"}
