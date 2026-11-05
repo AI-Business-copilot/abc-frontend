@@ -123,6 +123,14 @@ function ProductCard({
             alt={product.name}
             className="w-full h-full object-cover transition-all duration-500 transform group-hover:scale-105"
             loading="lazy"
+            onError={(e) => {
+              const target = e.currentTarget;
+              target.style.display = "none";
+              const parent = target.parentElement;
+              if (parent) {
+                parent.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-[#f2f4f7] text-[#98a2b3]"><span class="material-symbols-outlined text-[40px]">image</span></div>';
+              }
+            }}
           />
         ) : (
           <div className="w-full h-full grid place-items-center text-[#98a2b3]">
@@ -412,7 +420,12 @@ function SkuModal({
                               alt={sku.sku}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                (e.currentTarget as HTMLElement).style.display = "none";
+                                const target = e.currentTarget;
+                                target.style.display = "none";
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  parent.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400"><span class="material-symbols-outlined text-[18px]">image</span></div>';
+                                }
                               }}
                             />
                           </button>
