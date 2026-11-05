@@ -7,6 +7,8 @@ interface DiscrepancyFormProps {
   initialReason?: string | null;
   onReasonChange: (reason: string | null) => void;
   disabled?: boolean;
+  /** A new lot has no system quantity, so the reason is labelled as a counting note. */
+  isNewLot?: boolean;
 }
 
 const MAX_REASON_LENGTH = 1000;
@@ -16,6 +18,7 @@ export function DiscrepancyForm({
   initialReason = '',
   onReasonChange,
   disabled = false,
+  isNewLot = false,
 }: DiscrepancyFormProps) {
   const [reason, setReason] = useState(initialReason || '');
   const charCount = reason.length;
@@ -40,14 +43,14 @@ export function DiscrepancyForm({
         <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
         <div className="flex-1">
           <Label className="text-sm font-semibold text-amber-900">
-            Lý do chênh lệch <span className="text-red-600">*</span>
+            {isNewLot ? 'Lý do kiểm kê' : 'Lý do chênh lệch'} <span className="text-red-600">*</span>
           </Label>
           <p className="text-xs text-amber-800 mt-1">
             Bắt buộc nhập lý do cho mọi dòng kiểm kê.
           </p>
           {hasDiff && (
             <p className="text-xs text-amber-800 mt-1">
-              Chênh lệch {diffQty} đơn vị so với SL hệ thống. Vui lòng giải thích lý do.
+              Chênh lệch {diffQty} đơn vị so với Số Lượng hàng trong hệ thống. Vui lòng giải thích lý do.
             </p>
           )}
         </div>

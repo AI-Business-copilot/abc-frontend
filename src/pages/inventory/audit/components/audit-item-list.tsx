@@ -156,25 +156,29 @@ export function AuditItemList({
               </div>
 
               <div className="flex-shrink-0 text-right min-w-max">
-                <div className="grid grid-cols-3 gap-4 mb-3">
-                  <div>
-                    <p className="text-xs text-gray-500">SL hệ thống</p>
-                    <p className="text-lg font-semibold text-gray-900">{item.snapshotQty}</p>
-                  </div>
+                <div className={`grid gap-4 mb-3 ${item.isNewLot ? 'grid-cols-1' : 'grid-cols-3'}`}>
+                  {!item.isNewLot && (
+                    <div>
+                      <p className="text-xs text-gray-500">Số Lượng hàng trong hệ thống</p>
+                      <p className="text-lg font-semibold text-gray-900">{item.snapshotQty}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-xs text-gray-500">Số Lượng Hàng Sử Dụng Được</p>
                     <p className="text-lg font-semibold text-gray-900">{item.countedQty}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Chênh lệch</p>
-                    <p
-                      className={`text-lg font-semibold ${hasDiscrepancy ? 'text-red-600' : 'text-green-600'
-                        }`}
-                    >
-                      {item.diffQty >= 0 ? '+' : ''}
-                      {item.diffQty}
-                    </p>
-                  </div>
+                  {!item.isNewLot && (
+                    <div>
+                      <p className="text-xs text-gray-500">Chênh lệch</p>
+                      <p
+                        className={`text-lg font-semibold ${hasDiscrepancy ? 'text-red-600' : 'text-green-600'
+                          }`}
+                      >
+                        {item.diffQty >= 0 ? '+' : ''}
+                        {item.diffQty}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

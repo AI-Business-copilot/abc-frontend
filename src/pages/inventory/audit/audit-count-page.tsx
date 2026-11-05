@@ -188,13 +188,15 @@ export function AuditCountPage() {
               initialCountedQty={countedQty}
               onCountChange={setCountedQty}
               disabled={saving || !editable}
+              isNewLot={item.isNewLot}
             />
 
             <DiscrepancyForm
-              diffQty={countedQty - systemQty}
+              diffQty={item.isNewLot ? null : countedQty - systemQty}
               initialReason={discrepancyReason}
               onReasonChange={setDiscrepancyReason}
               disabled={saving || !editable}
+              isNewLot={item.isNewLot}
             />
           </div>
 

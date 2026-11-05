@@ -158,6 +158,8 @@ export function AuditItemDetailPage() {
 
   const diff = item.countedQty - item.snapshotQty;
   const hasDiff = diff !== 0;
+  // A new lot is not in the system yet, so there is no system quantity or difference to show
+  const isNewLot = Boolean(item.isNewLot);
   const canReview = audit?.status === 'IN_PROGRESS' && item.itemStatus === 'PENDING_APPROVAL';
   const wasRejected = item.itemStatus === 'IN_PROGRESS' && Boolean(item.rejectionReason);
 
@@ -219,22 +221,28 @@ export function AuditItemDetailPage() {
           <Field label="Giao cho">{item.assignedTo?.name ?? '—'}</Field>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 rounded-lg bg-gray-50 p-4 text-center">
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">SL hệ thống</p>
-            <p className="text-2xl font-semibold text-gray-900">{item.snapshotQty}</p>
-          </div>
+        <div
+          className={`grid gap-4 rounded-lg bg-gray-50 p-4 text-center ${isNewLot ? 'grid-cols-1' : 'grid-cols-3'}`}
+        >
+          {!isNewLot && (
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Số Lượng hàng trong hệ thống</p>
+              <p className="text-2xl font-semibold text-gray-900">{item.snapshotQty}</p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide">Số Lượng Hàng Sử Dụng Được</p>
             <p className="text-2xl font-semibold text-gray-900">{item.countedQty}</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Chênh lệch</p>
-            <p className={`text-2xl font-semibold ${hasDiff ? 'text-red-600' : 'text-green-600'}`}>
-              {diff > 0 ? '+' : ''}
-              {diff}
-            </p>
-          </div>
+          {!isNewLot && (
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Chênh lệch</p>
+              <p className={`text-2xl font-semibold ${hasDiff ? 'text-red-600' : 'text-green-600'}`}>
+                {diff > 0 ? '+' : ''}
+                {diff}
+              </p>
+            </div>
+          )}
         </div>
 
         {item.datesCorrected && (
@@ -245,7 +253,7 @@ export function AuditItemDetailPage() {
 
         <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-900">
-            {hasDiff ? `Lý do chênh lệch ${diff > 0 ? '+' : ''}${diff}` : 'Lý do kiểm kê'}
+            {!isNewLot && hasDiff ? `Lý do chênh lệch ${diff > 0 ? '+' : ''}${diff}` : 'Lý do kiểm kê'}
           </p>
           <p className="text-sm text-amber-800 mt-1 whitespace-pre-wrap">
             {item.discrepancyReason || 'Không có lý do nào được nhập.'}

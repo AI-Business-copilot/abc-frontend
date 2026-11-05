@@ -8,6 +8,8 @@ interface ItemCounterProps {
   initialCountedQty?: number;
   onCountChange: (countedQty: number) => void;
   disabled?: boolean;
+  /** A new lot does not exist in the system yet, so only the count is shown. */
+  isNewLot?: boolean;
 }
 
 export function ItemCounter({
@@ -15,10 +17,12 @@ export function ItemCounter({
   initialCountedQty = 0,
   onCountChange,
   disabled = false,
+  isNewLot = false,
 }: ItemCounterProps) {
   const [countedQty, setCountedQty] = useState(initialCountedQty);
   const diffQty = countedQty - snapshotQty;
   const hasDiscrepancy = diffQty !== 0;
+  const showSystemQty = !isNewLot;
 
   useEffect(() => {
     setCountedQty(initialCountedQty);
@@ -44,11 +48,13 @@ export function ItemCounter({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <Label className="text-sm font-medium">SL hệ thống</Label>
-          <p className="text-lg font-semibold text-gray-900">{snapshotQty}</p>
-        </div>
+      <div className={`flex items-center ${showSystemQty ? 'justify-between' : 'justify-center'}`}>
+        {showSystemQty && (
+          <div>
+            <Label className="text-sm font-medium">Số Lượng hàng trong hệ thống</Label>
+            <p className="text-lg font-semibold text-gray-900">{snapshotQty}</p>
+          </div>
+        )}
 
         <div className="flex flex-col items-center gap-2">
           <Label htmlFor="counted-qty" className="text-sm font-medium">
@@ -87,21 +93,23 @@ export function ItemCounter({
           </div>
         </div>
 
-        <div>
-          <Label className="text-sm font-medium">Chênh lệch</Label>
-          <p
-            className={`text-lg font-semibold ${hasDiscrepancy ? 'text-red-600' : 'text-green-600'
-              }`}
-          >
-            {diffQty >= 0 ? '+' : ''}
-            {diffQty}
-          </p>
-        </div>
+        {showSystemQty && (
+          <div>
+            <Label className="text-sm font-medium">Chênh lệch</Label>
+            <p
+              className={`text-lg font-semibold ${hasDiscrepancy ? 'text-red-600' : 'text-green-600'
+                }`}
+            >
+              {diffQty >= 0 ? '+' : ''}
+              {diffQty}
+            </p>
+          </div>
+        )}
       </div>
 
-      {hasDiscrepancy && (
+      {showSystemQty && hasDiscrepancy && (
         <div className="rounded-md bg-amber-50 p-2 text-sm text-amber-700">
-          Có chênh lệch so với SL hệ thống. Vui lòng nhập lý do.
+          Có chênh lệch so với Số Lượng hàng trong hệ thống. Vui lòng nhập lý do.
         </div>
       )}
     </div>
