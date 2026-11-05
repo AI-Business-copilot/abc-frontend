@@ -21,7 +21,7 @@ export function DiscrepancyForm({
   const hasDiscrepancy = diffQty !== null && diffQty !== 0;
   const isRequired = hasDiscrepancy;
   const charCount = reason.length;
-  const isOver = charCount > MAX_REASON_LENGTH;
+  // const isOver = charCount > MAX_REASON_LENGTH;
 
   useEffect(() => {
     setReason(initialReason || '');
