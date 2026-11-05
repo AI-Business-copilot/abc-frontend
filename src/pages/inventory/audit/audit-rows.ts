@@ -20,19 +20,19 @@ export function emptyRow(assignedToUserId = ''): AuditRowDraft {
 
 /** Returns an error message, or null when every row is complete and unique. */
 export function validateRows(rows: AuditRowDraft[], auditType: AuditType): string | null {
-  if (rows.length === 0) return 'Add at least one row (employee + SKU).';
+  if (rows.length === 0) return 'Cần thêm ít nhất một dòng (nhân viên + SKU).';
 
   const seen = new Set<string>();
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i];
-    if (!row.assignedToUserId) return `Row ${i + 1}: choose an employee.`;
-    if (!row.variant) return `Row ${i + 1}: choose a SKU.`;
+    if (!row.assignedToUserId) return `Dòng ${i + 1}: hãy chọn nhân viên.`;
+    if (!row.variant) return `Dòng ${i + 1}: hãy chọn SKU.`;
     if (auditType === 'RE_AUDIT' && !row.lotItemId) {
-      return `Row ${i + 1}: choose an existing lot. A re-audit keeps the lot you pick.`;
+      return `Dòng ${i + 1}: hãy chọn một lô có sẵn. Kiểm kê lại giữ nguyên lô bạn chọn.`;
     }
     if (row.lotItemId) {
       const key = `${row.variant.id}:${row.lotItemId}`;
-      if (seen.has(key)) return `Row ${i + 1}: duplicate SKU and lot.`;
+      if (seen.has(key)) return `Dòng ${i + 1}: trùng SKU và lô.`;
       seen.add(key);
     }
   }
@@ -62,7 +62,7 @@ export function useStaffMembers() {
         setMembers(data.members.filter((m) => m.role === 'STAFF' && m.status === 'ACTIVE'));
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load staff members');
+          setError(err instanceof Error ? err.message : 'Không tải được danh sách nhân viên');
         }
       } finally {
         if (!cancelled) setLoading(false);

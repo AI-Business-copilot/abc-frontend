@@ -16,7 +16,7 @@ export function AuditCreatePage() {
     try {
       const newAudit = await createAudit(data);
       navigate(`/inventory/audit/${newAudit.id}`, {
-        state: { message: 'Audit created. Add items to start counting.', openAddItems: true },
+        state: { message: 'Đã tạo đợt kiểm kê. Hãy thêm dòng để bắt đầu đếm.', openAddItems: true },
       });
     } catch (err) {
       // Error is handled by the form
@@ -32,11 +32,11 @@ export function AuditCreatePage() {
           variant="outline"
           onClick={() => navigate('/inventory/audit')}
         >
-          ← Back to Audits
+          ← Quay lại danh sách
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create New Audit</h1>
-          <p className="text-gray-600 mt-1">Start a new inventory audit</p>
+          <h1 className="text-3xl font-bold text-gray-900">Tạo đợt kiểm kê mới</h1>
+          <p className="text-gray-600 mt-1">Bắt đầu một đợt kiểm kê tồn kho</p>
         </div>
       </div>
 
@@ -56,19 +56,19 @@ export function AuditCreatePage() {
         onSubmit={handleSubmit}
         loading={loading}
         error={error}
-        submitLabel={loading ? 'Creating...' : 'Create Audit'}
+        submitLabel={loading ? 'Đang tạo...' : 'Tạo đợt kiểm kê'}
       />
 
       <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
-        <p className="font-semibold mb-2">Before creating an audit:</p>
+        <p className="font-semibold mb-2">Trước khi tạo đợt kiểm kê:</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
-          <li>Create the audit first, then add items on its detail page</li>
+          <li>Tạo đợt kiểm kê trước, sau đó thêm dòng ở trang chi tiết</li>
           <li>
-            The audit type decides the lots: New lots means every item is a new lot the employee types
-            in; Re-audit means every item uses an existing lot you pick when adding it
+            Loại kiểm kê quyết định cách xử lý lô: Lô mới nghĩa là mỗi dòng là một lô mới do nhân viên
+            nhập; Kiểm kê lại nghĩa là mỗi dòng dùng một lô có sẵn do bạn chọn khi thêm dòng
           </li>
-          <li>On a re-audit the employee keeps that lot and can still correct its dates and enter the count</li>
-          <li>A lot that does not exist yet is created when you apply the audit</li>
+          <li>Với kiểm kê lại, nhân viên giữ nguyên lô đó nhưng vẫn có thể sửa ngày của lô và nhập số đếm</li>
+          <li>Lô chưa tồn tại sẽ được tạo khi bạn áp dụng đợt kiểm kê</li>
         </ul>
       </div>
       </main>

@@ -15,10 +15,10 @@ import type { StockAuditItem } from '../../../types/audit';
 const MAX_REJECT_REASON = 1000;
 
 const formatDateTime = (value?: string | Date | null) =>
-  value ? new Date(value).toLocaleString() : '—';
+  value ? new Date(value).toLocaleString('vi-VN') : '—';
 
 const formatDate = (value?: string | Date | null) =>
-  value ? new Date(value).toLocaleDateString() : '—';
+  value ? new Date(value).toLocaleDateString('vi-VN') : '—';
 
 /** Compares two dates by calendar day. */
 const sameDay = (a?: string | Date | null, b?: string | Date | null) =>
@@ -59,7 +59,7 @@ export function AuditItemDetailPage() {
       setLoadError(null);
       setItem(await auditApi.getAuditItem(auditId, itemId));
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load item');
+      setLoadError(err instanceof Error ? err.message : 'Không tải được dòng kiểm kê');
     } finally {
       setLoading(false);
     }
@@ -80,11 +80,11 @@ export function AuditItemDetailPage() {
       const result = await auditApi.approveAuditItem(auditId, item.id);
       backToAudit(
         result.auditAutoApplied
-          ? `${item.sku} approved. All items are approved, so the audit was applied to inventory.`
-          : `${item.sku} approved`
+          ? `${item.sku} đã được duyệt. Tất cả dòng đã được duyệt nên đợt kiểm kê đã được áp dụng vào tồn kho.`
+          : `${item.sku} đã được duyệt`
       );
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Failed to approve item');
+      setActionError(err instanceof Error ? err.message : 'Không duyệt được dòng kiểm kê');
     } finally {
       setActing(false);
     }
@@ -94,16 +94,16 @@ export function AuditItemDetailPage() {
     if (!auditId || !item) return;
     const reason = rejectReason.trim();
     if (!reason) {
-      setActionError('Please enter a reason so the employee knows what to recount.');
+      setActionError('Vui lòng nhập lý do để nhân viên biết cần đếm lại gì.');
       return;
     }
     try {
       setActing(true);
       setActionError(null);
       await auditApi.rejectAuditItem(auditId, item.id, reason);
-      backToAudit(`${item.sku} sent back to ${item.assignedTo?.name ?? 'the employee'} for a recount`);
+      backToAudit(`${item.sku} đã được trả lại cho ${item.assignedTo?.name ?? 'nhân viên'} để đếm lại`);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Failed to reject item');
+      setActionError(err instanceof Error ? err.message : 'Không trả lại được dòng kiểm kê');
     } finally {
       setActing(false);
     }
@@ -118,11 +118,11 @@ export function AuditItemDetailPage() {
   const header = (
     <div className="flex items-center gap-4">
       <Button variant="outline" onClick={() => backToAudit()}>
-        ← Back to Audit
+        ← Quay lại kiểm kê
       </Button>
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Item details</h1>
-        {audit && <p className="text-gray-600 mt-1">Audit {audit.auditCode}</p>}
+        <h1 className="text-3xl font-bold text-gray-900">Chi tiết dòng kiểm kê</h1>
+        {audit && <p className="text-gray-600 mt-1">Đợt kiểm kê {audit.auditCode}</p>}
       </div>
     </div>
   );
@@ -151,7 +151,7 @@ export function AuditItemDetailPage() {
     return pageFrame(
       <div className="space-y-6">
         {header}
-        <Alert className="bg-red-50 border-red-200 text-red-700">{loadError || 'Item not found'}</Alert>
+        <Alert className="bg-red-50 border-red-200 text-red-700">{loadError || 'Không tìm thấy dòng kiểm kê'}</Alert>
       </div>,
     );
   }
@@ -189,47 +189,47 @@ export function AuditItemDetailPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <Field label="Lot">
+          <Field label="Lô">
             {item.lotNumber ? (
               <>
                 {item.lotNumber}
-                {item.isNewLot && <span className="ml-2 text-xs text-amber-700">new lot</span>}
+                {item.isNewLot && <span className="ml-2 text-xs text-amber-700">lô mới</span>}
               </>
             ) : (
-              <span className="text-amber-700">Not chosen yet</span>
+              <span className="text-amber-700">Chưa chọn</span>
             )}
           </Field>
-          <Field label="Expiry">
+          <Field label="Hạn sử dụng">
             {formatDate(item.expirationDate)}
             {item.datesCorrected && sameDay(item.lotExpirationDate, item.expirationDate) === false && (
               <span className="block text-xs text-amber-700">
-                Corrected from {formatDate(item.lotExpirationDate)}
+                Đã sửa từ {formatDate(item.lotExpirationDate)}
               </span>
             )}
           </Field>
-          <Field label="Manufactured">
+          <Field label="Ngày sản xuất">
             {formatDate(item.manufacturingDate)}
             {item.datesCorrected &&
               sameDay(item.lotManufacturingDate, item.manufacturingDate) === false && (
                 <span className="block text-xs text-amber-700">
-                  Corrected from {formatDate(item.lotManufacturingDate)}
+                  Đã sửa từ {formatDate(item.lotManufacturingDate)}
                 </span>
               )}
           </Field>
-          <Field label="Assigned to">{item.assignedTo?.name ?? '—'}</Field>
+          <Field label="Giao cho">{item.assignedTo?.name ?? '—'}</Field>
         </div>
 
         <div className="grid grid-cols-3 gap-4 rounded-lg bg-gray-50 p-4 text-center">
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">System</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">SL hệ thống</p>
             <p className="text-2xl font-semibold text-gray-900">{item.snapshotQty}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Counted</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Số Lượng Hàng Sử Dụng Được</p>
             <p className="text-2xl font-semibold text-gray-900">{item.countedQty}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Difference</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Chênh lệch</p>
             <p className={`text-2xl font-semibold ${hasDiff ? 'text-red-600' : 'text-green-600'}`}>
               {diff > 0 ? '+' : ''}
               {diff}
@@ -239,40 +239,35 @@ export function AuditItemDetailPage() {
 
         {item.datesCorrected && (
           <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            The employee corrected this lot's dates. They are written to the lot when the audit is applied.
+            Nhân viên đã sửa ngày của lô này. Ngày sẽ được ghi vào lô khi đợt kiểm kê được áp dụng.
           </p>
         )}
 
-        {hasDiff ? (
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
-            <p className="text-sm font-semibold text-amber-900">
-              Reason for the difference of {diff > 0 ? '+' : ''}
-              {diff}
-            </p>
-            <p className="text-sm text-amber-800 mt-1 whitespace-pre-wrap">
-              {item.discrepancyReason || 'No reason was given.'}
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm text-green-700">The counted quantity matches the system quantity.</p>
-        )}
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-900">
+            {hasDiff ? `Lý do chênh lệch ${diff > 0 ? '+' : ''}${diff}` : 'Lý do kiểm kê'}
+          </p>
+          <p className="text-sm text-amber-800 mt-1 whitespace-pre-wrap">
+            {item.discrepancyReason || 'Không có lý do nào được nhập.'}
+          </p>
+        </div>
 
         {wasRejected && (
           <div className="rounded-md border border-red-200 bg-red-50 p-4">
             <p className="text-sm font-semibold text-red-900">
-              Sent back for a recount
-              {item.rejectedBy ? ` by ${item.rejectedBy.name}` : ''} on {formatDateTime(item.rejectedAt)}
+              Bị trả lại để đếm lại
+              {item.rejectedBy ? ` bởi ${item.rejectedBy.name}` : ''} lúc {formatDateTime(item.rejectedAt)}
             </p>
             <p className="text-sm text-red-800 mt-1 whitespace-pre-wrap">{item.rejectionReason}</p>
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 border-t border-gray-200 pt-4">
-          <Field label="Created by">{item.createdBy?.name ?? '—'}</Field>
-          <Field label="Submitted by">
+          <Field label="Người tạo">{item.createdBy?.name ?? '—'}</Field>
+          <Field label="Người gửi">
             {item.submittedBy ? `${item.submittedBy.name} · ${formatDateTime(item.submittedAt)}` : '—'}
           </Field>
-          <Field label="Approved by">
+          <Field label="Người duyệt">
             {item.approvedBy ? `${item.approvedBy.name} · ${formatDateTime(item.approvedAt)}` : '—'}
           </Field>
         </div>
@@ -281,12 +276,12 @@ export function AuditItemDetailPage() {
       <PermissionGate permission="inventory.audit.approve_item" fallback={null}>
         {canReview && (
           <Card className="p-6 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Review</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Duyệt dòng kiểm kê</h3>
 
             {rejecting ? (
               <div className="space-y-3">
                 <Label htmlFor="rejectReason" className="font-semibold">
-                  Why is this count being sent back? <span className="text-red-600">*</span>
+                  Vì sao trả lại kết quả đếm này? <span className="text-red-600">*</span>
                 </Label>
                 <textarea
                   id="rejectReason"
@@ -294,7 +289,7 @@ export function AuditItemDetailPage() {
                   onChange={(e) => setRejectReason(e.target.value.slice(0, MAX_REJECT_REASON))}
                   disabled={acting}
                   rows={3}
-                  placeholder="e.g., Please recount shelf B2, the quantity looks too low."
+                  placeholder="Ví dụ: vui lòng đếm lại kệ B2, số lượng có vẻ quá thấp."
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 resize-none"
                 />
                 <div className="flex items-center justify-between">
@@ -310,14 +305,14 @@ export function AuditItemDetailPage() {
                         setActionError(null);
                       }}
                     >
-                      Cancel
+                      Hủy
                     </Button>
                     <Button
                       onClick={handleReject}
                       disabled={acting}
                       className="bg-red-600 hover:bg-red-700 text-white"
                     >
-                      {acting ? 'Sending back...' : 'Send back for recount'}
+                      {acting ? 'Đang trả lại...' : 'Trả lại để đếm lại'}
                     </Button>
                   </div>
                 </div>
@@ -329,10 +324,10 @@ export function AuditItemDetailPage() {
                   disabled={acting}
                   className="bg-green-600 hover:bg-green-700 text-white"
                 >
-                  {acting ? 'Approving...' : 'Approve'}
+                  {acting ? 'Đang duyệt...' : 'Duyệt'}
                 </Button>
                 <Button variant="outline" disabled={acting} onClick={() => setRejecting(true)}>
-                  Reject
+                  Từ chối
                 </Button>
               </div>
             )}

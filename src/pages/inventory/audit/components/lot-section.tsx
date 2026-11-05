@@ -54,12 +54,11 @@ function NewLot({ item, disabled, onChange }: ModeProps) {
   return (
     <div className="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
       <p className="text-xs text-amber-800">
-        This is a new lot that is not in the system yet. It will be created when the owner applies the
-        audit.
+        Đây là lô mới chưa có trong hệ thống. Lô sẽ được tạo khi chủ cửa hàng áp dụng đợt kiểm kê.
       </p>
       <div>
         <Label htmlFor="new-lot-number" className="text-xs font-medium">
-          Lot number <span className="text-red-600">*</span>
+          Số lô <span className="text-red-600">*</span>
         </Label>
         <Input
           id="new-lot-number"
@@ -76,7 +75,7 @@ function NewLot({ item, disabled, onChange }: ModeProps) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label htmlFor="new-lot-expiry" className="text-xs font-medium">
-            Expiration date <span className="text-red-600">*</span>
+            Hạn sử dụng <span className="text-red-600">*</span>
           </Label>
           <Input
             id="new-lot-expiry"
@@ -92,7 +91,7 @@ function NewLot({ item, disabled, onChange }: ModeProps) {
         </div>
         <div>
           <Label htmlFor="new-lot-mfg" className="text-xs font-medium">
-            Manufacturing date (optional)
+            Ngày sản xuất (không bắt buộc)
           </Label>
           <Input
             id="new-lot-mfg"
@@ -134,12 +133,12 @@ function FixedLot({ item, disabled, onChange }: ModeProps) {
     <div className="space-y-2">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div>
-          <Label className="text-xs font-medium">Lot number</Label>
+          <Label className="text-xs font-medium">Số lô</Label>
           <Input value={item.lotNumber ?? ''} readOnly disabled className="mt-1 bg-gray-100" />
         </div>
         <div>
           <Label htmlFor="lot-expiry" className="text-xs font-medium">
-            Expiration date <span className="text-red-600">*</span>
+            Hạn sử dụng <span className="text-red-600">*</span>
           </Label>
           <Input
             id="lot-expiry"
@@ -153,12 +152,12 @@ function FixedLot({ item, disabled, onChange }: ModeProps) {
             className="mt-1"
           />
           {expiryChanged && (
-            <p className="mt-1 text-xs text-amber-700">System: {toDateInput(item.lotExpirationDate)}</p>
+            <p className="mt-1 text-xs text-amber-700">Hệ thống: {toDateInput(item.lotExpirationDate)}</p>
           )}
         </div>
         <div>
           <Label htmlFor="lot-mfg" className="text-xs font-medium">
-            Manufacturing date
+            Ngày sản xuất
           </Label>
           <Input
             id="lot-mfg"
@@ -173,26 +172,26 @@ function FixedLot({ item, disabled, onChange }: ModeProps) {
           />
           {mfgChanged && (
             <p className="mt-1 text-xs text-amber-700">
-              System: {toDateInput(item.lotManufacturingDate) || 'not set'}
+              Hệ thống: {toDateInput(item.lotManufacturingDate) || 'chưa có'}
             </p>
           )}
         </div>
       </div>
       {item.lotItemId ? (
         <p className="text-xs text-gray-600">
-          The lot was assigned by the owner and cannot be changed. You can still correct its dates.
+          Lô đã được chủ cửa hàng chỉ định và không thể thay đổi. Bạn vẫn có thể sửa ngày của lô.
         </p>
       ) : (
-        <p className="text-xs text-red-600">No lot was assigned to this row. Ask the owner to fix it.</p>
+        <p className="text-xs text-red-600">Dòng này chưa được gán lô. Hãy báo chủ cửa hàng xử lý.</p>
       )}
       {(expiryChanged || mfgChanged) && !dateOrderInvalid && (
         <p className="text-xs text-amber-800">
-          The lot's date will be corrected when the owner applies the audit.
+          Ngày của lô sẽ được cập nhật khi chủ cửa hàng áp dụng đợt kiểm kê.
         </p>
       )}
       {dateOrderInvalid && (
         <p className="text-xs text-red-600">
-          The manufacturing date cannot be after the expiration date.
+          Ngày sản xuất không được sau hạn sử dụng.
         </p>
       )}
     </div>

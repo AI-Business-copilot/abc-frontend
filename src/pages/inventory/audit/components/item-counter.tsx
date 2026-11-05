@@ -46,13 +46,13 @@ export function ItemCounter({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <Label className="text-sm font-medium">System Qty</Label>
+          <Label className="text-sm font-medium">SL hệ thống</Label>
           <p className="text-lg font-semibold text-gray-900">{snapshotQty}</p>
         </div>
 
         <div className="flex flex-col items-center gap-2">
           <Label htmlFor="counted-qty" className="text-sm font-medium">
-            Usable Qty
+            Số Lượng Hàng Sử Dụng Được
           </Label>
           <div className="flex items-center gap-2">
             <Button
@@ -88,7 +88,7 @@ export function ItemCounter({
         </div>
 
         <div>
-          <Label className="text-sm font-medium">Difference</Label>
+          <Label className="text-sm font-medium">Chênh lệch</Label>
           <p
             className={`text-lg font-semibold ${hasDiscrepancy ? 'text-red-600' : 'text-green-600'
               }`}
@@ -101,7 +101,7 @@ export function ItemCounter({
 
       {hasDiscrepancy && (
         <div className="rounded-md bg-amber-50 p-2 text-sm text-amber-700">
-          Discrepancy detected. Please provide a reason.
+          Có chênh lệch so với SL hệ thống. Vui lòng nhập lý do.
         </div>
       )}
     </div>

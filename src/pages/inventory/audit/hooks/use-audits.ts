@@ -49,7 +49,7 @@ export function useAudits(initialFilter?: AuditFilter) {
     } catch (error) {
       setState((prev) => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Failed to fetch audits',
+        error: error instanceof Error ? error.message : 'Không tải được danh sách đợt kiểm kê',
         loading: false,
       }));
     }

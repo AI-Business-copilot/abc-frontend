@@ -24,7 +24,7 @@ export function useAuditActions() {
       setState({ loading: false, error: null });
       return audit;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create audit';
+      const message = error instanceof Error ? error.message : 'Không tạo được đợt kiểm kê';
       setState({ loading: false, error: message });
       throw error;
     }

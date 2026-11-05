@@ -62,7 +62,7 @@ async function getAuthHeaders() {
   const token = data?.session?.access_token;
 
   if (!token) {
-    throw new Error('Not authenticated');
+    throw new Error('Chưa đăng nhập');
   }
 
   return {
@@ -173,7 +173,7 @@ export const auditApi = {
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('Audit not found');
+          throw new Error('Không tìm thấy đợt kiểm kê');
         }
         throw new Error(`Failed to fetch audit (${response.status})`);
       }
@@ -324,7 +324,7 @@ export const auditApi = {
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('Item not found');
+          throw new Error('Không tìm thấy dòng kiểm kê');
         }
         throw new Error(`Failed to fetch item (${response.status})`);
       }

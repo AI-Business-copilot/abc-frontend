@@ -18,8 +18,6 @@ export function DiscrepancyForm({
   disabled = false,
 }: DiscrepancyFormProps) {
   const [reason, setReason] = useState(initialReason || '');
-  const hasDiscrepancy = diffQty !== null && diffQty !== 0;
-  const isRequired = hasDiscrepancy;
   const charCount = reason.length;
 
   useEffect(() => {
@@ -34,9 +32,7 @@ export function DiscrepancyForm({
     }
   };
 
-  if (!hasDiscrepancy) {
-    return null;
-  }
+  const hasDiff = diffQty !== null && diffQty !== 0;
 
   return (
     <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-4">
@@ -44,12 +40,16 @@ export function DiscrepancyForm({
         <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
         <div className="flex-1">
           <Label className="text-sm font-semibold text-amber-900">
-            Discrepancy Reason {isRequired && <span className="text-red-600">*</span>}
+            Lý do chênh lệch <span className="text-red-600">*</span>
           </Label>
           <p className="text-xs text-amber-800 mt-1">
-            A difference of {diffQty} unit{Math.abs(diffQty) !== 1 ? 's' : ''} was found.
-            Please explain the reason.
+            Bắt buộc nhập lý do cho mọi dòng kiểm kê.
           </p>
+          {hasDiff && (
+            <p className="text-xs text-amber-800 mt-1">
+              Chênh lệch {diffQty} đơn vị so với SL hệ thống. Vui lòng giải thích lý do.
+            </p>
+          )}
         </div>
       </div>
 
@@ -57,7 +57,7 @@ export function DiscrepancyForm({
         value={reason}
         onChange={handleChange}
         disabled={disabled}
-        placeholder="e.g., Found 1 damaged item in corner, 2 missing tags..."
+        placeholder="Ví dụ: phát hiện 1 sản phẩm bị móp góc, thiếu 2 tem..."
         maxLength={MAX_REASON_LENGTH}
         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 resize-none"
         rows={3}
@@ -67,11 +67,8 @@ export function DiscrepancyForm({
         <div className="text-xs text-gray-500">
           {charCount} / {MAX_REASON_LENGTH}
         </div>
-        {isRequired && !reason && (
-          <div className="text-xs text-red-600 font-medium">This field is required</div>
-        )}
-        {reason && !isRequired && (
-          <div className="text-xs text-green-600 font-medium">✓</div>
+        {!reason && !disabled && (
+          <div className="text-xs text-red-600 font-medium">Bắt buộc nhập trường này</div>
         )}
       </div>
     </div>

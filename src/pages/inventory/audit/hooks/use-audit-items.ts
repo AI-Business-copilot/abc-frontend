@@ -45,7 +45,7 @@ export function useAuditItems(auditId: string | undefined, options: { mine?: boo
       } catch (error) {
         setState((prev) => ({
           ...prev,
-          error: error instanceof Error ? error.message : 'Failed to fetch items',
+          error: error instanceof Error ? error.message : 'Không tải được danh sách dòng kiểm kê',
           loading: false,
         }));
       }
@@ -94,7 +94,7 @@ export function useAuditItems(auditId: string | undefined, options: { mine?: boo
 
         return updated;
       } catch (error) {
-        throw error instanceof Error ? error : new Error('Failed to update item');
+        throw error instanceof Error ? error : new Error('Không cập nhật được dòng kiểm kê');
       }
     },
     [auditId]
@@ -112,7 +112,7 @@ export function useAuditItems(auditId: string | undefined, options: { mine?: boo
         }));
         return updated;
       } catch (error) {
-        throw error instanceof Error ? error : new Error('Failed to submit item');
+        throw error instanceof Error ? error : new Error('Không gửi duyệt được dòng kiểm kê');
       }
     },
     [auditId]
@@ -137,7 +137,7 @@ export function useAuditItems(auditId: string | undefined, options: { mine?: boo
 
         return item;
       } catch (error) {
-        throw error instanceof Error ? error : new Error('Failed to record count');
+        throw error instanceof Error ? error : new Error('Không ghi nhận được số đếm');
       }
     },
     [auditId]

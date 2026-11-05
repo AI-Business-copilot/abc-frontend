@@ -10,7 +10,7 @@ import { emptyRow, type AuditRowDraft } from '../audit-rows';
 const selectClass =
   'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100';
 
-const formatDate = (value: string | Date) => new Date(value).toLocaleDateString();
+const formatDate = (value: string | Date) => new Date(value).toLocaleDateString('vi-VN');
 
 interface VariantSearchProps {
   value: VariantOption | null;
@@ -65,7 +65,7 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
             setQuery('');
           }}
         >
-          Change
+          Đổi
         </Button>
       </div>
     );
@@ -75,7 +75,7 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
     <div className="relative">
       <Input
         type="text"
-        placeholder="Search SKU or product name"
+        placeholder="Tìm theo SKU hoặc tên sản phẩm"
         value={query}
         disabled={disabled}
         onFocus={() => setOpen(true)}
@@ -92,7 +92,7 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
               <Spinner className="h-4 w-4" />
             </div>
           ) : results.length === 0 ? (
-            <p className="px-3 py-3 text-sm text-gray-500">No SKU found</p>
+            <p className="px-3 py-3 text-sm text-gray-500">Không tìm thấy SKU</p>
           ) : (
             results.map((variant) => (
               <button
@@ -159,18 +159,18 @@ function RowLotSelect({ variantId, lotItemId, onChange, disabled }: RowLotSelect
         className={selectClass}
       >
         <option value="" disabled>
-          Select lot
+          Chọn lô
         </option>
         {lots.map((lot) => (
           <option key={lot.id} value={lot.id}>
-            {lot.lotNumber} • exp {formatDate(lot.expirationDate)} • on hand {lot.onHand}
+            {lot.lotNumber} • HSD {formatDate(lot.expirationDate)} • tồn {lot.onHand}
           </option>
         ))}
       </select>
       {selected && (
         <p className="mt-1 text-xs text-gray-600">
-          Lot number <span className="font-mono">{selected.lotNumber}</span> and expiry{' '}
-          {formatDate(selected.expirationDate)} are filled in automatically.
+          Số lô <span className="font-mono">{selected.lotNumber}</span> và hạn sử dụng{' '}
+          {formatDate(selected.expirationDate)} được điền tự động.
         </p>
       )}
     </div>
@@ -204,7 +204,7 @@ export function AuditRowEditor({ rows, onChange, members, auditType, disabled }:
       {rows.map((row, index) => (
         <div key={row.key} className="space-y-3 rounded-lg border border-gray-200 p-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-700">Row {index + 1}</p>
+            <p className="text-sm font-semibold text-gray-700">Dòng {index + 1}</p>
             <Button
               type="button"
               variant="outline"
@@ -212,19 +212,19 @@ export function AuditRowEditor({ rows, onChange, members, auditType, disabled }:
               disabled={disabled}
               onClick={() => removeRow(row.key)}
             >
-              Remove
+              Xóa
             </Button>
           </div>
 
           <div>
-            <Label className="text-xs font-medium">Employee</Label>
+            <Label className="text-xs font-medium">Nhân viên</Label>
             <select
               value={row.assignedToUserId}
               disabled={disabled}
               onChange={(e) => updateRow(row.key, { assignedToUserId: e.target.value })}
               className={selectClass}
             >
-              <option value="">Select employee</option>
+              <option value="">Chọn nhân viên</option>
               {members.map((member) => (
                 <option key={member.user.id} value={member.user.id}>
                   {member.user.fullName} ({member.user.email})
@@ -245,7 +245,7 @@ export function AuditRowEditor({ rows, onChange, members, auditType, disabled }:
           {row.variant && auditType === 'RE_AUDIT' && (
             <div>
               <Label className="text-xs font-medium">
-                Existing lot <span className="text-red-600">*</span>
+                Lô có sẵn <span className="text-red-600">*</span>
               </Label>
               <RowLotSelect
                 variantId={row.variant.id}
@@ -254,22 +254,21 @@ export function AuditRowEditor({ rows, onChange, members, auditType, disabled }:
                 onChange={(lotItemId) => updateRow(row.key, { lotItemId })}
               />
               <p className="mt-1 text-xs text-gray-600">
-                The employee cannot change this lot while counting. They can still correct its dates and
-                enter the count.
+                Nhân viên không thể đổi lô này khi đếm. Họ vẫn có thể sửa ngày của lô và nhập số đếm.
               </p>
             </div>
           )}
 
           {row.variant && auditType === 'NEW_LOTS' && (
             <p className="text-xs text-gray-600">
-              New lot: the employee enters the lot number and expiry while counting.
+              Lô mới: nhân viên nhập số lô và hạn sử dụng khi đếm.
             </p>
           )}
         </div>
       ))}
 
       <Button type="button" variant="outline" disabled={disabled} onClick={addRow}>
-        + Add row
+        + Thêm dòng
       </Button>
     </div>
   );
