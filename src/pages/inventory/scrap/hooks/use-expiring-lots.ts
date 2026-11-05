@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { scrapApi } from "@/api/scrap";
-import type { ExpiringLot, ExpiringLotsSummary, LotStatus } from "@/types/scrap";
+import type { ExpiringLotsSummary, LotBatch, LotStatus } from "@/types/scrap";
 
 const PAGE_SIZE = 20;
+/** The scrap-order endpoint caps `take` at 100, so pending orders are collected page by page. */
+const ORDER_PAGE_SIZE = 100;
 
 const emptySummary: ExpiringLotsSummary = {
   healthy: 0,
@@ -14,14 +16,32 @@ const emptySummary: ExpiringLotsSummary = {
   total: 0,
 };
 
+/** Every PENDING scrap order, keyed by the lot item it will consume. */
+async function loadPendingOrderMap(): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  for (let skip = 0; ; skip += ORDER_PAGE_SIZE) {
+    const result = await scrapApi.listScrapOrders({
+      status: "PENDING",
+      skip,
+      take: ORDER_PAGE_SIZE,
+    });
+    for (const order of result.orders) {
+      if (order.lotItemId) map[order.lotItemId] = order.id;
+    }
+    if (result.orders.length < ORDER_PAGE_SIZE || skip + ORDER_PAGE_SIZE >= result.total) break;
+  }
+  return map;
+}
+
 /**
- * Lots that need attention (WARNING, UNUSABLE, QUARANTINED by default), soonest expiry first.
- * Also loads the PENDING scrap orders so a quarantined lot can link to its open order.
+ * Batches that need attention (WARNING, UNUSABLE, QUARANTINED by default), soonest expiry first.
+ * One entry per lot number, each holding the variant items that matched the filter.
+ * Also loads the PENDING scrap orders so a quarantined item can link to its open order.
  */
 export function useExpiringLots() {
   const [status, setStatus] = useState<LotStatus | undefined>(undefined);
   const [page, setPage] = useState(1);
-  const [lots, setLots] = useState<ExpiringLot[]>([]);
+  const [lots, setLots] = useState<LotBatch[]>([]);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<ExpiringLotsSummary>(emptySummary);
   const [pendingOrderByLot, setPendingOrderByLot] = useState<Record<string, string>>({});
@@ -32,18 +52,14 @@ export function useExpiringLots() {
     setLoading(true);
     setError(null);
     try {
-      const [lotResult, pending] = await Promise.all([
-        scrapApi.getExpiringLots({ status, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
-        scrapApi.listScrapOrders({ status: "PENDING", take: 100 }),
+      const [lotResult, pendingOrderByLot] = await Promise.all([
+        scrapApi.getExpiringBatches({ status, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
+        loadPendingOrderMap(),
       ]);
       setLots(lotResult.lots);
       setTotal(lotResult.total);
       setSummary(lotResult.summary);
-      const map: Record<string, string> = {};
-      for (const order of pending.orders) {
-        if (order.lotId) map[order.lotId] = order.id;
-      }
-      setPendingOrderByLot(map);
+      setPendingOrderByLot(pendingOrderByLot);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tải danh sách lô hàng.");
     } finally {

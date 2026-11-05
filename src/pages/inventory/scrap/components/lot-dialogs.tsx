@@ -14,7 +14,7 @@ import {
 import { Modal } from "./scrap-ui";
 
 export function lotStock(lot: ExpiringLot) {
-  return lot.inventoryBalances.reduce((sum, b) => sum + b.quantityOnHand + b.damagedQuantity, 0);
+  return lot.onHand + lot.damaged;
 }
 
 /** Staff pull a quantity of a lot off the shelf. Photos are added later, on the scrap order. */
@@ -46,7 +46,7 @@ export function QuarantineDialog({
     setSubmitting(true);
     setError(null);
     try {
-      await scrapApi.quarantineLot(lot.id, { quantity: qty, note: note.trim() || undefined });
+      await scrapApi.quarantineLot(lot.lotId, lot.id, { quantity: qty, note: note.trim() || undefined });
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể cách ly lô hàng.");
@@ -154,7 +154,7 @@ export function CreateScrapDialog({
     setError(null);
     try {
       const order = await scrapApi.createScrapOrder({
-        lotId: lot.id,
+        lotItemId: lot.id,
         scrapQty: qty,
         scrapReason: reason.trim(),
         images: files,

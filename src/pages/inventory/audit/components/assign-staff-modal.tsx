@@ -4,7 +4,7 @@ import { Card } from '../../../../components/ui/card';
 import { Spinner } from '../../../../components/ui/spinner';
 import { Alert } from '../../../../components/ui/alert';
 import { auditApi } from '../../../../api/audit';
-import type { StockAuditItem } from '../../../../types/audit';
+import type { AuditType, StockAuditItem } from '../../../../types/audit';
 import { AuditRowEditor } from './audit-row-editor';
 import {
   emptyRow,
@@ -16,15 +16,18 @@ import {
 
 interface AssignStaffModalProps {
   auditId: string;
+  /** The audit type decides which lots a new row may point at. */
+  auditType: AuditType;
   /** Items already in the audit, used to reject duplicate SKU + lot rows early. */
   existingItems?: StockAuditItem[];
   onClose: () => void;
   onAssignSuccess?: () => void;
 }
 
-/** Owner dialog: add employee + SKU + optional lot rows, and reassign existing items. */
+/** Owner dialog: add employee + SKU (+ lot on a re-audit) rows, and reassign existing items. */
 export function AssignStaffModal({
   auditId,
+  auditType,
   existingItems = [],
   onClose,
   onAssignSuccess,
@@ -38,18 +41,18 @@ export function AssignStaffModal({
   const reassignable = existingItems.filter((item) => item.itemStatus === 'IN_PROGRESS');
 
   const handleAdd = async () => {
-    const rowsError = validateRows(rows);
+    const rowsError = validateRows(rows, auditType);
     if (rowsError) {
       setError(rowsError);
       return;
     }
 
     const taken = new Set(
-      existingItems.filter((item) => item.lotId).map((item) => `${item.variantId}:${item.lotId}`)
+      existingItems.filter((item) => item.lotItemId).map((item) => `${item.variantId}:${item.lotItemId}`)
     );
-    const clash = rows.find((row) => row.lotId && taken.has(`${row.variant!.id}:${row.lotId}`));
+    const clash = rows.find((row) => row.lotItemId && taken.has(`${row.variant!.id}:${row.lotItemId}`));
     if (clash) {
-      setError(`${clash.variant!.sku} with this lot is already in the audit.`);
+      setError(`${clash.variant!.sku} với lô này đã có trong đợt kiểm kê.`);
       return;
     }
 
@@ -60,7 +63,7 @@ export function AssignStaffModal({
       onAssignSuccess?.();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add items');
+      setError(err instanceof Error ? err.message : 'Không thêm được dòng kiểm kê');
     } finally {
       setSubmitting(false);
     }
@@ -74,7 +77,7 @@ export function AssignStaffModal({
       await auditApi.reassignItem(auditId, itemId, userId);
       onAssignSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reassign item');
+      setError(err instanceof Error ? err.message : 'Không đổi được người phụ trách');
     } finally {
       setReassigningId(null);
     }
@@ -85,11 +88,11 @@ export function AssignStaffModal({
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-lg">
         <div className="space-y-5">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Add Audit Items</h2>
+            <h2 className="text-xl font-bold text-gray-900">Thêm dòng kiểm kê</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Each row is one SKU assigned to one employee. Choose the lot type: a new lot the
-              employee types in, or an existing lot (pick it now or leave it for the employee). The
-              employee cannot change the lot type while counting.
+              {auditType === 'RE_AUDIT'
+                ? 'Mỗi dòng là một SKU giao cho một nhân viên, kèm một lô có sẵn do bạn chọn ngay bây giờ. Nhân viên giữ nguyên lô đó khi đếm và chỉ có thể sửa ngày của lô và nhập số lượng.'
+                : 'Mỗi dòng là một SKU giao cho một nhân viên. Mọi dòng đều là lô mới: nhân viên nhập số lô và hạn sử dụng khi đếm.'}
             </p>
           </div>
 
@@ -104,17 +107,23 @@ export function AssignStaffModal({
               <Spinner />
             </div>
           ) : members.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4 text-center">No active staff members found</p>
+            <p className="text-sm text-gray-500 py-4 text-center">Không có nhân viên nào đang hoạt động</p>
           ) : (
             <>
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900">New items</h3>
-                <AuditRowEditor rows={rows} onChange={setRows} members={members} disabled={submitting} />
+                <h3 className="font-semibold text-gray-900">Dòng mới</h3>
+                <AuditRowEditor
+                  rows={rows}
+                  onChange={setRows}
+                  members={members}
+                  auditType={auditType}
+                  disabled={submitting}
+                />
               </div>
 
               {reassignable.length > 0 && (
                 <div className="space-y-2 border-t pt-4">
-                  <h3 className="font-semibold text-gray-900">Reassign existing items</h3>
+                  <h3 className="font-semibold text-gray-900">Đổi người phụ trách các dòng hiện có</h3>
                   <div className="space-y-2 max-h-56 overflow-y-auto">
                     {reassignable.map((item) => (
                       <div
@@ -125,7 +134,7 @@ export function AssignStaffModal({
                           <p className="truncate text-sm font-medium text-gray-900">{item.productName}</p>
                           <p className="truncate font-mono text-xs text-gray-500">
                             {item.sku}
-                            {item.lotNumber ? ` • Lot ${item.lotNumber}` : ''}
+                            {item.lotNumber ? ` • Lô ${item.lotNumber}` : ''}
                           </p>
                         </div>
                         <select
@@ -135,7 +144,7 @@ export function AssignStaffModal({
                           className="w-48 rounded-md border border-gray-300 px-2 py-1 text-sm"
                         >
                           <option value="" disabled>
-                            Select employee
+                            Chọn nhân viên
                           </option>
                           {members.map((member) => (
                             <option key={member.user.id} value={member.user.id}>
@@ -151,14 +160,14 @@ export function AssignStaffModal({
 
               <div className="flex gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={onClose} disabled={submitting} className="flex-1">
-                  Close
+                  Đóng
                 </Button>
                 <Button
                   onClick={handleAdd}
                   disabled={submitting}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {submitting ? 'Adding...' : 'Add items'}
+                  {submitting ? 'Đang thêm...' : 'Thêm dòng'}
                 </Button>
               </div>
             </>
