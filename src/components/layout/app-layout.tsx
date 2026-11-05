@@ -50,7 +50,7 @@ const navigation: NavigationGroup[] = [
     label: "VẬN HÀNH",
     items: [
       { to: "/app/products", label: "Sản phẩm & tồn kho", icon: Boxes, permission: "products.read" },
-      { to: "/app/orders", label: "Đơn hàng & thanh toán", icon: CreditCard, disabled: true },
+      { to: "/app/orders", label: "Đơn hàng & thanh toán", icon: CreditCard },
       { to: "/app/analytics", label: "Báo cáo kinh doanh", icon: BarChart3, disabled: true },
     ],
   },

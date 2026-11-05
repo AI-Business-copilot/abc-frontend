@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
@@ -13,7 +13,7 @@ export function AuditListPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<AuditStatus | undefined>(undefined);
-  const { audits, total, page, pageSize, totalPages, loading, error, filter, goToPage, updateFilter } = useAudits({
+  const { audits, total, page, totalPages, loading, error, goToPage, updateFilter } = useAudits({
     status: statusFilter,
   });
 
@@ -24,10 +24,6 @@ export function AuditListPage() {
 
   const handleViewAudit = (auditId: string) => {
     navigate(`/inventory/audit/${auditId}`);
-  };
-
-  const handleCountItems = (auditId: string) => {
-    navigate(`/inventory/audit/${auditId}/count`);
   };
 
   return (
