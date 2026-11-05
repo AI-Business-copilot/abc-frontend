@@ -37,6 +37,7 @@ import { AuditItemDetailPage } from "@/pages/inventory/audit/audit-item-detail-p
 import { LotsPage } from "@/pages/inventory/scrap/lots-page";
 import { ScrapListPage } from "@/pages/inventory/scrap/scrap-list-page";
 import { ScrapDetailPage } from "@/pages/inventory/scrap/scrap-detail-page";
+import { CashShiftsPage } from "@/pages/cash-shifts/cash-shifts-page";
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -268,6 +269,7 @@ export const router = createBrowserRouter([
           { path: "team", element: <TeamPage /> },
           { path: "business", element: <BusinessPage /> },
           { path: "security", element: <SecurityPage /> },
+          { path: "cash-shifts", element: <CashShiftsPage /> },
           { path: "admin", element: <AdminPage /> },
         ],
       },
