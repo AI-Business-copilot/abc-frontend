@@ -1,38 +1,33 @@
-import { supabase, supabaseConfigured } from "@/lib/supabase";
+import { apiJson } from "@/lib/api-client";
 
 /**
- * Tiện ích tải ảnh trực tiếp lên Supabase Storage bucket "SEP"
+ * Tiện ích tải ảnh trực tiếp lên Supabase Storage bucket "SEP" thông qua API Backend
  * Tránh lưu base64 gây nặng CSDL và nghẽn băng thông.
  */
 export async function uploadImageToStorage(file: File): Promise<string> {
-  const bucket = "SEP";
-  const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-  const filePath = `products/${Date.now()}_${Math.random().toString(36).substring(2, 8)}_${cleanName}`;
-
-  if (supabaseConfigured) {
-    try {
-      const { data, error } = await supabase.storage.from(bucket).upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-      if (!error && data) {
-        const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
-        if (urlData?.publicUrl) {
-          return urlData.publicUrl;
-        }
-      } else if (error) {
-        console.warn("Lỗi upload Supabase bucket SEP:", error.message);
-      }
-    } catch (err) {
-      console.warn("Không thể kết nối Supabase Storage:", err);
-    }
-  }
-
-  // Fallback tạm nếu chưa kết nối được storage
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      try {
+        const res = await apiJson<{ url: string }>("/upload", {
+          method: "POST",
+          body: JSON.stringify({
+            base64,
+            filename: file.name,
+            contentType: file.type || "image/jpeg",
+          }),
+        });
+        if (res && res.url) {
+          resolve(res.url);
+          return;
+        }
+      } catch (err) {
+        console.warn("Backend upload failed, fallback to data url:", err);
+      }
+      // Fallback
+      resolve(base64);
+    };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });

@@ -12,7 +12,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { CatalogHeader } from '@/pages/products/catalog-header';
 import { Icon } from '@/pages/products/ui-icon';
 import { getAllImages } from '@/lib/image-utils';
-import { BarcodeScannerModal } from '@/pages/products/barcode-scanner-modal';
+import { inventoryApi } from '@/api/inventory';
+import { BarcodeScannerModal, stopAllGlobalMediaStreams } from '@/pages/products/barcode-scanner-modal';
 import { BarcodePrintModal, type PrintableVariant } from '@/pages/products/barcode-print-modal';
 import { ProductEditModal } from '@/pages/products/product-edit-modal';
 
@@ -177,15 +178,26 @@ function ProductCard({
 
       <div className="p-3.5 flex flex-col flex-1">
         {missingCategory ? (
-          <div className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#b54708]">
+          <button
+            type="button"
+            onClick={() => onQuickCategory(product)}
+            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#b54708] bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded transition-colors"
+            title="Bấm để gán danh mục cho sản phẩm này"
+          >
             <Icon name="error" className="text-[15px] text-[#f04438]" />
-            Chưa phân loại category_id
-          </div>
+            <span>Chưa phân loại danh mục</span>
+          </button>
         ) : (
-          <div className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#4f46e5]">
+          <button
+            type="button"
+            onClick={() => onQuickCategory(product)}
+            className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#4f46e5] bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors"
+            title="Bấm để thay đổi hoặc gỡ danh mục này"
+          >
             <Icon name="sell" className="text-[15px]" />
-            {product.categoryPath}
-          </div>
+            <span>{product.categoryPath}</span>
+            <Icon name="edit" className="text-[12px] opacity-70" />
+          </button>
         )}
 
         <h3 className="mt-1.5 text-[15.5px] leading-snug font-bold text-[#101828] line-clamp-2">{product.name}</h3>
@@ -266,10 +278,12 @@ function SkuModal({
   product,
   onClose,
   onPrintVariants,
+  onOpenLots,
 }: {
   product: ProductItem;
   onClose: () => void;
   onPrintVariants: (variants: PrintableVariant[]) => void;
+  onOpenLots?: (sku: ProductSku, product: ProductItem) => void;
 }) {
   const images = useMemo(() => getAllImages(product.imageUrl), [product.imageUrl]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -378,8 +392,10 @@ function SkuModal({
             </thead>
             <tbody>
               {product.skus.map((sku: ProductSku, idx: number) => {
-                const variantImg = variantImages[sku.id] || images[0] || null;
-                const isLowStock = sku.stockQty <= (sku.safetyStockQty || 5);
+                const rawImg = variantImages[sku.id] || images[0] || "";
+                const variantImg = typeof rawImg === "string" && rawImg.trim().length > 5 ? rawImg.trim() : null;
+                const safetyLimit = typeof sku.safetyStockQty === "number" ? sku.safetyStockQty : 0;
+                const isLowStock = product.isActive && safetyLimit > 0 && sku.stockQty <= safetyLimit;
                 return (
                   <tr key={sku.id} className="border-b border-[#f2f4f7] hover:bg-[#fafbff] transition-colors">
                     <td className="px-3 py-2">
@@ -391,7 +407,14 @@ function SkuModal({
                             className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 hover:border-[#4f46e5] shadow-xs block transition-transform group-hover:scale-105"
                             title="Bấm để xem ảnh phóng to"
                           >
-                            <img src={variantImg} alt={sku.sku} className="w-full h-full object-cover" />
+                            <img
+                              src={variantImg}
+                              alt={sku.sku}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = "none";
+                              }}
+                            />
                           </button>
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-gray-100 grid place-items-center text-gray-400">
@@ -426,14 +449,27 @@ function SkuModal({
                     <td className="px-3 py-2 text-right text-[#475467]">{vnd(sku.costPrice)}</td>
                     <td className="px-3 py-2 text-right font-bold text-[#4f46e5]">{vnd(sku.basePrice)}</td>
                     <td className="px-4 py-2 text-right">
-                      <span className={["font-bold", isLowStock ? "text-red-600 bg-red-50 px-2 py-0.5 rounded text-[11.5px]" : "text-gray-900"].join(" ")}>
-                        {sku.stockQty} {product.unitOfMeasure}
-                      </span>
-                      {isLowStock && (
-                        <span className="block text-[10px] text-red-500 font-semibold mt-0.5">
-                          Tồn thấp (≤ {sku.safetyStockQty || 5})
+                      <div className="flex flex-col items-end">
+                        <span className={["font-bold", isLowStock ? "text-red-600 bg-red-50 px-2 py-0.5 rounded text-[11.5px]" : "text-gray-900"].join(" ")}>
+                          {sku.stockQty} {product.unitOfMeasure}
                         </span>
-                      )}
+                        {product.hasLotTracking && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenLots?.(sku, product)}
+                            className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-bold text-[#4f46e5] hover:text-[#4338ca] bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded transition-colors"
+                            title="Xem chi tiết phân bổ tồn kho theo từng Lô (FEFO)"
+                          >
+                            <Icon name="inventory" className="text-[12px]" />
+                            <span>Xem lô</span>
+                          </button>
+                        )}
+                        {isLowStock && (
+                          <span className="block text-[10px] text-amber-600 font-semibold mt-0.5">
+                            Tồn an toàn (≤ {safetyLimit})
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-center">
                       <button
@@ -551,6 +587,108 @@ function SkuModal({
   );
 }
 
+function VariantLotsModal({
+  sku,
+  product,
+  onClose,
+}: {
+  sku: ProductSku;
+  product: ProductItem;
+  onClose: () => void;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [lots, setLots] = useState<any[]>([]);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const fetchLots = async () => {
+      setLoading(true);
+      try {
+        const res = await inventoryApi.getVariantLots(sku.id);
+        if (active) setLots(res.lots || (res as any).items || []);
+      } catch (err: any) {
+        if (active) setError(err?.message || 'Không thể tải thông tin lô');
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void fetchLots();
+    return () => {
+      active = false;
+    };
+  }, [sku.id]);
+
+  return (
+    <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-purple-50 text-purple-600"><Icon name="inventory" className="text-[20px]" /></span>
+            <div>
+              <h3 className="text-[16px] font-bold text-gray-900">Chi tiết tồn kho theo Lô (FEFO)</h3>
+              <p className="text-[11.5px] text-gray-500 font-mono">{sku.sku} • {product.name}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700">
+            <Icon name="close" className="text-[20px]" />
+          </button>
+        </div>
+
+        {error && <div className="mt-3 text-[12px] text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200">{error}</div>}
+
+        <div className="mt-4">
+          {loading ? (
+            <div className="py-8 text-center text-[13px] text-gray-500">
+              <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-purple-600 border-t-transparent mb-2" />
+              <p>Đang truy vấn số dư theo lô...</p>
+            </div>
+          ) : lots.length === 0 ? (
+            <div className="py-8 text-center text-[13px] text-gray-400">
+              Chưa có thông tin lô cụ thể nào cho biến thể này. Dữ liệu lô được khởi tạo ở phiếu Nạp tồn (F02) hoặc Nhập mua PO.
+            </div>
+          ) : (
+            <div className="max-h-64 overflow-y-auto rounded-xl border border-gray-200">
+              <table className="w-full text-left text-[12px]">
+                <thead className="bg-gray-50 text-[10.5px] uppercase font-bold text-gray-500 border-b">
+                  <tr>
+                    <th className="px-3.5 py-2">Số Lô</th>
+                    <th className="px-3 py-2">Hạn sử dụng (HSD)</th>
+                    <th className="px-3 py-2 text-right">Tồn kho</th>
+                    <th className="px-3.5 py-2 text-center">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {lots.map((lot) => {
+                    const expiry = lot.expirationDate ? new Date(lot.expirationDate).toLocaleDateString("vi-VN") : "Không hạn dùng";
+                    const isExpired = lot.expirationDate && new Date(lot.expirationDate) < new Date();
+                    return (
+                      <tr key={lot.id} className="hover:bg-purple-50/20">
+                        <td className="px-3.5 py-2 font-mono font-bold text-purple-700">{lot.lotNumber}</td>
+                        <td className="px-3 py-2 text-gray-700">{expiry}</td>
+                        <td className="px-3 py-2 text-right font-bold text-gray-900">{Number(lot.quantityOnHand || 0).toLocaleString("vi-VN")} {product.unitOfMeasure}</td>
+                        <td className="px-3.5 py-2 text-center">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${isExpired ? "bg-red-50 text-red-700 border border-red-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
+                            {isExpired ? "Hết hạn" : "Khả dụng"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 flex justify-end">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-[12.5px] font-semibold text-gray-700">Đóng</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function QuickCategoryModal({
   product,
   categories,
@@ -562,18 +700,14 @@ function QuickCategoryModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [selectedId, setSelectedId] = useState(product.categoryId || (categories[0]?.id ?? ''));
+  const [selectedId, setSelectedId] = useState(product.categoryId || '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const handleSave = async () => {
-    if (!selectedId) {
-      setError('Vui lòng chọn một danh mục');
-      return;
-    }
     setBusy(true);
     try {
-      await productWizardApi.updateTemplate(product.id, { categoryId: selectedId });
+      await productWizardApi.updateTemplate(product.id, { categoryId: selectedId ? selectedId : null });
       onSaved();
     } catch (err: any) {
       setError(err?.message || 'Lỗi khi gán danh mục');
@@ -589,7 +723,7 @@ function QuickCategoryModal({
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-xl bg-indigo-50 text-[#4f46e5]"><Icon name="sell" className="text-[20px]" /></span>
             <div>
-              <h3 className="text-[16px] font-bold text-gray-900">Gán nhanh danh mục</h3>
+              <h3 className="text-[16px] font-bold text-gray-900">Gán / Gỡ danh mục sản phẩm</h3>
               <p className="text-[11.5px] text-gray-500 truncate max-w-[240px]">{product.name}</p>
             </div>
           </div>
@@ -607,18 +741,22 @@ function QuickCategoryModal({
             onChange={(e) => setSelectedId(e.target.value)}
             className="w-full h-11 px-3.5 rounded-xl border border-gray-300 bg-white text-[13.5px] font-medium text-gray-800 outline-none focus:border-[#4f46e5]"
           >
+            <option value="">-- Bỏ gán / Xóa danh mục hiện tại (Không gán) --</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.parentName ? `${c.parentName} > ` : ''}{c.name}
               </option>
             ))}
           </select>
+          <p className="mt-1.5 text-[11px] text-gray-500">
+            Chọn danh mục mới để thay đổi, hoặc chọn &quot;Bỏ gán&quot; để gỡ danh mục khỏi sản phẩm này.
+          </p>
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-2.5">
           <button onClick={onClose} className="px-4 py-2 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600 hover:bg-gray-50">Hủy</button>
           <button disabled={busy} onClick={() => void handleSave()} className="px-5 py-2 rounded-xl bg-[#4f46e5] text-white text-[13px] font-bold shadow-md hover:bg-[#4338ca] disabled:opacity-50">
-            {busy ? 'Đang lưu...' : 'Lưu danh mục'}
+            {busy ? 'Đang lưu...' : selectedId ? 'Lưu thay đổi danh mục' : 'Xác nhận gỡ danh mục'}
           </button>
         </div>
       </div>
@@ -653,6 +791,7 @@ export default function ProductsPage() {
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [quickCategoryProduct, setQuickCategoryProduct] = useState<ProductItem | null>(null);
   const [barcodeVariants, setBarcodeVariants] = useState<PrintableVariant[] | null>(null);
+  const [viewingLots, setViewingLots] = useState<{ sku: ProductSku; product: ProductItem } | null>(null);
 
   // Debounce gọi server ở mức thấp (100ms) để không spam network
   useEffect(() => {
@@ -1157,6 +1296,15 @@ export default function ProductsPage() {
           product={selected}
           onClose={() => setSelected(null)}
           onPrintVariants={(v) => setBarcodeVariants(v)}
+          onOpenLots={(sku, prod) => setViewingLots({ sku, product: prod })}
+        />
+      )}
+
+      {viewingLots && (
+        <VariantLotsModal
+          sku={viewingLots.sku}
+          product={viewingLots.product}
+          onClose={() => setViewingLots(null)}
         />
       )}
 
@@ -1172,7 +1320,10 @@ export default function ProductsPage() {
       {showScannerModal && (
         <BarcodeScannerModal
           products={rawItems}
-          onClose={() => setShowScannerModal(false)}
+          onClose={() => {
+            stopAllGlobalMediaStreams();
+            setShowScannerModal(false);
+          }}
           onSelectProduct={(p) => setSelected(p)}
         />
       )}

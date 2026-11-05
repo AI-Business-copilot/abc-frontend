@@ -436,7 +436,8 @@ export function ProductEditModal({
                   <tbody className="divide-y divide-gray-100">
                     {skus.map((s, index) => {
                       const displayImg = s.image || images[0] || "";
-                      const isLowStock = s.stockQty <= (s.safetyStockQty || 5);
+                      const safetyLimit = typeof s.safetyStockQty === "number" ? s.safetyStockQty : 0;
+                      const isLowStock = safetyLimit > 0 && s.stockQty <= safetyLimit;
                       return (
                         <tr key={s.id} className="hover:bg-gray-50/50">
                           <td className="px-3 py-2">

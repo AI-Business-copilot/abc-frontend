@@ -25,6 +25,7 @@ export function InventoryPage() {
   const [data, setData] = useState<OpeningStockListResponse | null>(null);
   const [error, setError] = useState("");
   const [showStockInModal, setShowStockInModal] = useState(false);
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [applyingSheetId, setApplyingSheetId] = useState<string | null>(null);
 
   // Modal xem trước chứng từ A4
@@ -258,8 +259,16 @@ export function InventoryPage() {
                       <td className="px-5 py-3.5">
                         <button
                           type="button"
-                          onClick={() => void viewSheet(row.id)}
+                          onClick={() => {
+                            if (row.status === "DRAFT") {
+                              setEditingDraftId(row.id);
+                              setShowStockInModal(true);
+                            } else {
+                              void viewSheet(row.id);
+                            }
+                          }}
                           className="font-mono font-bold text-[#4f46e5] hover:underline flex items-center gap-1.5"
+                          title={row.status === "DRAFT" ? "Bấm để tiếp tục sửa và duyệt bản nháp này" : "Bấm để xem và in phiếu"}
                         >
                           <Icon name="receipt" className="text-[16px]" />
                           {row.code || "OSTK-UNNAMED"}
@@ -308,14 +317,39 @@ export function InventoryPage() {
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => void viewSheet(row.id)}
-                            className="rounded-lg border border-indigo-200 bg-indigo-50/60 px-3 py-1.5 text-[12px] font-bold text-[#4f46e5] hover:bg-indigo-100 transition-colors flex items-center gap-1"
-                          >
-                            <Icon name="visibility" className="text-[15px]" />
-                            Xem &amp; In phiếu
-                          </button>
+                          {row.status === "DRAFT" ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingDraftId(row.id);
+                                  setShowStockInModal(true);
+                                }}
+                                className="rounded-lg bg-[#4f46e5] px-3 py-1.5 text-[12px] font-bold text-white shadow-xs hover:bg-[#4338ca] transition-colors flex items-center gap-1 cursor-pointer"
+                                title="Mở để tiếp tục chỉnh sửa và duyệt áp dụng phiếu"
+                              >
+                                <Icon name="edit_document" className="text-[15px]" />
+                                Sửa &amp; Duyệt
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void viewSheet(row.id)}
+                                className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1"
+                              >
+                                <Icon name="visibility" className="text-[15px]" />
+                                Xem A4
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => void viewSheet(row.id)}
+                              className="rounded-lg border border-indigo-200 bg-indigo-50/60 px-3 py-1.5 text-[12px] font-bold text-[#4f46e5] hover:bg-indigo-100 transition-colors flex items-center gap-1"
+                            >
+                              <Icon name="visibility" className="text-[15px]" />
+                              Xem &amp; In phiếu
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -340,9 +374,14 @@ export function InventoryPage() {
       {/* Modal Nạp tồn kho chuyên dụng độc lập */}
       {showStockInModal && (
         <StockInModal
-          onClose={() => setShowStockInModal(false)}
+          initialSheetId={editingDraftId}
+          onClose={() => {
+            setShowStockInModal(false);
+            setEditingDraftId(null);
+          }}
           onSuccess={() => {
             setShowStockInModal(false);
+            setEditingDraftId(null);
             void loadSheets();
           }}
         />

@@ -19,6 +19,34 @@ setZXingModuleOverrides({
   },
 });
 
+// Quản lý toàn bộ MediaStream của trình duyệt để đảm bảo TẮT CAMERA HOÀN TOÀN khi đóng modal
+const globalMediaStreams = new Set<MediaStream>();
+export function stopAllGlobalMediaStreams() {
+  globalMediaStreams.forEach((stream) => {
+    try {
+      stream.getTracks().forEach((track) => {
+        track.stop();
+        track.enabled = false;
+      });
+    } catch {
+      // ignore
+    }
+  });
+  globalMediaStreams.clear();
+}
+
+// Khởi tạo phần cứng BarcodeDetector duy nhất 1 lần (tránh tạo lại 30 lần/giây gây nghẽn RAM/GC)
+let nativeHardwareDetector: any = null;
+if (typeof window !== "undefined" && "BarcodeDetector" in window) {
+  try {
+    nativeHardwareDetector = new (window as any).BarcodeDetector({
+      formats: ["ean_13", "code_128", "upc_a", "ean_8"],
+    });
+  } catch {
+    nativeHardwareDetector = null;
+  }
+}
+
 interface BarcodeScannerModalProps {
   products: ProductItem[];
   onClose: () => void;
@@ -80,6 +108,7 @@ export function BarcodeScannerModal({
   const [activeTab, setActiveTab] = useState<"camera" | "hardware" | "upload" | "sample">("camera");
   const [barcodeMode, setBarcodeMode] = useState<"all" | "ean13" | "code128">("all");
   const [scannedCode, setScannedCode] = useState("");
+  const [copiedCode, setCopiedCode] = useState("");
   const [inputVal, setInputVal] = useState("");
   const [matchResult, setMatchResult] = useState<FoundMatch | null>(null);
 
@@ -100,6 +129,7 @@ export function BarcodeScannerModal({
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<any>(null);
   const isScanningRef = useRef(false);
+  const lastScanRef = useRef<{ code: string; time: number }>({ code: "", time: 0 });
 
   // Tạo từ điển tra cứu nhanh barcode -> { product, sku } (Truy vấn tức thì 0.1ms)
   const barcodeDirectory = useMemo(() => {
@@ -140,6 +170,19 @@ export function BarcodeScannerModal({
     const startT = performance.now();
     const code = rawCode.trim().toUpperCase();
     if (!code) return;
+
+    // Cooldown 800ms tránh quét lặp mã giống hệt liên tục
+    if (code === lastScanRef.current.code && startT - lastScanRef.current.time < 800) {
+      return;
+    }
+    lastScanRef.current = { code, time: startT };
+
+    // Nếu mã là 13 số: Bắt buộc phải đúng checksum Modulo-10 của chuẩn EAN-13 để chống đọc sai số
+    if (/^\d{13}$/.test(code)) {
+      if (!isValidEan13(code)) {
+        return; // Bỏ qua mã đọc sai số checksum
+      }
+    }
 
     // Lọc theo chế độ nếu người dùng chọn chỉ quét EAN-13
     if (barcodeMode === "ean13" && /^\d+$/.test(code)) {
@@ -245,6 +288,13 @@ export function BarcodeScannerModal({
       }
       videoRef.current.srcObject = null;
     }
+    // Dừng toàn bộ các luồng camera toàn cục
+    stopAllGlobalMediaStreams();
+  };
+
+  const handleClose = () => {
+    stopAllCameras();
+    onClose();
   };
 
   // KHỞI ĐỘNG CAMERA & FRAME SCANNER BẰNG WASM C++ (SIÊU NHANH < 1MS, CHUẨN XÁC 100%)
@@ -254,7 +304,7 @@ export function BarcodeScannerModal({
     setCameraError("");
     setIsDetected(false);
     isScanningRef.current = true;
-    setScanEngine("wasm");
+    setScanEngine(nativeHardwareDetector ? "native" : "wasm");
 
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
@@ -283,11 +333,14 @@ export function BarcodeScannerModal({
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      globalMediaStreams.add(stream);
+
       if (!isScanningRef.current) {
         stream.getTracks().forEach((t) => {
           t.stop();
           t.enabled = false;
         });
+        globalMediaStreams.delete(stream);
         return;
       }
       streamRef.current = stream;
@@ -301,7 +354,7 @@ export function BarcodeScannerModal({
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       let isBusy = false;
 
-      // Frame scan loop mỗi 60ms: Quét toàn khung hình bằng WASM C++ Engine
+      // Quét toàn khung hình (Full-Viewfinder) không cắt gọt để mã vạch ở góc nào cũng bắt được tức thì
       scanIntervalRef.current = setInterval(async () => {
         if (!videoRef.current || videoRef.current.readyState < 2 || !isScanningRef.current || isBusy) return;
         const video = videoRef.current;
@@ -311,24 +364,51 @@ export function BarcodeScannerModal({
 
         isBusy = true;
         try {
-          canvas.width = vw;
-          canvas.height = vh;
+          if (canvas.width !== vw || canvas.height !== vh) {
+            canvas.width = vw;
+            canvas.height = vh;
+          }
+
           ctx.drawImage(video, 0, 0, vw, vh);
 
-          const imgData = ctx.getImageData(0, 0, vw, vh);
-          const results = await readBarcodesFromImageData(imgData);
-          if (results && results.length > 0 && results[0].isValid && isScanningRef.current) {
-            const raw = results[0].text?.trim();
-            if (raw) {
-              handleBarcodeDetected(raw);
+          let detectedText = "";
+
+          // 1. Thử BarcodeDetector native phần cứng nếu có sẵn (cực nhanh < 1ms)
+          if (nativeHardwareDetector) {
+            try {
+              const detected = await nativeHardwareDetector.detect(canvas);
+              if (detected && detected.length > 0 && detected[0].rawValue) {
+                detectedText = String(detected[0].rawValue).trim();
+              }
+            } catch {
+              // fallback sang WASM C++
             }
+          }
+
+          // 2. Quét bằng zxing-wasm C++ engine với cấu hình tối ưu độ trễ cực thấp
+          if (!detectedText) {
+            const imgData = ctx.getImageData(0, 0, vw, vh);
+            const results = await readBarcodesFromImageData(imgData, {
+              maxNumberOfSymbols: 1,
+              formats:
+                barcodeMode === "ean13"
+                  ? ["EAN-13"]
+                  : ["EAN-13", "Code128", "UPC-A", "EAN-8"],
+            });
+            if (results && results.length > 0 && results[0].isValid) {
+              detectedText = results[0].text?.trim() || "";
+            }
+          }
+
+          if (detectedText && isScanningRef.current) {
+            handleBarcodeDetected(detectedText);
           }
         } catch {
           // frame skip
         } finally {
           isBusy = false;
         }
-      }, 60);
+      }, 40);
     } catch (err: any) {
       setCameraError(err?.message || "Không thể truy cập camera. Vui lòng cấp quyền camera trong trình duyệt.");
     } finally {
@@ -351,12 +431,20 @@ export function BarcodeScannerModal({
       }
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleClose();
+      }
+    };
+
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("beforeunload", stopAllCameras);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("beforeunload", stopAllCameras);
+      window.removeEventListener("keydown", handleKeyDown);
       stopAllCameras();
     };
   }, [activeTab, barcodeMode]);
@@ -374,7 +462,13 @@ export function BarcodeScannerModal({
     setIsProcessingUpload(true);
 
     try {
-      const results = await readBarcodesFromImageFile(file);
+      const results = await readBarcodesFromImageFile(file, {
+        tryHarder: true,
+        tryRotate: true,
+        tryInvert: true,
+        tryDownscale: true,
+        maxNumberOfSymbols: 1,
+      });
       if (results && results.length > 0 && results[0].isValid && results[0].text) {
         handleBarcodeDetected(results[0].text.trim());
       } else {
@@ -423,8 +517,7 @@ export function BarcodeScannerModal({
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          stopAllCameras();
-          onClose();
+          handleClose();
         }
       }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
@@ -446,10 +539,7 @@ export function BarcodeScannerModal({
             </div>
           </div>
           <button
-            onClick={() => {
-              stopAllCameras();
-              onClose();
-            }}
+            onClick={handleClose}
             className="rounded-lg p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
           >
             <Icon name="close" className="text-[22px]" />
@@ -875,17 +965,40 @@ export function BarcodeScannerModal({
                   </div>
                 </div>
               ) : scannedCode ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-center">
-                  <Icon name="check_circle" className="text-[28px] text-green-600 mx-auto" />
-                  <p className="mt-1.5 text-[13px] font-bold text-gray-900">
-                    Đã đọc được mã sản phẩm thật!
-                  </p>
-                  <p className="font-mono text-[14px] font-bold text-[#4f46e5] mt-1 bg-white p-1 rounded border border-amber-200">
-                    {scannedCode}
-                  </p>
-                  <p className="text-[11px] text-gray-600 mt-2 text-left leading-relaxed">
-                    💡 Mã vạch này chưa được lưu trong kho. Bạn có thể sao chép mã này để dán vào ô <b>Mã vạch barcode</b> ở Bước 3 khi tạo/sửa sản phẩm.
-                  </p>
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-center">
+                    <Icon name="check_circle" className="text-[28px] text-emerald-600 mx-auto" />
+                    <p className="mt-1.5 text-[14px] font-bold text-gray-900">
+                      Đã đọc thành công mã sản phẩm thật!
+                    </p>
+                    <div className="font-mono text-[16px] font-black text-[#4f46e5] mt-2 bg-white py-1.5 px-3 rounded-lg border border-amber-200 tracking-wider inline-block">
+                      {scannedCode}
+                    </div>
+                    <p className="text-[11.5px] text-gray-600 mt-2 text-left leading-relaxed">
+                      💡 Mã vạch này chưa được gán cho sản phẩm nào trong kho. Bạn có thể sao chép mã này để dán vào ô <b>Mã vạch barcode</b> khi tạo hoặc sửa biến thể sản phẩm.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(scannedCode);
+                        setCopiedCode(scannedCode);
+                        setTimeout(() => setCopiedCode(""), 2000);
+                      }}
+                      className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-[12px] font-bold text-white hover:bg-indigo-700 transition-colors shadow-xs"
+                    >
+                      <Icon name="content_copy" className="text-[15px]" />
+                      {copiedCode === scannedCode ? "Đã sao chép vào bộ nhớ tạm!" : "Sao chép dãy số mã vạch"}
+                    </button>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 bg-white p-2.5 flex flex-col items-center">
+                    <BarcodeSvg
+                      value={scannedCode}
+                      width={1.2}
+                      height={28}
+                      fontSize={9}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div className="text-center text-gray-400 py-10">
@@ -907,8 +1020,7 @@ export function BarcodeScannerModal({
                   type="button"
                   onClick={() => {
                     onSelectProduct(matchResult.product);
-                    stopAllCameras();
-                    onClose();
+                    handleClose();
                   }}
                   className="w-full rounded-xl bg-[#4f46e5] py-2.5 text-[12.5px] font-bold text-white shadow hover:bg-[#4338ca] transition-colors"
                 >

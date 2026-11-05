@@ -272,6 +272,7 @@ export function ProductVariantsPage() {
         safetyStockQty: row.safety,
         sku: row.sku.trim().toUpperCase(),
         barcode: row.barcode.trim() || undefined,
+        isActive: selectedIds.includes(row.id),
       })),
     );
   };

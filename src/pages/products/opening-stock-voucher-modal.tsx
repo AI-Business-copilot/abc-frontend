@@ -158,7 +158,7 @@ export function OpeningStockVoucherModal({
         <thead>
           <tr className="bg-gray-100 text-black font-bold text-center">
             <th className="border border-black p-1.5" style={{ width: "5%" }}>STT</th>
-            <th className="border border-black p-1.5 text-left" style={{ width: hasLotTracking ? "28%" : "35%" }}>Tên sản phẩm &amp; Biến thể</th>
+            <th className="border border-black p-1.5 text-left" style={{ width: hasLotTracking ? "26%" : "33%" }}>Tên sản phẩm &amp; Biến thể</th>
             <th className="border border-black p-1.5 text-left font-mono" style={{ width: hasLotTracking ? "15%" : "18%" }}>Mã SKU</th>
             {hasLotTracking && (
               <th className="border border-black p-1.5 text-center" style={{ width: "14%" }}>Lô / HSD</th>
@@ -166,7 +166,7 @@ export function OpeningStockVoucherModal({
             <th className="border border-black p-1.5 text-center" style={{ width: "6%" }}>ĐVT</th>
             <th className="border border-black p-1.5 text-right" style={{ width: "8%" }}>SL Tồn</th>
             <th className="border border-black p-1.5 text-right" style={{ width: "12%" }}>Đơn giá vốn</th>
-            <th className="border border-black p-1.5 text-right" style={{ width: "16%" }}>Thành tiền</th>
+            <th className="border border-black p-1.5 text-right" style={{ width: hasLotTracking ? "14%" : "14%" }}>Thành tiền</th>
           </tr>
         </thead>
         <tbody>
@@ -194,8 +194,11 @@ export function OpeningStockVoucherModal({
                     {item.lotNumber ? (
                       <div>
                         <span className="font-mono font-bold text-black">{item.lotNumber}</span>
+                        {item.manufacturingDate && (
+                          <div className="text-gray-700 text-[8.5px]">NSX: {item.manufacturingDate}</div>
+                        )}
                         {item.expirationDate && (
-                          <div className="text-gray-600 text-[9px]">HSD: {item.expirationDate}</div>
+                          <div className="text-gray-700 text-[8.5px]">HSD: {item.expirationDate}</div>
                         )}
                       </div>
                     ) : (
@@ -345,7 +348,7 @@ export function OpeningStockVoucherModal({
             }
             @media print {
               @page {
-                size: A4 auto;
+                size: A4 portrait;
                 margin: 8mm 10mm 8mm 10mm;
               }
               html, body {

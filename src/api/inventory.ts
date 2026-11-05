@@ -174,6 +174,13 @@ export const inventoryApi = {
     return apiJson<OpeningStockSheetDetail>(`/inventory/opening-sheets/${id}?limit=${limit}&offset=${offset}`);
   },
 
+  updateDraft: (id: string, payload: any) => {
+    return apiJson<OpeningStockSheetDetail>(`/inventory/opening-sheets/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+
   applySheet: (id: string) => {
     return apiJson<OpeningStockSheetDetail>(`/inventory/opening-sheets/${id}/apply`, {
       method: "POST",
@@ -184,5 +191,18 @@ export const inventoryApi = {
     return apiJson<{ success: boolean }>(`/inventory/opening-sheets/${id}`, {
       method: "DELETE",
     });
+  },
+
+  getVariantLots: (variantId: string) => {
+    return apiJson<{
+      lots: Array<{
+        id: string;
+        lotNumber: string;
+        manufacturingDate: string | null;
+        expirationDate: string | null;
+        quantityOnHand: number;
+        status: string;
+      }>;
+    }>(`/inventory/variants/${variantId}/lots`);
   },
 };

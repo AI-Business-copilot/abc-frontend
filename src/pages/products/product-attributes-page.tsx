@@ -171,8 +171,8 @@ export function ProductAttributesPage() {
   };
 
   const addAttribute = () => {
-    if (selections.length >= 3) {
-      setError("Tối đa 3 chiều thuộc tính trong ma trận biến thể.");
+    if (selections.length >= 8) {
+      setError("Tối đa 8 chiều thuộc tính trong ma trận biến thể.");
       return;
     }
     const candidate = attributes.find(
@@ -331,7 +331,7 @@ export function ProductAttributesPage() {
               <p className="text-[12px] text-[#667085]">Gắn chiều thuộc tính để tự động tổ hợp mã SKU trong ma trận biến thể</p>
             </div>
           </div>
-          <span className="rounded-full bg-[#eef3ff] px-3 py-2 font-mono text-[12px] text-[#667085]">{selections.length}/3 Thuộc tính đã chọn</span>
+          <span className="rounded-full bg-[#eef3ff] px-3 py-2 font-mono text-[12px] text-[#667085]">{selections.length} Thuộc tính đã chọn</span>
         </div>
 
         <div className="mt-4 space-y-3">
@@ -428,7 +428,7 @@ export function ProductAttributesPage() {
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-[#e8eaf0] bg-white py-4 text-[15px] font-bold text-[#4338ca] hover:bg-[#f8f7ff]"
         >
           <Icon name="library_add" className="text-[20px]" />
-          + Thêm thuộc tính khác (Tối đa 3 chiều ma trận)
+          + Thêm thuộc tính khác (Ma trận biến thể đa chiều)
         </button>
 
         <div className="mt-4 grid grid-cols-[1.4fr_1fr] gap-4">

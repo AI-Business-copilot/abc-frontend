@@ -19,17 +19,62 @@ interface StockInLine {
 interface StockInModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  initialSheetId?: string | null;
 }
 
 const vnd = (value: number) => new Intl.NumberFormat("vi-VN").format(Math.round(value || 0)) + " đ";
 
-export function StockInModal({ onClose, onSuccess }: StockInModalProps) {
+export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModalProps) {
   const { profile } = useAuth();
   const [keyword, setKeyword] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchVariantItem[]>([]);
   const [selectedLines, setSelectedLines] = useState<StockInLine[]>([]);
   const [note, setNote] = useState("Nạp tồn kho đợt hàng mới");
+  const [sheetCode, setSheetCode] = useState<string>("");
+
+  // Nạp dữ liệu bản nháp nếu đang chỉnh sửa phiếu nháp đã lưu
+  useEffect(() => {
+    if (!initialSheetId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const detail = await inventoryApi.getSheet(initialSheetId);
+        if (cancelled) return;
+        setSheetCode(detail.code || "");
+        if (detail.note) setNote(detail.note);
+        setSelectedLines(
+          detail.items.map((it) => ({
+            variant: {
+              id: it.variantId,
+              sku: it.sku,
+              barcode: null,
+              productName: it.productName,
+              imageUrl: null,
+              unit: it.unitOfMeasure || "Cái",
+              hasLotTracking: Boolean(it.lotNumber),
+              categoryId: null,
+              categoryName: null,
+              costPrice: it.unitCost,
+              basePrice: it.unitCost,
+              onHand: 0,
+              attributeText: it.attributeText || "",
+            },
+            quantity: it.quantity,
+            unitCost: it.unitCost,
+            lotNumber: it.lotNumber || "",
+            manufacturingDate: it.manufacturingDate ? String(it.manufacturingDate).slice(0, 10) : "",
+            expirationDate: it.expirationDate ? String(it.expirationDate).slice(0, 10) : "",
+          })),
+        );
+      } catch (err: any) {
+        setError("Không thể nạp chi tiết bản nháp: " + (err?.message || ""));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSheetId]);
 
   // Bộ lọc lô áp dụng chung cho đợt đặt hàng
   const [batchLotNumber, setBatchLotNumber] = useState("");
@@ -156,8 +201,8 @@ export function StockInModal({ onClose, onSuccess }: StockInModalProps) {
           setError(`Sản phẩm mỹ phẩm "${l.variant.productName}" bắt buộc phải có Hạn sử dụng (HSD) để quản lý FEFO.`);
           return;
         }
-        if (l.manufacturingDate && l.expirationDate <= l.manufacturingDate) {
-          setError(`Hạn sử dụng của SKU ${l.variant.sku} phải sau ngày sản xuất.`);
+        if (l.manufacturingDate && l.expirationDate < l.manufacturingDate) {
+          setError(`Hạn sử dụng của SKU ${l.variant.sku} phải bằng hoặc sau ngày sản xuất.`);
           return;
         }
       }
@@ -166,9 +211,8 @@ export function StockInModal({ onClose, onSuccess }: StockInModalProps) {
     setSaving(true);
     setError("");
     try {
-      await inventoryApi.createSheet({
+      const payload = {
         note: note.trim() || undefined,
-        apply: applyNow,
         items: selectedLines.map((l) => ({
           variantId: l.variant.id,
           quantity: Number(l.quantity),
@@ -177,7 +221,19 @@ export function StockInModal({ onClose, onSuccess }: StockInModalProps) {
           manufacturingDate: l.manufacturingDate || undefined,
           expirationDate: l.variant.hasLotTracking ? l.expirationDate || undefined : undefined,
         })),
-      });
+      };
+
+      if (initialSheetId) {
+        await inventoryApi.updateDraft(initialSheetId, payload);
+        if (applyNow) {
+          await inventoryApi.applySheet(initialSheetId);
+        }
+      } else {
+        await inventoryApi.createSheet({
+          ...payload,
+          apply: applyNow,
+        });
+      }
 
       onSuccess();
     } catch (err: any) {
@@ -534,7 +590,7 @@ export function StockInModal({ onClose, onSuccess }: StockInModalProps) {
       {/* Modal Xem trước Phiếu A4 */}
       {showVoucherPreview && (
         <OpeningStockVoucherModal
-          voucherCode={`PKK-${new Date().getFullYear()}-MỚI`}
+          voucherCode={sheetCode || `PKK-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`}
           businessName={profile?.business?.name || "CỬA HÀNG ERP"}
           businessAddress={profile?.business?.address || "Việt Nam"}
           businessPhone={profile?.business?.phone || "0900000000"}

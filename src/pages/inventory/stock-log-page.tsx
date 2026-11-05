@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CatalogHeader } from "@/pages/products/catalog-header";
 import { Icon } from "@/pages/products/ui-icon";
-import { inventoryApi, type LedgerListResponse } from "@/api/inventory";
+import { inventoryApi, type LedgerListResponse, type OpeningStockSheetDetail } from "@/api/inventory";
+import { OpeningStockVoucherModal } from "@/pages/products/opening-stock-voucher-modal";
 
 const vnd = (value: number) => new Intl.NumberFormat("vi-VN").format(Math.round(value || 0)) + " đ";
 
@@ -52,6 +53,27 @@ export function StockLogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState<LedgerListResponse | null>(null);
+  const [previewSheet, setPreviewSheet] = useState<OpeningStockSheetDetail | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const openVoucherByCode = async (code: string) => {
+    if (!code) return;
+    setPreviewLoading(true);
+    try {
+      const res = await inventoryApi.listSheets({ search: code });
+      const match = res.items.find((item) => item.code === code) || res.items[0];
+      if (match) {
+        const detail = await inventoryApi.getSheet(match.id);
+        setPreviewSheet(detail);
+      } else {
+        setError(`Không tìm thấy chi tiết chứng từ mã "${code}".`);
+      }
+    } catch (err: any) {
+      setError(`Lỗi khi mở chứng từ: ${err?.message || ""}`);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedKeyword(keyword.trim()), 200);
@@ -292,10 +314,15 @@ export function StockLogPage() {
                           <span className="font-mono font-bold text-gray-900">{timeStr}</span>{" "}
                           <span className="text-gray-400 text-[11px]">{dateStr}</span>
                           {voucherCode && (
-                            <div className="mt-1.5 flex items-center gap-1 font-mono font-bold text-[#4f46e5] text-[11px] bg-indigo-50/80 border border-indigo-100 rounded px-1.5 py-0.5 w-fit">
+                            <button
+                              type="button"
+                              onClick={() => void openVoucherByCode(voucherCode)}
+                              className="mt-1.5 flex items-center gap-1 font-mono font-bold text-[#4f46e5] hover:text-[#4338ca] text-[11px] bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded px-1.5 py-0.5 w-fit cursor-pointer transition-colors"
+                              title="Bấm để xem và in phiếu chứng từ gốc"
+                            >
                               <Icon name="receipt" className="text-[13px]" />
                               <span>{voucherCode}</span>
-                            </div>
+                            </button>
                           )}
                         </td>
                         <td className="px-4 py-3.5">
@@ -339,8 +366,10 @@ export function StockLogPage() {
                         <td className="px-4 py-3.5 text-right font-mono font-bold text-gray-900">
                           {Number(row.balanceAfter ?? 0).toLocaleString("vi-VN")}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-mono text-gray-800">
-                          {vnd(row.totalCostValue)}
+                        <td className="px-4 py-3.5 text-right font-mono font-bold">
+                          <span className={isPositive ? "text-emerald-600" : "text-rose-600"}>
+                            {isPositive ? `+${vnd(row.totalCostValue)}` : `-${vnd(Math.abs(row.totalCostValue))}`}
+                          </span>
                         </td>
                         <td className="px-5 py-3.5 text-gray-600 text-[12px]">
                           {row.createdBy || "Hệ thống"}
@@ -392,6 +421,40 @@ export function StockLogPage() {
           </div>
         </section>
       </main>
+
+      {/* Loading khi mở xem nhanh chứng từ */}
+      {previewLoading && (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-xs grid place-items-center">
+          <div className="rounded-xl bg-white p-5 shadow-xl flex items-center gap-3">
+            <Icon name="progress_activity" className="animate-spin text-[22px] text-[#4f46e5]" />
+            <span className="text-[13px] font-semibold text-gray-800">Đang tải chứng từ kiểm kê...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xem trước & In Phiếu kiểm kê truy ngược từ mã phiếu */}
+      {previewSheet && (
+        <OpeningStockVoucherModal
+          voucherCode={previewSheet.code || "OSTK-001"}
+          businessName="CỬA HÀNG ERP"
+          creatorName={previewSheet.createdBy || "Quản trị viên"}
+          date={new Date(previewSheet.createdAt).toLocaleDateString("vi-VN")}
+          note={previewSheet.note || "Phiếu nạp tồn kho đầu kỳ"}
+          items={previewSheet.items.map((it) => ({
+            id: it.id,
+            name: it.productName,
+            sku: it.sku,
+            quantity: it.quantity,
+            cost: it.unitCost,
+            unit: it.unitOfMeasure || "Cái",
+            attributeText: it.attributeText || "",
+            lotNumber: it.lotNumber || undefined,
+            expirationDate: it.expirationDate ? new Date(it.expirationDate).toLocaleDateString("vi-VN") : undefined,
+          }))}
+          hasLotTracking={previewSheet.items.some((it) => Boolean(it.lotNumber))}
+          onClose={() => setPreviewSheet(null)}
+        />
+      )}
     </div>
   );
 }

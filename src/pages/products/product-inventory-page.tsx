@@ -609,7 +609,11 @@ export function ProductInventoryPage() {
       {/* MODAL XEM TRƯỚC PHIẾU KIỂM KÊ KHO A4 */}
       {showVoucherModal && (
         <OpeningStockVoucherModal
-          voucherCode={`PKK-${new Date().getFullYear()}-${template?.code ? template.code.replace(/^TMP-/, "").replace(/^\d{4}-/, "") : "001"}`}
+          voucherCode={(() => {
+            const year = new Date().getFullYear();
+            const rawDigits = (template?.code || "").replace(/^TMP-/, "").replace(/^\d{4}-/, "").replace(/[^0-9]/g, "");
+            return `PKK-${year}-${rawDigits ? rawDigits.padStart(4, "0") : "0001"}`;
+          })()}
           businessName={profile?.business?.name || "CỬA HÀNG ERP"}
           businessAddress={profile?.business?.address || "Việt Nam"}
           businessPhone={profile?.business?.phone || "0900000000"}
