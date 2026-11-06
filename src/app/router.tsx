@@ -43,6 +43,11 @@ import { CashShiftsPage } from "@/pages/cash-shifts/cash-shifts-page";
 const PurchasesPage = lazy(() => import("@/pages/purchases/purchases-page").then((module) => ({ default: module.PurchasesPage })));
 const SalesPage = lazy(() => import("@/pages/sales/sales-page").then((module) => ({ default: module.SalesPage })));
 const ReturnsPage = lazy(() => import("@/pages/returns/returns-page").then((module) => ({ default: module.ReturnsPage })));
+const AdminBusinessesPage = lazy(() => import("@/pages/admin/admin-management-page").then((module) => ({ default: module.AdminBusinessesPage })));
+const AdminUsersPage = lazy(() => import("@/pages/admin/admin-management-page").then((module) => ({ default: module.AdminUsersPage })));
+const AdminAuditPage = lazy(() => import("@/pages/admin/admin-management-page").then((module) => ({ default: module.AdminAuditPage })));
+const BusinessActivityPage = lazy(() => import("@/pages/admin/admin-management-page").then((module) => ({ default: module.BusinessActivityPage })));
+const BusinessRolesPage = lazy(() => import("@/pages/business/business-roles-page").then((module) => ({ default: module.BusinessRolesPage })));
 
 function RequireSession({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -58,7 +63,7 @@ function LegacyPurchaseRedirect() {
 }
 
 function RequireProfile() {
-  const { session, profile, loading, profileError, refreshProfile } = useAuth();
+  const { session, profile, loading, profileError, refreshProfile, logout } = useAuth();
   const location = useLocation();
   if (loading) return <LoadingScreen />;
   if (!session) return <Navigate replace state={{ from: location.pathname }} to="/login" />;
@@ -70,7 +75,7 @@ function RequireProfile() {
           <h1>Kết nối không thành công</h1>
           <Alert className="mb-5" variant="destructive">{profileError}</Alert>
           <p className="form-help">Vui lòng thử lại sau. Nếu sự cố tiếp tục, hãy liên hệ người quản lý cửa hàng.</p>
-          <Button onClick={() => void refreshProfile()}>Thử lại</Button>
+          <div className="flex flex-wrap gap-2"><Button onClick={() => void refreshProfile()}>Thử lại</Button><Button onClick={() => void logout()} variant="outline">Đăng xuất</Button></div>
         </div>
       </main>
     );
@@ -91,7 +96,15 @@ function RequireBusiness({ children }: { children: ReactNode }) {
   if (profile.onboardingRequired || !profile.business) {
     return <Navigate replace to="/app" />;
   }
+  if (profile.business.status !== "ACTIVE" || profile.business.membershipStatus !== "ACTIVE") {
+    return <BusinessUnavailable />;
+  }
   return <>{children}</>;
+}
+
+function BusinessUnavailable() {
+  const { logout } = useAuth();
+  return <main className="grid min-h-screen place-items-center bg-slate-50 p-6"><div className="max-w-lg rounded-2xl border border-amber-200 bg-white p-8 text-center shadow-sm"><span className="eyebrow">TRUY CẬP DOANH NGHIỆP</span><h1 className="mt-2 text-2xl font-bold text-slate-900">Không gian doanh nghiệp hiện không hoạt động</h1><p className="mt-3 text-sm text-slate-600">Tài khoản hoặc doanh nghiệp của bạn đang tạm ngưng. Vui lòng liên hệ quản trị viên doanh nghiệp hoặc ABC Copilot để được hỗ trợ.</p><Button className="mt-5" onClick={() => void logout()} variant="outline">Đăng xuất</Button></div></main>;
 }
 
 function AppIndex() {
@@ -100,6 +113,9 @@ function AppIndex() {
   if (profile.onboardingRequired) return <Navigate replace to="/onboarding" />;
   if (profile.platformRoles.some((role) => role.code === "SYSTEM_ADMIN") && !profile.business) {
     return <Navigate replace to="/app/admin" />;
+  }
+  if (profile.business && (profile.business.status !== "ACTIVE" || profile.business.membershipStatus !== "ACTIVE")) {
+    return <BusinessUnavailable />;
   }
   return <DashboardPage />;
 }
@@ -284,11 +300,16 @@ export const router = createBrowserRouter([
           { path: "products", element: <OperationsPage /> },
           { path: "orders", element: <RequireBusiness><OrdersOperationsPage /></RequireBusiness> },
           { path: "orders/*", element: <RequireBusiness><LegacyPurchaseRedirect /></RequireBusiness> },
-          { path: "team", element: <TeamPage /> },
-          { path: "business", element: <BusinessPage /> },
+          { path: "team", element: <RequireBusiness><TeamPage /></RequireBusiness> },
+          { path: "business/roles", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><BusinessRolesPage /></Suspense></RequireBusiness> },
+          { path: "business", element: <RequireBusiness><BusinessPage /></RequireBusiness> },
           { path: "security", element: <SecurityPage /> },
           { path: "cash-shifts", element: <CashShiftsPage /> },
           { path: "admin", element: <AdminPage /> },
+          { path: "admin/businesses", element: <Suspense fallback={<LoadingScreen />}><AdminBusinessesPage /></Suspense> },
+          { path: "admin/users", element: <Suspense fallback={<LoadingScreen />}><AdminUsersPage /></Suspense> },
+          { path: "admin/activity", element: <Suspense fallback={<LoadingScreen />}><AdminAuditPage /></Suspense> },
+          { path: "activity", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><BusinessActivityPage /></Suspense></RequireBusiness> },
         ],
       },
     ],
