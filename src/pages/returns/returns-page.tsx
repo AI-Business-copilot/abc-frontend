@@ -23,7 +23,7 @@ export function ReturnsPage() {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<"f05" | "f06" | "history">("f05");
   const isOwner = profile?.business?.role === "OWNER";
-  const isStaff = profile?.business?.role === "STAFF";
+  const isStaff = Boolean(profile?.business && profile.business.role !== "OWNER");
 
   return (
     <div className="purchase-workspace">
