@@ -38,7 +38,6 @@ import { AuditItemDetailPage } from "@/pages/inventory/audit/audit-item-detail-p
 import { LotsPage } from "@/pages/inventory/scrap/lots-page";
 import { ScrapListPage } from "@/pages/inventory/scrap/scrap-list-page";
 import { ScrapDetailPage } from "@/pages/inventory/scrap/scrap-detail-page";
-import { CashShiftsPage } from "@/pages/cash-shifts/cash-shifts-page";
 
 const PurchasesPage = lazy(() => import("@/pages/purchases/purchases-page").then((module) => ({ default: module.PurchasesPage })));
 const SalesPage = lazy(() => import("@/pages/sales/sales-page").then((module) => ({ default: module.SalesPage })));
@@ -287,7 +286,6 @@ export const router = createBrowserRouter([
           { path: "team", element: <TeamPage /> },
           { path: "business", element: <BusinessPage /> },
           { path: "security", element: <SecurityPage /> },
-          { path: "cash-shifts", element: <CashShiftsPage /> },
           { path: "admin", element: <AdminPage /> },
         ],
       },

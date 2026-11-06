@@ -8,7 +8,6 @@ import {
   CreditCard,
   LayoutDashboard,
   LogOut,
-  Wallet,
   PackageSearch,
   RotateCcw,
   Settings2,
@@ -52,8 +51,6 @@ const navigation: NavigationGroup[] = [
     label: "VẬN HÀNH",
     items: [
       { to: "/app/products", label: "Sản phẩm & tồn kho", icon: Boxes, permission: "products.read" },
-      { to: "/app/cash-shifts", label: "Ca trực & tiền mặt", icon: Wallet, permission: "cash.shift.read" },
-      { to: "/app/orders", label: "Đơn hàng & thanh toán", icon: CreditCard, disabled: true },
       { to: "/app/orders", label: "Đơn hàng & thanh toán", icon: CreditCard },
       { to: "/returns", label: "Đổi trả hàng", icon: RotateCcw },
       { to: "/app/analytics", label: "Báo cáo kinh doanh", icon: BarChart3, disabled: true },
