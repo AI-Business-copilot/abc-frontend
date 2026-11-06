@@ -7,8 +7,22 @@ export interface CashTransaction {
   amount: string;
   notes: string | null;
   recipientOrPayer?: string | null;
+  refDocType?: string | null;
+  refDocId?: string | null;
   createdAt: string | null;
   createdByUser: { id: string; fullName: string };
+}
+
+export interface CashShiftPagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface CashTransactionPage {
+  items: CashTransaction[];
+  pagination: CashShiftPagination;
 }
 
 export interface CashShiftHandoff {
@@ -47,6 +61,8 @@ export interface CashShift extends CashShiftRecord {
   cashTransactions?: CashTransaction[];
   incomingHandoff?: CashShiftHandoff | null;
   systemExpectedCash?: string;
+  cashDataComplete?: boolean;
+  untrackedCashEventCount?: number;
 }
 
 export interface CashShiftCloseReview {
@@ -61,6 +77,14 @@ export interface CashShiftCloseReview {
   submittedAt: string;
   submittedByUser?: { id: string; fullName: string };
   reviewerNote?: string | null;
+  isDataComplete?: boolean;
+  shift?: {
+    id: string;
+    openedAt: string | null;
+    closedAt: string | null;
+    userId: string;
+    reconciliationStatus: "INCOMPLETE_DATA" | "RECONCILED";
+  };
 }
 
 export interface CashShiftHandoffReview {
@@ -85,6 +109,7 @@ export interface CashShiftHandoffReview {
 export interface CashShiftSummary {
   currentShift: CashShift | null;
   shifts: CashShift[];
+  pagination: CashShiftPagination;
 }
 
 export interface OpenCashShiftResult {

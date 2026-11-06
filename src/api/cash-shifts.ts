@@ -3,14 +3,36 @@ import type {
   CashShiftSummary,
   CashShiftReviewQueue,
   CloseCashShiftResult,
+  CashTransactionPage,
   OpenCashShiftResult,
 } from "@/types/cash-shifts";
 
 const base = "/cash-shifts";
 
 export const cashShiftsApi = {
-  getSummary() {
-    return apiRequest<CashShiftSummary>(base);
+  getSummary(query: { page: number; pageSize: number; search: string; status: string; sort: string }) {
+    const params = new URLSearchParams({
+      page: String(query.page),
+      pageSize: String(query.pageSize),
+      search: query.search,
+      status: query.status,
+      sort: query.sort,
+    });
+    return apiRequest<CashShiftSummary>(`${base}?${params.toString()}`);
+  },
+
+  getTransactions(
+    shiftId: string,
+    query: { page: number; pageSize: number; search: string; type: string; sort: string },
+  ) {
+    const params = new URLSearchParams({
+      page: String(query.page),
+      pageSize: String(query.pageSize),
+      search: query.search,
+      type: query.type,
+      sort: query.sort,
+    });
+    return apiRequest<CashTransactionPage>(`${base}/${shiftId}/transactions?${params.toString()}`);
   },
 
   previewHandoff(body: { openingCash: number }) {
@@ -50,7 +72,7 @@ export const cashShiftsApi = {
   },
 
   previewClose(shiftId: string, body: { actualCash: number }) {
-    return apiRequest<{ isMatched: boolean; requiresExplanation: boolean }>(
+    return apiRequest<{ isMatched: boolean; requiresExplanation: boolean; isDataComplete: boolean }>(
       `${base}/${shiftId}/close/preview`,
       { method: "POST", body: JSON.stringify(body) },
     );
