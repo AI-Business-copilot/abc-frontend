@@ -9,22 +9,27 @@ interface AuditStatusBadgeProps {
 const statusConfig: Record<
   AuditStatus,
   { label: string; bgColor: string; textColor: string }
-> = {
-  IN_PROGRESS: {
-    label: 'In Progress',
+> = {  IN_PROGRESS: {
+    label: 'Đang thực hiện',
     bgColor: 'bg-blue-100',
     textColor: 'text-blue-800',
   },
   PENDING_APPROVAL: {
-    label: 'Pending Approval',
+    label: 'Chờ duyệt',
     bgColor: 'bg-amber-100',
     textColor: 'text-amber-800',
   },
   DONE: {
-    label: 'Done',
+    label: 'Hoàn thành',
     bgColor: 'bg-green-100',
     textColor: 'text-green-800',
   },
+};
+
+export const AUDIT_STATUS_LABELS: Record<AuditStatus, string> = {
+  IN_PROGRESS: statusConfig.IN_PROGRESS.label,
+  PENDING_APPROVAL: statusConfig.PENDING_APPROVAL.label,
+  DONE: statusConfig.DONE.label,
 };
 
 const sizeConfig = {

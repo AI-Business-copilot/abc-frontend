@@ -22,9 +22,9 @@ const statusColorConfig: Record<AuditItemStatus, string> = {
 };
 
 const statusLabelConfig: Record<AuditItemStatus, string> = {
-  IN_PROGRESS: 'In Progress',
-  PENDING_APPROVAL: 'Pending',
-  APPROVED: 'Approved',
+  IN_PROGRESS: 'Đang đếm',
+  PENDING_APPROVAL: 'Chờ duyệt',
+  APPROVED: 'Đã duyệt',
 };
 
 export function AuditItemStatusBadge({ status }: { status: AuditItemStatus }) {
@@ -43,7 +43,7 @@ export function AuditItemList({
   onItemClick,
   canEdit,
   canEditItem,
-  actionLabel = 'Edit',
+  actionLabel = 'Sửa',
   onViewDetails,
 }: AuditItemListProps) {
   if (loading) {
@@ -59,7 +59,7 @@ export function AuditItemList({
   if (items.length === 0) {
     return (
       <div className="rounded-md bg-gray-50 p-8 text-center">
-        <p className="text-gray-600">No items found</p>
+        <p className="text-gray-600">Không có dòng kiểm kê nào</p>
       </div>
     );
   }
@@ -79,16 +79,15 @@ export function AuditItemList({
             onKeyDown={
               onViewDetails
                 ? (e) => {
-                    if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-                      e.preventDefault();
-                      onViewDetails(item);
-                    }
+                  if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onViewDetails(item);
                   }
+                }
                 : undefined
             }
-            className={`rounded-lg border border-gray-200 bg-white p-4 hover:shadow-md transition-shadow ${
-              onViewDetails ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500' : ''
-            }`}
+            className={`rounded-lg border border-gray-200 bg-white p-4 hover:shadow-md transition-shadow ${onViewDetails ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500' : ''
+              }`}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
@@ -97,7 +96,7 @@ export function AuditItemList({
                   <AuditItemStatusBadge status={item.itemStatus} />
                   {wasRejected && (
                     <span className="inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap bg-red-50 text-red-700">
-                      Sent back
+                      Bị trả lại
                     </span>
                   )}
                 </div>
@@ -114,18 +113,18 @@ export function AuditItemList({
                     <>
                       <span className="mx-2">•</span>
                       <span>
-                        Lot: {item.lotNumber}
+                        Lô: {item.lotNumber}
                         {item.expirationDate
-                          ? ` (exp ${new Date(item.expirationDate).toLocaleDateString()})`
+                          ? ` (HSD ${new Date(item.expirationDate).toLocaleDateString('vi-VN')})`
                           : ''}
-                        {!item.lotId ? ' • new lot' : ''}
+                        {item.isNewLot ? ' • lô mới' : ''}
                       </span>
                     </>
                   ) : (
                     <>
                       <span className="mx-2">•</span>
                       <span className="text-amber-700">
-                        Lot: not entered yet
+                        Lô: chưa nhập
                       </span>
                     </>
                   )}
@@ -133,15 +132,15 @@ export function AuditItemList({
 
                 {(item.assignedTo || item.createdBy) && (
                   <div className="text-xs text-gray-500 mb-2">
-                    {item.assignedTo && <span>Assigned to: {item.assignedTo.name}</span>}
+                    {item.assignedTo && <span>Giao cho: {item.assignedTo.name}</span>}
                     {item.assignedTo && item.createdBy && <span className="mx-2">•</span>}
-                    {item.createdBy && <span>Created by: {item.createdBy.name}</span>}
+                    {item.createdBy && <span>Người tạo: {item.createdBy.name}</span>}
                   </div>
                 )}
 
                 {item.discrepancyReason && (
                   <div className="bg-amber-50 border-l-2 border-amber-400 px-3 py-2 rounded text-xs text-amber-800 mt-2">
-                    <p className="font-medium mb-1">Reason:</p>
+                    <p className="font-medium mb-1">Lý do:</p>
                     <p>{item.discrepancyReason}</p>
                   </div>
                 )}
@@ -149,7 +148,7 @@ export function AuditItemList({
                 {wasRejected && (
                   <div className="bg-red-50 border-l-2 border-red-400 px-3 py-2 rounded text-xs text-red-800 mt-2">
                     <p className="font-medium mb-1">
-                      Sent back{item.rejectedBy ? ` by ${item.rejectedBy.name}` : ''}:
+                      Bị trả lại{item.rejectedBy ? ` bởi ${item.rejectedBy.name}` : ''}:
                     </p>
                     <p>{item.rejectionReason}</p>
                   </div>
@@ -157,25 +156,29 @@ export function AuditItemList({
               </div>
 
               <div className="flex-shrink-0 text-right min-w-max">
-                <div className="grid grid-cols-3 gap-4 mb-3">
+                <div className={`grid gap-4 mb-3 ${item.isNewLot ? 'grid-cols-1' : 'grid-cols-3'}`}>
+                  {!item.isNewLot && (
+                    <div>
+                      <p className="text-xs text-gray-500">Số Lượng hàng trong hệ thống</p>
+                      <p className="text-lg font-semibold text-gray-900">{item.snapshotQty}</p>
+                    </div>
+                  )}
                   <div>
-                    <p className="text-xs text-gray-500">System</p>
-                    <p className="text-lg font-semibold text-gray-900">{item.snapshotQty}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Counted</p>
+                    <p className="text-xs text-gray-500">Số Lượng Hàng Sử Dụng Được</p>
                     <p className="text-lg font-semibold text-gray-900">{item.countedQty}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Diff</p>
-                    <p
-                      className={`text-lg font-semibold ${hasDiscrepancy ? 'text-red-600' : 'text-green-600'
-                        }`}
-                    >
-                      {item.diffQty >= 0 ? '+' : ''}
-                      {item.diffQty}
-                    </p>
-                  </div>
+                  {!item.isNewLot && (
+                    <div>
+                      <p className="text-xs text-gray-500">Chênh lệch</p>
+                      <p
+                        className={`text-lg font-semibold ${hasDiscrepancy ? 'text-red-600' : 'text-green-600'
+                          }`}
+                      >
+                        {item.diffQty >= 0 ? '+' : ''}
+                        {item.diffQty}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -189,7 +192,7 @@ export function AuditItemList({
                       size="sm"
                       className="w-full"
                     >
-                      View details
+                      Xem chi tiết
                     </Button>
                   )}
                   {onItemClick && (canEditItem ? canEditItem(item) : canEdit) && (

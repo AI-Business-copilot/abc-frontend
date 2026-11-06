@@ -1,6 +1,7 @@
 import { apiRequest } from "@/services/api.service";
 import type {
   ApproveScrapResult,
+  ExpiringBatchesResponse,
   ExpiringLotsResponse,
   LotStatus,
   RejectionReasonCode,
@@ -28,8 +29,16 @@ export const scrapApi = {
     return apiRequest<ExpiringLotsResponse>(`${base}/lots/expiring${query(params)}`);
   },
 
-  quarantineLot(lotId: string, body: { quantity: number; note?: string }) {
-    return apiRequest<unknown>(`${base}/lots/${lotId}/quarantine`, {
+  /** Same list, but paged over batches: one entry per lot number with its variant items inside. */
+  getExpiringBatches(params: { status?: LotStatus; skip?: number; take?: number } = {}) {
+    return apiRequest<ExpiringBatchesResponse>(
+      `${base}/lots/expiring${query({ ...params, groupBy: "lot" })}`,
+    );
+  },
+
+  /** Quarantine a quantity of one lot item. The route keeps the batch id in the path for readability. */
+  quarantineLot(lotId: string, lotItemId: string, body: { quantity: number; note?: string }) {
+    return apiRequest<unknown>(`${base}/lots/${lotId}/items/${lotItemId}/quarantine`, {
       method: "POST",
       body: JSON.stringify(body),
     });
@@ -45,14 +54,14 @@ export const scrapApi = {
 
   /** Creates the order and its evidence photos in one request. Photos cannot be added or removed afterward. */
   createScrapOrder(body: {
-    lotId: string;
+    lotItemId: string;
     scrapReason: string;
     scrapQty?: number;
     scrapSource?: ScrapSource;
     images: File[];
   }) {
     const form = new FormData();
-    form.append("lotId", body.lotId);
+    form.append("lotItemId", body.lotItemId);
     form.append("scrapReason", body.scrapReason);
     if (body.scrapQty !== undefined) form.append("scrapQty", String(body.scrapQty));
     if (body.scrapSource) form.append("scrapSource", body.scrapSource);

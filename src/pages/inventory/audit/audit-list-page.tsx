@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
@@ -7,13 +7,19 @@ import { PermissionGate } from '../../../components/common/permission-gate';
 import { AuditStatusBadge } from './components/audit-status-badge';
 import { useAudits } from './hooks/use-audits';
 import { CatalogHeader } from '../../products/catalog-header';
-import type { AuditStatus } from '../../../types/audit';
+import type { AuditScopeType, AuditStatus } from '../../../types/audit';
 
 export function AuditListPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<AuditStatus | undefined>(undefined);
-  const { audits, total, page, pageSize, totalPages, loading, error, filter, goToPage, updateFilter } = useAudits({
+  const SCOPE_LABELS: Record<AuditScopeType, string> = {
+    FULL_STORE: 'Toàn cửa hàng',
+    CATEGORY: 'Theo danh mục',
+    SHELF: 'Theo kệ',
+  };
+
+  const { audits, total, page, totalPages, loading, error, goToPage, updateFilter } = useAudits({
     status: statusFilter,
   });
 
@@ -26,9 +32,11 @@ export function AuditListPage() {
     navigate(`/inventory/audit/${auditId}`);
   };
 
-  const handleCountItems = (auditId: string) => {
-    navigate(`/inventory/audit/${auditId}/count`);
-  };
+  // The backend has no text search, so the header box narrows the loaded page.
+  const needle = keyword.trim().toLowerCase();
+  const visible = needle
+    ? audits.filter((audit) => audit.auditCode.toLowerCase().includes(needle))
+    : audits;
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
@@ -36,12 +44,12 @@ export function AuditListPage() {
       <main className="mx-auto max-w-[1580px] space-y-6 px-5 py-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Stock Audit</h1>
-          <p className="text-gray-600 mt-1">Manage inventory audits</p>
+          <h1 className="text-3xl font-bold text-gray-900">Kiểm kê tồn kho</h1>
+          <p className="text-gray-600 mt-1">Quản lý các đợt kiểm kê tồn kho</p>
         </div>
         <PermissionGate permission="inventory.audit.create">
           <Button onClick={() => navigate('/inventory/audit/create')}>
-            + New Audit
+            + Tạo đợt kiểm kê
           </Button>
         </PermissionGate>
       </div>
@@ -57,25 +65,25 @@ export function AuditListPage() {
           variant={statusFilter === undefined ? 'default' : 'outline'}
           onClick={() => handleStatusChange(undefined)}
         >
-          All ({total})
+          Tất cả ({total})
         </Button>
         <Button
           variant={statusFilter === 'IN_PROGRESS' ? 'default' : 'outline'}
           onClick={() => handleStatusChange('IN_PROGRESS')}
         >
-          In Progress
+          Đang thực hiện
         </Button>
         <Button
           variant={statusFilter === 'PENDING_APPROVAL' ? 'default' : 'outline'}
           onClick={() => handleStatusChange('PENDING_APPROVAL')}
         >
-          Pending Approval
+          Chờ duyệt
         </Button>
         <Button
           variant={statusFilter === 'DONE' ? 'default' : 'outline'}
           onClick={() => handleStatusChange('DONE')}
         >
-          Done
+          Hoàn thành
         </Button>
       </div>
 
@@ -85,13 +93,13 @@ export function AuditListPage() {
             <div key={i} className="h-20 rounded-lg bg-gray-200 animate-pulse" />
           ))}
         </div>
-      ) : audits.length === 0 ? (
+      ) : visible.length === 0 ? (
         <Card className="p-12 text-center">
-          <p className="text-gray-600">No audits found</p>
+          <p className="text-gray-600">Không có đợt kiểm kê nào</p>
         </Card>
       ) : (
         <div className="space-y-3">
-          {audits.map((audit) => (
+          {visible.map((audit) => (
             <Card key={audit.id} className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -100,11 +108,11 @@ export function AuditListPage() {
                     <AuditStatusBadge status={audit.status} />
                   </div>
                   <div className="text-sm text-gray-600 space-x-3">
-                    <span>Scope: {audit.scopeType}</span>
+                    <span>Phạm vi: {SCOPE_LABELS[audit.scopeType]}</span>
                     <span>•</span>
-                    <span>Items: {audit.itemCount}</span>
+                    <span>Số dòng: {audit.itemCount}</span>
                     <span>•</span>
-                    <span>Started: {new Date(audit.countStartAt).toLocaleDateString()}</span>
+                    <span>Bắt đầu: {new Date(audit.countStartAt).toLocaleDateString('vi-VN')}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -114,7 +122,7 @@ export function AuditListPage() {
                     size="sm"
                     onClick={() => handleViewAudit(audit.id)}
                   >
-                    View Details
+                    Xem chi tiết
                   </Button>
                 </div>
               </div>
@@ -130,17 +138,17 @@ export function AuditListPage() {
             onClick={() => goToPage(page - 1)}
             disabled={page === 1 || loading}
           >
-            Previous
+            Trước
           </Button>
           <span className="text-sm text-gray-600">
-            Page {page} of {totalPages}
+            Trang {page} / {totalPages}
           </span>
           <Button
             variant="outline"
             onClick={() => goToPage(page + 1)}
             disabled={page === totalPages || loading}
           >
-            Next
+            Sau
           </Button>
         </div>
       )}
