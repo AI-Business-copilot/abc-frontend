@@ -5,6 +5,7 @@ import {
   Banknote,
   CircleAlert,
   Clock3,
+  Eye,
   History,
   LockKeyhole,
   Plus,
@@ -20,12 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Modal } from "@/components/ui/modal";
+import { Pagination } from "@/components/ui/pagination";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
-import type { CashShift, CashShiftReviewQueue, CashShiftSummary } from "@/types/cash-shifts";
+import type { CashShift, CashShiftReviewQueue, CashShiftSummary, CashTransaction, CashTransactionPage } from "@/types/cash-shifts";
 
 const incomingCategories = [
-  { value: "SALE_CASH", label: "Thu bán hàng tiền mặt" },
   { value: "OTHER_IN", label: "Thu tiền khác" },
 ];
 const outgoingCategories = [
@@ -47,12 +49,31 @@ function money(value: string | number | null | undefined) {
   return currency.format(Number(value ?? 0));
 }
 
+function formatCashInput(value: string) {
+  const [rawInteger, rawFraction] = value.split(",");
+  const integer = rawInteger.replace(/\D/g, "");
+  const groupedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const fraction = rawFraction?.replace(/\D/g, "").slice(0, 2);
+  return `${groupedInteger}${fraction === undefined ? "" : `,${fraction}`}`;
+}
+
+function formatStoredCashInput(value: string | number) {
+  const [integer, fraction] = String(value).split(".");
+  return formatCashInput(`${integer}${fraction && fraction !== "00" ? `,${fraction}` : ""}`);
+}
+
+function cashInputValue(value: string) {
+  return Number(value.replace(/\./g, "").replace(",", "."));
+}
+
 function timestamp(value: string | null | undefined) {
   return value ? dateTime.format(new Date(value)) : "—";
 }
 
 function categoryLabel(value: string) {
   if (value === "SAFE_DROP") return "Rút tiền khỏi két";
+  if (value === "POS_SALE" || value === "SALE_CASH") return "Thu bán hàng tiền mặt";
+  if (value === "SUPPLIER_PAYMENT") return "Thanh toán nhà cung cấp";
   return [...incomingCategories, ...outgoingCategories].find((item) => item.value === value)?.label ?? value;
 }
 
@@ -100,7 +121,7 @@ function MovementForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="cash-transaction-amount">Số tiền (VNĐ)</Label>
-        <Input autoComplete="off" id="cash-transaction-amount" max="9999999999.99" min="0.01" name="amount" placeholder="Ví dụ: 150000" required step="0.01" type="number" />
+        <Input autoComplete="off" id="cash-transaction-amount" inputMode="decimal" maxLength={16} name="amount" onChange={(event) => { event.target.value = formatCashInput(event.target.value); }} placeholder="Ví dụ: 150.000" required type="text" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="cash-transaction-notes">Ghi chú</Label>
@@ -123,12 +144,26 @@ export function CashShiftsPage() {
   const canWithdraw = can("cash.shift.withdraw");
   const [summary, setSummary] = useState<CashShiftSummary | null>(null);
   const [reviewQueue, setReviewQueue] = useState<CashShiftReviewQueue | null>(null);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historySearchInput, setHistorySearchInput] = useState("");
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyStatus, setHistoryStatus] = useState("ALL");
+  const [historySort, setHistorySort] = useState("newest");
+  const [transactionPage, setTransactionPage] = useState(1);
+  const [transactionSearchInput, setTransactionSearchInput] = useState("");
+  const [transactionSearch, setTransactionSearch] = useState("");
+  const [transactionType, setTransactionType] = useState("ALL");
+  const [transactionSort, setTransactionSort] = useState("newest");
+  const [transactionData, setTransactionData] = useState<CashTransactionPage | null>(null);
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [transactionRefresh, setTransactionRefresh] = useState(0);
+  const [selectedTransaction, setSelectedTransaction] = useState<CashTransaction | null>(null);
   const [openingCash, setOpeningCash] = useState("");
   const [openingExplanation, setOpeningExplanation] = useState("");
   const [openingPreview, setOpeningPreview] = useState<{ amount: string; hasPreviousShift: boolean; isMatched: boolean } | null>(null);
   const [actualCash, setActualCash] = useState("");
   const [closeExplanation, setCloseExplanation] = useState("");
-  const [closePreview, setClosePreview] = useState<{ amount: string; isMatched: boolean } | null>(null);
+  const [closePreview, setClosePreview] = useState<{ amount: string; isMatched: boolean; isDataComplete: boolean } | null>(null);
   const [resubmission, setResubmission] = useState<Record<string, { explanation: string; actualCash: string }>>({});
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [withdrawal, setWithdrawal] = useState({ amount: "", purpose: "", destination: "" });
@@ -137,29 +172,76 @@ export function CashShiftsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setHistorySearch(historySearchInput.trim());
+      setHistoryPage(1);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [historySearchInput]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setTransactionSearch(transactionSearchInput.trim());
+      setTransactionPage(1);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [transactionSearchInput]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [nextSummary, nextReviews] = await Promise.all([
-        cashShiftsApi.getSummary(),
+        cashShiftsApi.getSummary({
+          page: historyPage,
+          pageSize: 10,
+          search: historySearch,
+          status: historyStatus,
+          sort: historySort,
+        }),
         canReview ? cashShiftsApi.getReviewQueue() : Promise.resolve(null),
       ]);
       setSummary(nextSummary);
       setReviewQueue(nextReviews);
+      setTransactionRefresh((value) => value + 1);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Không thể tải dữ liệu ca trực.");
     } finally {
       setLoading(false);
     }
-  }, [canReview]);
+  }, [canReview, historyPage, historySearch, historySort, historyStatus]);
+
+  const currentShift = summary?.currentShift ?? null;
+  const transactions = transactionData?.items ?? [];
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const currentShift = summary?.currentShift ?? null;
-  const transactions = currentShift?.cashTransactions ?? [];
+  useEffect(() => {
+    if (!currentShift) {
+      setTransactionData(null);
+      return;
+    }
+    let active = true;
+    setTransactionLoading(true);
+    cashShiftsApi.getTransactions(currentShift.id, {
+      page: transactionPage,
+      pageSize: 10,
+      search: transactionSearch,
+      type: transactionType,
+      sort: transactionSort,
+    }).then((result) => {
+      if (active) setTransactionData(result);
+    }).catch((loadError: unknown) => {
+      if (active) setError(loadError instanceof Error ? loadError.message : "Không thể tải giao dịch trong ca.");
+    }).finally(() => {
+      if (active) setTransactionLoading(false);
+    });
+    return () => { active = false; };
+  }, [currentShift?.id, transactionPage, transactionRefresh, transactionSearch, transactionSort, transactionType]);
+
   const isResponsible = currentShift?.userId === profile?.user.id;
   const ownExplanationRequests = (summary?.shifts ?? []).flatMap((shift) =>
     shift.userId === profile?.user.id
@@ -190,7 +272,7 @@ export function CashShiftsPage() {
     setSuccess(null);
     try {
       const result = await cashShiftsApi.openShift({
-        openingCash: Number(openingCash),
+        openingCash: cashInputValue(openingCash),
         handoffExplanation: openingExplanation.trim() || undefined,
       });
       setSuccess(
@@ -212,7 +294,7 @@ export function CashShiftsPage() {
   }
 
   async function previewOpeningCash() {
-    if (!openingCash || Number(openingCash) < 0) {
+    if (!openingCash || !Number.isFinite(cashInputValue(openingCash)) || cashInputValue(openingCash) < 0) {
       setError("Hãy nhập số tiền đầu ca hợp lệ.");
       return;
     }
@@ -220,7 +302,7 @@ export function CashShiftsPage() {
     setError(null);
     setOpeningPreview(null);
     try {
-      const result = await cashShiftsApi.previewHandoff({ openingCash: Number(openingCash) });
+      const result = await cashShiftsApi.previewHandoff({ openingCash: cashInputValue(openingCash) });
       setOpeningPreview({
         amount: openingCash,
         hasPreviousShift: result.hasPreviousShift,
@@ -250,7 +332,7 @@ export function CashShiftsPage() {
       await cashShiftsApi.recordTransaction(currentShift.id, {
         transactionType,
         category: String(form.get("category")),
-        amount: Number(form.get("amount")),
+        amount: cashInputValue(String(form.get("amount") ?? "")),
         notes: String(form.get("notes") ?? "").trim() || undefined,
       });
       formElement.reset();
@@ -272,8 +354,8 @@ export function CashShiftsPage() {
     setError(null);
     setClosePreview(null);
     try {
-      const result = await cashShiftsApi.previewClose(currentShift.id, { actualCash: Number(actualCash) });
-      setClosePreview({ amount: actualCash, isMatched: result.isMatched });
+      const result = await cashShiftsApi.previewClose(currentShift.id, { actualCash: cashInputValue(actualCash) });
+      setClosePreview({ amount: actualCash, isMatched: result.isMatched, isDataComplete: result.isDataComplete });
       if (result.isMatched) setCloseExplanation("");
     } catch (previewError) {
       setError(previewError instanceof Error ? previewError.message : "Không thể kiểm tra kết quả kiểm đếm.");
@@ -298,14 +380,14 @@ export function CashShiftsPage() {
     setSuccess(null);
     try {
       const result = await cashShiftsApi.closeShift(currentShift.id, {
-        actualCash: Number(actualCash),
+        actualCash: cashInputValue(actualCash),
         explanation: closeExplanation.trim() || undefined,
       });
-      setSuccess(
-        result.review.isMatched
+      setSuccess(!result.review.isDataComplete
+        ? "Đã gửi yêu cầu và kết thúc ca để có thể chuyển ca. Dữ liệu bán hàng/hoàn tiền chưa đầy đủ nên chủ cửa hàng cần đối soát thêm."
+        : result.review.isMatched
           ? "Số tiền kiểm đếm khớp. Ca đã kết thúc và yêu cầu đang chờ chủ cửa hàng xác nhận."
-          : "Đã gửi yêu cầu kết thúc ca cùng phần giải trình. Ca đã kết thúc để có thể chuyển ca.",
-      );
+          : "Đã gửi yêu cầu kết thúc ca cùng phần giải trình. Ca đã kết thúc để có thể chuyển ca.");
       setActualCash("");
       setCloseExplanation("");
       setClosePreview(null);
@@ -328,7 +410,7 @@ export function CashShiftsPage() {
     try {
       await cashShiftsApi.resubmitCloseExplanation(shiftId, {
         explanation: input.explanation.trim(),
-        actualCash: input.actualCash ? Number(input.actualCash) : undefined,
+        actualCash: input.actualCash ? cashInputValue(input.actualCash) : undefined,
       });
       setSuccess("Đã gửi giải trình bổ sung tới chủ cửa hàng.");
       await load();
@@ -366,7 +448,7 @@ export function CashShiftsPage() {
     setSuccess(null);
     try {
       await cashShiftsApi.withdraw(currentShift.id, {
-        amount: Number(withdrawal.amount),
+        amount: cashInputValue(withdrawal.amount),
         purpose: withdrawal.purpose.trim(),
         destination: withdrawal.destination.trim(),
       });
@@ -440,7 +522,7 @@ export function CashShiftsPage() {
         {success && <Alert variant="success">{success}</Alert>}
         <Alert className="flex gap-3 border-amber-200 bg-amber-50 text-amber-950">
           <CircleAlert className="mt-0.5 shrink-0 text-amber-600" size={18} />
-          <span><strong>Đối soát đang ở chế độ tạm tính.</strong> POS và dữ liệu đổi trả chưa được tích hợp đầy đủ; chủ cửa hàng xem số lý thuyết, nhân viên chỉ nhận kết quả khớp/chênh lệch.</span>
+          <span><strong>Đối soát tiền mặt:</strong> Thanh toán CASH từ đơn bán và hoàn tiền CASH được tự động ghi vào dòng tiền ca; các khoản thu chi khác cần được nhân viên ghi nhận tại đây. Ca có đơn bán/hoàn tiền thiếu dữ liệu sẽ được đánh dấu chưa thể đối soát đầy đủ.</span>
         </Alert>
 
         {loading ? (
@@ -468,8 +550,9 @@ export function CashShiftsPage() {
             {canReconcile && (
               <Card>
                 <CardContent className="flex items-center justify-between gap-4 p-5">
-                  <div><p className="text-sm font-semibold text-slate-700">Số tiền két theo hệ thống (tạm tính)</p><p className="mt-1 text-xs text-slate-500">Chỉ hiển thị với người có quyền đối soát.</p></div>
-                  <strong className="text-xl text-violet-800">{money(currentShift.systemExpectedCash)}</strong>
+                  {currentShift.cashDataComplete
+                    ? <><div><p className="text-sm font-semibold text-slate-700">Số tiền két theo hệ thống</p><p className="mt-1 text-xs text-slate-500">Chỉ hiển thị với người có quyền đối soát.</p></div><strong className="text-xl text-violet-800">{money(currentShift.systemExpectedCash)}</strong></>
+                    : <Alert className="w-full" variant="destructive">Chưa thể xác nhận số lý thuyết: có {currentShift.untrackedCashEventCount ?? "một số"} mục dữ liệu nguồn chưa đầy đủ.</Alert>}
                 </CardContent>
               </Card>
             )}
@@ -489,12 +572,12 @@ export function CashShiftsPage() {
                         <form className="space-y-4" onSubmit={submitCloseShift}>
                           <div className="space-y-2">
                             <Label htmlFor="cash-actual">Tiền thực tế trong két (VNĐ)</Label>
-                            <Input id="cash-actual" max="9999999999.99" min="0" onChange={(event) => { setActualCash(event.target.value); setClosePreview(null); }} placeholder="Nhập tổng số tiền đã kiểm đếm" required step="0.01" type="number" value={actualCash} />
+                            <Input id="cash-actual" inputMode="decimal" maxLength={16} onChange={(event) => { setActualCash(formatCashInput(event.target.value)); setClosePreview(null); }} placeholder="Ví dụ: 1.000.000" required type="text" value={actualCash} />
                           </div>
                           <Button disabled={saving || !actualCash} onClick={() => void previewCloseCount()} type="button" variant="outline"><Banknote size={16} /> Kiểm tra kết quả kiểm đếm</Button>
                           {closePreview?.amount === actualCash && (
                             <Alert variant={closePreview.isMatched ? "success" : "destructive"}>
-                              {closePreview.isMatched ? "Số tiền kiểm đếm khớp với hệ thống." : "Số tiền kiểm đếm có chênh lệch. Vui lòng giải trình trước khi gửi yêu cầu."}
+                              {!closePreview.isDataComplete ? "Dữ liệu bán hàng/hoàn tiền chưa đầy đủ; hãy ghi rõ trong phần giải trình để chủ cửa hàng đối soát." : closePreview.isMatched ? "Số tiền kiểm đếm khớp với hệ thống." : "Số tiền kiểm đếm có chênh lệch. Vui lòng giải trình trước khi gửi yêu cầu."}
                             </Alert>
                           )}
                           {closePreview?.amount === actualCash && !closePreview.isMatched && (
@@ -515,7 +598,7 @@ export function CashShiftsPage() {
                 <CardHeader><CardTitle className="flex items-center gap-2"><Wallet size={18} className="text-violet-600" /> Rút tiền khỏi két</CardTitle><p className="text-sm text-slate-500">Chuyển tiền dư sang két an toàn hoặc ngân hàng; đây là dòng tiền ra, không phải chi phí kinh doanh.</p></CardHeader>
                 <CardContent>
                   <form className="grid gap-4 md:grid-cols-2" onSubmit={submitWithdrawal}>
-                    <div className="space-y-2"><Label htmlFor="withdrawal-amount">Số tiền rút (VNĐ)</Label><Input id="withdrawal-amount" max="9999999999.99" min="0.01" onChange={(event) => setWithdrawal((old) => ({ ...old, amount: event.target.value }))} required step="0.01" type="number" value={withdrawal.amount} /></div>
+                    <div className="space-y-2"><Label htmlFor="withdrawal-amount">Số tiền rút (VNĐ)</Label><Input id="withdrawal-amount" inputMode="decimal" maxLength={16} onChange={(event) => setWithdrawal((old) => ({ ...old, amount: formatCashInput(event.target.value) }))} required type="text" value={withdrawal.amount} /></div>
                     <div className="space-y-2"><Label htmlFor="withdrawal-destination">Nơi nhận tiền</Label><Input id="withdrawal-destination" maxLength={255} onChange={(event) => setWithdrawal((old) => ({ ...old, destination: event.target.value }))} placeholder="Két an toàn, ngân hàng..." required value={withdrawal.destination} /></div>
                     <div className="space-y-2 md:col-span-2"><Label htmlFor="withdrawal-purpose">Mục đích rút</Label><Input id="withdrawal-purpose" maxLength={1000} onChange={(event) => setWithdrawal((old) => ({ ...old, purpose: event.target.value }))} placeholder="Lý do và thông tin đối chiếu/biên nhận" required value={withdrawal.purpose} /></div>
                     <div className="md:col-span-2"><Button disabled={saving} type="submit"><ArrowUpRight size={16} /> Xác nhận rút tiền</Button></div>
@@ -525,9 +608,19 @@ export function CashShiftsPage() {
             )}
 
             <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><History size={18} className="text-violet-600" /> Giao dịch trong ca</CardTitle><p className="text-sm text-slate-500">{transactions.length} giao dịch đã ghi nhận</p></CardHeader>
-              <CardContent>
-                {transactions.length === 0 ? <div className="rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center text-sm text-slate-500">Chưa có giao dịch tiền mặt trong ca này.</div>
+              <CardHeader><CardTitle className="flex items-center gap-2"><History size={18} className="text-violet-600" /> Giao dịch trong ca</CardTitle><p className="text-sm text-slate-500">{transactionData?.pagination.total ?? 0} giao dịch phù hợp</p></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Input aria-label="Tìm giao dịch" onChange={(event) => setTransactionSearchInput(event.target.value)} placeholder="Tìm ghi chú, người nhận..." value={transactionSearchInput} />
+                  <select aria-label="Lọc chiều giao dịch" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm" onChange={(event) => { setTransactionType(event.target.value); setTransactionPage(1); }} value={transactionType}>
+                    <option value="ALL">Tất cả dòng tiền</option><option value="IN">Tiền vào</option><option value="OUT">Tiền ra</option>
+                  </select>
+                  <select aria-label="Sắp xếp giao dịch" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm" onChange={(event) => { setTransactionSort(event.target.value); setTransactionPage(1); }} value={transactionSort}>
+                    <option value="newest">Mới nhất trước</option><option value="oldest">Cũ nhất trước</option><option value="amount_high">Số tiền cao nhất</option><option value="amount_low">Số tiền thấp nhất</option>
+                  </select>
+                </div>
+                {transactionLoading ? <div className="py-8 text-center text-sm text-slate-500">Đang tải giao dịch...</div>
+                  : transactions.length === 0 ? <div className="rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center text-sm text-slate-500">{transactionSearch || transactionType !== "ALL" ? "Không có giao dịch phù hợp với bộ lọc." : "Chưa có giao dịch tiền mặt trong ca này."}</div>
                   : <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm">
                     <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-3 font-semibold">Thời gian</th><th className="px-3 py-3 font-semibold">Danh mục</th><th className="px-3 py-3 font-semibold">Người ghi</th><th className="px-3 py-3 text-right font-semibold">Số tiền</th><th className="px-3 py-3 font-semibold">Ghi chú / nơi nhận</th></tr></thead>
                     <tbody>{transactions.map((transaction) => <tr className="border-b border-slate-100 last:border-0" key={transaction.id}>
@@ -535,9 +628,10 @@ export function CashShiftsPage() {
                       <td className="px-3 py-3"><span className={`inline-flex items-center gap-1.5 font-semibold ${transaction.transactionType === "IN" ? "text-emerald-700" : "text-rose-700"}`}>{transaction.transactionType === "IN" ? <ArrowDownLeft size={14} /> : <ArrowUpRight size={14} />}{categoryLabel(transaction.category)}</span></td>
                       <td className="px-3 py-3 text-slate-600">{transaction.createdByUser.fullName}</td>
                       <td className={`whitespace-nowrap px-3 py-3 text-right font-bold ${transaction.transactionType === "IN" ? "text-emerald-700" : "text-rose-700"}`}>{transaction.transactionType === "IN" ? "+" : "−"}{money(transaction.amount)}</td>
-                      <td className="max-w-56 truncate px-3 py-3 text-slate-500">{transaction.recipientOrPayer ? `${transaction.notes || ""} · ${transaction.recipientOrPayer}` : transaction.notes || "—"}</td>
+                      <td className="max-w-64 px-3 py-3 text-slate-500"><p className="max-w-52 truncate">{transaction.notes || transaction.recipientOrPayer || "—"}</p><Button className="mt-1 h-auto px-0 py-0 text-xs" onClick={() => setSelectedTransaction(transaction)} type="button" variant="link"><Eye size={13} /> Xem chi tiết</Button></td>
                     </tr>)}</tbody>
                   </table></div>}
+                {transactionData?.pagination && <Pagination {...transactionData.pagination} onPageChange={setTransactionPage} />}
               </CardContent>
             </Card>
           </>
@@ -547,7 +641,7 @@ export function CashShiftsPage() {
             <CardContent>
               {canManage ? (
                 <form className="max-w-xl space-y-4" onSubmit={submitOpenShift}>
-                  <div className="space-y-2"><Label htmlFor="cash-opening">Tiền đầu ca trong két (VNĐ)</Label><Input id="cash-opening" max="9999999999.99" min="0" onChange={(event) => { setOpeningCash(event.target.value); setOpeningPreview(null); }} placeholder="Nhập số tiền kiểm đếm được" required step="0.01" type="number" value={openingCash} /></div>
+                  <div className="space-y-2"><Label htmlFor="cash-opening">Tiền đầu ca trong két (VNĐ)</Label><Input id="cash-opening" inputMode="decimal" maxLength={16} onChange={(event) => { setOpeningCash(formatCashInput(event.target.value)); setOpeningPreview(null); }} placeholder="Ví dụ: 1.000.000" required type="text" value={openingCash} /></div>
                   <p className="text-sm text-slate-500">Ca sẽ do <strong className="text-slate-700">{profile?.user.fullName}</strong> chịu trách nhiệm.</p>
                   <Button disabled={saving || !openingCash} onClick={() => void previewOpeningCash()} type="button" variant="outline"><Banknote size={16} /> Kiểm tra tiền bàn giao</Button>
                   {openingPreview?.amount === openingCash && (
@@ -569,7 +663,7 @@ export function CashShiftsPage() {
           <Card key={review.id}>
             <CardHeader><CardTitle>Giải trình bổ sung · ca {timestamp(shift.openedAt)}</CardTitle><p className="text-sm text-amber-800">{review.reviewerNote || "Chủ cửa hàng yêu cầu giải trình lại."}</p></CardHeader>
             <CardContent className="space-y-3">
-              <div className="space-y-2"><Label htmlFor={`resubmit-amount-${review.id}`}>Tiền thực tế đã kiểm đếm (có thể cập nhật)</Label><Input id={`resubmit-amount-${review.id}`} min="0" onChange={(event) => setResubmission((old) => ({ ...old, [review.id]: { explanation: old[review.id]?.explanation ?? "", actualCash: event.target.value } }))} step="0.01" type="number" value={resubmission[review.id]?.actualCash ?? review.actualCash} /></div>
+              <div className="space-y-2"><Label htmlFor={`resubmit-amount-${review.id}`}>Tiền thực tế đã kiểm đếm (có thể cập nhật)</Label><Input id={`resubmit-amount-${review.id}`} inputMode="decimal" maxLength={16} onChange={(event) => setResubmission((old) => ({ ...old, [review.id]: { explanation: old[review.id]?.explanation ?? "", actualCash: formatCashInput(event.target.value) } }))} type="text" value={resubmission[review.id]?.actualCash ?? formatStoredCashInput(review.actualCash)} /></div>
               <div className="space-y-2"><Label htmlFor={`resubmit-reason-${review.id}`}>Giải trình bổ sung</Label><textarea className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100" id={`resubmit-reason-${review.id}`} maxLength={1000} onChange={(event) => setResubmission((old) => ({ ...old, [review.id]: { actualCash: old[review.id]?.actualCash ?? review.actualCash, explanation: event.target.value } }))} placeholder="Bổ sung thông tin theo yêu cầu của chủ cửa hàng" value={resubmission[review.id]?.explanation ?? ""} /></div>
               <Button disabled={saving} onClick={() => void resubmitCloseReview(shift.id, review.id)} type="button">Gửi giải trình bổ sung</Button>
             </CardContent>
@@ -594,8 +688,9 @@ export function CashShiftsPage() {
                 <>
                   {reviewQueue.closeReviews.map((review) => (
                     <div className="space-y-3 rounded-xl border border-slate-200 p-4" key={review.id}>
-                      <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-semibold text-slate-900">Kiểm kê cuối ca · {review.submittedByUser?.fullName}</p><p className="text-xs text-slate-500">Gửi lúc {timestamp(review.submittedAt)} · lần {review.revision}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(review.status)}`}>{review.isMatched ? "Số đếm khớp" : "Có chênh lệch"}</span></div>
+                      <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-semibold text-slate-900">Kiểm kê cuối ca · {review.submittedByUser?.fullName}</p><p className="text-xs text-slate-500">Gửi lúc {timestamp(review.submittedAt)} · lần {review.revision}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(review.status)}`}>{review.shift?.reconciliationStatus === "INCOMPLETE_DATA" ? "Dữ liệu chưa đầy đủ" : review.isMatched ? "Số đếm khớp" : "Có chênh lệch"}</span></div>
                       <div className="grid gap-3 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-3"><div>Hệ thống dự kiến<strong className="mt-1 block">{money(review.expectedCash)}</strong></div><div>Nhân viên đếm<strong className="mt-1 block">{money(review.actualCash)}</strong></div><div>Chênh lệch<strong className="mt-1 block">{money(review.differenceCash)}</strong></div></div>
+                      {review.shift?.reconciliationStatus === "INCOMPLETE_DATA" && <Alert variant="destructive">Dữ liệu giao dịch của ca chưa đầy đủ; số liệu dưới đây chỉ phản ánh các dòng tiền đã ghi nhận, cần xác minh thêm trước khi kết luận.</Alert>}
                       <p className="text-sm text-slate-600"><strong>Giải trình:</strong> {review.explanation || "Không có chênh lệch."}</p>
                       <textarea className="min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100" maxLength={1000} onChange={(event) => setReviewNotes((old) => ({ ...old, [review.id]: event.target.value }))} placeholder="Ghi chú duyệt hoặc nêu rõ lý do cần giải trình lại" value={reviewNotes[review.id] ?? ""} />
                       <div className="flex flex-wrap gap-2"><Button disabled={saving} onClick={() => void decideCloseReview(review.id, "APPROVE")} type="button">Chấp nhận yêu cầu</Button><Button disabled={saving || !reviewNotes[review.id]?.trim()} onClick={() => void decideCloseReview(review.id, "REQUEST_EXPLANATION")} type="button" variant="outline">Yêu cầu giải trình lại</Button></div>
@@ -618,7 +713,16 @@ export function CashShiftsPage() {
 
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><History size={18} className="text-violet-600" /> Lịch sử ca gần đây</CardTitle><p className="text-sm text-slate-500">Trạng thái kiểm kê có thể chờ duyệt sau khi két đã được bàn giao cho ca mới.</p></CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Input aria-label="Tìm nhân viên chịu trách nhiệm" onChange={(event) => setHistorySearchInput(event.target.value)} placeholder="Tìm nhân viên chịu trách nhiệm..." value={historySearchInput} />
+              <select aria-label="Lọc trạng thái ca" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm" onChange={(event) => { setHistoryStatus(event.target.value); setHistoryPage(1); }} value={historyStatus}>
+                <option value="ALL">Tất cả ca</option><option value="OPEN">Đang mở</option><option value="CLOSED">Đã đóng</option>
+              </select>
+              <select aria-label="Sắp xếp ca" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm" onChange={(event) => { setHistorySort(event.target.value); setHistoryPage(1); }} value={historySort}>
+                <option value="newest">Ca mới nhất</option><option value="oldest">Ca cũ nhất</option>
+              </select>
+            </div>
             {!summary?.shifts.length ? <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">Chưa có ca nào được ghi nhận.</div>
               : <div className="overflow-x-auto"><table className="w-full min-w-[820px] text-left text-sm">
                 <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-3 font-semibold">Người chịu trách nhiệm</th><th className="px-3 py-3 font-semibold">Bắt đầu</th><th className="px-3 py-3 font-semibold">Kết thúc</th><th className="px-3 py-3 text-right font-semibold">Đầu ca</th>{canReconcile && <><th className="px-3 py-3 text-right font-semibold">Dự kiến*</th><th className="px-3 py-3 text-right font-semibold">Thực tế</th><th className="px-3 py-3 text-right font-semibold">Chênh lệch*</th></>}<th className="px-3 py-3 font-semibold">Trạng thái ca / duyệt</th></tr></thead>
@@ -630,14 +734,28 @@ export function CashShiftsPage() {
                     <td className="whitespace-nowrap px-3 py-3 text-slate-600">{timestamp(shift.closedAt)}</td>
                     <td className="whitespace-nowrap px-3 py-3 text-right text-slate-700">{money(shift.openingCash)}</td>
                     {canReconcile && <><td className="whitespace-nowrap px-3 py-3 text-right text-slate-700">{shift.expectedCash == null ? "—" : money(shift.expectedCash)}</td><td className="whitespace-nowrap px-3 py-3 text-right text-slate-700">{shift.actualCash == null ? "—" : money(shift.actualCash)}</td><td className={`whitespace-nowrap px-3 py-3 text-right font-semibold ${Number(shift.differenceCash) < 0 ? "text-rose-700" : Number(shift.differenceCash) > 0 ? "text-emerald-700" : "text-slate-700"}`}>{shift.differenceCash == null ? "—" : money(shift.differenceCash)}</td></>}
-                    <td className="px-3 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${shift.status === "OPEN" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{shift.status === "OPEN" ? "Đang mở" : "Đã đóng"}</span>{latestReview && <span className={`ml-1 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(latestReview.status)}`}>{reviewStatusLabel(latestReview.status)}</span>}</td>
+                    <td className="px-3 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${shift.status === "OPEN" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{shift.status === "OPEN" ? "Đang mở" : "Đã đóng"}</span>{canReconcile && shift.status === "CLOSED" && shift.reconciliationStatus === "INCOMPLETE_DATA" && <span className="ml-1 inline-block rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">Dữ liệu thiếu</span>}{latestReview && <span className={`ml-1 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(latestReview.status)}`}>{reviewStatusLabel(latestReview.status)}</span>}</td>
                   </tr>;
                 })}</tbody>
               </table></div>}
-            {canReconcile && <p className="mt-3 text-xs text-slate-500">* Số dự kiến và chênh lệch chỉ tạm tính theo các giao dịch đã nhập; POS và đổi trả chưa tích hợp đầy đủ.</p>}
+            {canReconcile && <p className="mt-3 text-xs text-slate-500">* Ca có trạng thái dữ liệu chưa đầy đủ không thể dùng số dự kiến để kết luận chênh lệch.</p>}
+            {summary?.pagination && <Pagination {...summary.pagination} onPageChange={setHistoryPage} />}
           </CardContent>
         </Card>
       </div>
+      <Modal onClose={() => setSelectedTransaction(null)} open={selectedTransaction !== null} title="Chi tiết giao dịch">
+        {selectedTransaction && (
+          <dl className="grid gap-x-5 gap-y-4 text-sm sm:grid-cols-2">
+            <div><dt className="text-slate-500">Thời gian</dt><dd className="mt-1 font-medium">{timestamp(selectedTransaction.createdAt)}</dd></div>
+            <div><dt className="text-slate-500">Loại giao dịch</dt><dd className={`mt-1 font-semibold ${selectedTransaction.transactionType === "IN" ? "text-emerald-700" : "text-rose-700"}`}>{selectedTransaction.transactionType === "IN" ? "Tiền vào" : "Tiền ra"} · {categoryLabel(selectedTransaction.category)}</dd></div>
+            <div><dt className="text-slate-500">Số tiền</dt><dd className="mt-1 font-bold">{money(selectedTransaction.amount)}</dd></div>
+            <div><dt className="text-slate-500">Người ghi nhận</dt><dd className="mt-1 font-medium">{selectedTransaction.createdByUser.fullName}</dd></div>
+            <div className="sm:col-span-2"><dt className="text-slate-500">Người nhận / nộp tiền</dt><dd className="mt-1 font-medium">{selectedTransaction.recipientOrPayer || "—"}</dd></div>
+            <div className="sm:col-span-2"><dt className="text-slate-500">Ghi chú</dt><dd className="mt-1 whitespace-pre-wrap break-words font-medium">{selectedTransaction.notes || "Không có ghi chú."}</dd></div>
+            {selectedTransaction.refDocType && <div className="sm:col-span-2"><dt className="text-slate-500">Chứng từ tham chiếu</dt><dd className="mt-1 break-all font-medium">{selectedTransaction.refDocType}{selectedTransaction.refDocId ? ` · ${selectedTransaction.refDocId}` : ""}</dd></div>}
+          </dl>
+        )}
+      </Modal>
     </AppLayout>
   );
 }
