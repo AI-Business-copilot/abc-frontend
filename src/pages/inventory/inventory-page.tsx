@@ -95,17 +95,19 @@ export function InventoryPage() {
   const rows = data?.items || [];
 
   const voucherItems: VoucherItem[] =
-    activeSheet?.items.map((it) => ({
+    activeSheet?.items.map((it: any) => ({
       id: it.id,
       sku: it.sku,
       name: it.productName || "Sản phẩm",
       attributeText: it.attributeText || "Mặc định",
-      unit: it.unitOfMeasure || "Cái",
+      unit: it.unit || it.unitOfMeasure || "Cái",
       cost: Number(it.unitCost) || 0,
       quantity: Number(it.quantity) || 0,
       lotNumber: it.lotNumber || undefined,
-      manufacturingDate: it.manufacturingDate ? it.manufacturingDate.slice(0, 10) : undefined,
-      expirationDate: it.expirationDate ? it.expirationDate.slice(0, 10) : undefined,
+      manufacturingDate: it.manufacturingDate ? String(it.manufacturingDate).slice(0, 10) : undefined,
+      expirationDate: it.expirationDate && String(it.expirationDate).slice(0, 4) !== "2099"
+        ? String(it.expirationDate).slice(0, 10)
+        : undefined,
     })) || [];
 
   return (

@@ -44,27 +44,29 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
         setSheetCode(detail.code || "");
         if (detail.note) setNote(detail.note);
         setSelectedLines(
-          detail.items.map((it) => ({
+          detail.items.map((it: any) => ({
             variant: {
               id: it.variantId,
               sku: it.sku,
-              barcode: null,
+              barcode: it.barcode ?? null,
               productName: it.productName,
-              imageUrl: null,
-              unit: it.unitOfMeasure || "Cái",
-              hasLotTracking: Boolean(it.lotNumber),
+              imageUrl: it.imageUrl ?? null,
+              unit: it.unit || it.unitOfMeasure || "Cái",
+              hasLotTracking: Boolean(it.hasLotTracking),
               categoryId: null,
               categoryName: null,
               costPrice: it.unitCost,
               basePrice: it.unitCost,
-              onHand: 0,
+              onHand: it.onHand ?? 0,
               attributeText: it.attributeText || "",
             },
             quantity: it.quantity,
             unitCost: it.unitCost,
             lotNumber: it.lotNumber || "",
             manufacturingDate: it.manufacturingDate ? String(it.manufacturingDate).slice(0, 10) : "",
-            expirationDate: it.expirationDate ? String(it.expirationDate).slice(0, 10) : "",
+            expirationDate: it.expirationDate && String(it.expirationDate).slice(0, 4) !== "2099"
+              ? String(it.expirationDate).slice(0, 10)
+              : "",
           })),
         );
       } catch (err: any) {
