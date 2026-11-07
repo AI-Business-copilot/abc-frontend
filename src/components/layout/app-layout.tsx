@@ -34,6 +34,7 @@ interface NavigationItem {
   icon: LucideIcon;
   end?: boolean;
   permission?: string;
+  permissionGroups?: string[][];
   disabled?: boolean;
 }
 
@@ -58,11 +59,15 @@ const navigation: NavigationGroup[] = [
     items: [
       { to: "/app/products", label: "Sản phẩm & tồn kho", icon: Boxes, permission: "products.read" },
       { to: "/app/cash-shifts", label: "Ca trực & tiền mặt", icon: Wallet, permission: "cash.shift.read" },
-      { to: "/app/orders", label: "Đơn hàng & thanh toán", icon: CreditCard, disabled: true },
       { to: "/app/orders", label: "Đơn hàng & thanh toán", icon: CreditCard },
       { to: "/promotions", label: "Khuyến mãi", icon: Tag, permission: "promotions.manage" },
+      {
+        to: "/business-data",
+        label: "Dữ liệu kinh doanh",
+        icon: BarChart3,
+        permissionGroups: [["business_data.manage"], ["analytics.read", "finance.read"]],
+      },
       { to: "/returns", label: "Đổi trả hàng", icon: RotateCcw },
-      { to: "/app/analytics", label: "Báo cáo kinh doanh", icon: BarChart3, disabled: true },
     ],
   },
   {
@@ -95,6 +100,10 @@ export function AppLayout({ children }: { children?: ReactNode }) {
   const visiblePlatformItems = platformItems.filter(
     (item) => item.permission === undefined || can(item.permission),
   );
+  const canAccessNavigationItem = (item: NavigationItem) =>
+    item.permissionGroups
+      ? item.permissionGroups.some((group) => group.every((permission) => can(permission)))
+      : item.permission === undefined || can(item.permission);
   const canViewAdminDashboard =
     can("platform.users.manage") && can("platform.businesses.manage");
   const hasActiveBusinessContext =
@@ -123,9 +132,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         <nav className="side-nav" aria-label="Điều hướng chính">
           {navigation.map((group) => {
             if (isSystemAdmin && !hasActiveBusinessContext) return null;
-            const visibleItems = group.items.filter(
-              (item) => item.permission === undefined || can(item.permission),
-            );
+            const visibleItems = group.items.filter(canAccessNavigationItem);
             if (visibleItems.length === 0) return null;
             return (
               <div className="nav-group" key={group.label}>
