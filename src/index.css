@@ -1,3 +1,11 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", sans-serif;
+  --font-display: "Manrope", sans-serif;
+  --color-brand: #5b4ae8;
+}
+
 @font-face {
   font-family: 'Fz Poppins';
   src: url('https://nasani.vn/assets/fonts/FzPoppins-Regular.woff2') format('woff2'),
@@ -71,14 +79,6 @@
     min-height: auto;
     display: block;
   }
-}
-
-@import "tailwindcss";
-
-@theme {
-  --font-sans: "DM Sans", sans-serif;
-  --font-display: "Manrope", sans-serif;
-  --color-brand: #5b4ae8;
 }
 
 :root {

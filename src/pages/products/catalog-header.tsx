@@ -8,7 +8,21 @@ import { Icon } from "@/pages/products/ui-icon";
 import { signOut } from "@/services/auth.service";
 
 type CatalogHeaderProps = {
-  active: "products" | "categories" | "attributes" | "inventory" | "stock-log" | "orders" | "receipts" | "suppliers" | "sales" | "pos" | "customers";
+  active:
+    | "products"
+    | "categories"
+    | "attributes"
+    | "inventory"
+    | "stock-audit"
+    | "stock-log"
+    | "lots"
+    | "scrap"
+    | "orders"
+    | "receipts"
+    | "suppliers"
+    | "sales"
+    | "pos"
+    | "customers";
   keyword: string;
   onKeywordChange: (value: string) => void;
   mode?: "catalog" | "inventory" | "purchases" | "sales";

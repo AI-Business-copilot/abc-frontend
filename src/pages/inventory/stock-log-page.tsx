@@ -196,7 +196,7 @@ export function StockLogPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-      <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+      <CatalogHeader active="stock-log" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
 
       <main className="mx-auto max-w-[1580px] px-6 py-5">
         {/* Breadcrumb & Navigation Tabs */}
