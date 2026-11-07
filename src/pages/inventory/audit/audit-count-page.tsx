@@ -126,7 +126,7 @@ export function AuditCountPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-      <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+      <CatalogHeader active="stock-audit" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1580px] space-y-6 px-5 py-5">
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={() => backToAudit()}>

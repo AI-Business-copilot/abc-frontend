@@ -91,7 +91,7 @@ export function ScrapDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-      <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+      <CatalogHeader active="scrap" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1180px] space-y-5 px-5 py-5">
         <PermissionGate permission="inventory.lot.read">
           <Link className="text-sm font-semibold text-violet-700 hover:underline" to="/inventory/scrap">

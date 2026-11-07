@@ -1,6 +1,4 @@
-import { supabase } from "@/lib/supabase";
-
-const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { apiJson } from "@/lib/api-client";
 
 export type CategoryNode = {
   id: string;
@@ -48,29 +46,7 @@ export type CategoryMutationResult = {
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-  }
-
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
-    throw new Error(payload.message || payload.error || `Yêu cầu thất bại (${response.status}).`);
-  }
-
-  return (await response.json()) as T;
+  return apiJson<T>(path, init);
 }
 
 export const categoriesApi = {

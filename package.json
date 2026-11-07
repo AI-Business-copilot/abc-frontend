@@ -12,14 +12,18 @@
     "@radix-ui/react-label": "^2.1.17",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/supabase-js": "^2.57.4",
+    "@types/jsbarcode": "^3.11.4",
+    "@zxing/library": "^0.23.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jsbarcode": "^3.12.3",
     "lucide-react": "^0.468.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.4",
     "react-toastify": "^11.2.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "zxing-wasm": "^3.1.6"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.14",

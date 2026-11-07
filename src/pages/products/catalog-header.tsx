@@ -1,12 +1,28 @@
-import { Link, NavLink } from "react-router-dom";
+import { useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Icon } from "@/pages/products/ui-icon";
+import { signOut } from "@/services/auth.service";
 
 type CatalogHeaderProps = {
-  active: "products" | "categories" | "attributes" | "orders" | "receipts" | "suppliers" | "sales" | "pos" | "customers";
+  active:
+    | "products"
+    | "categories"
+    | "attributes"
+    | "inventory"
+    | "stock-audit"
+    | "stock-log"
+    | "lots"
+    | "scrap"
+    | "orders"
+    | "receipts"
+    | "suppliers"
+    | "sales"
+    | "pos"
+    | "customers";
   keyword: string;
   onKeywordChange: (value: string) => void;
   mode?: "catalog" | "inventory" | "purchases" | "sales";
@@ -17,9 +33,11 @@ const tabs = [
   { key: "products", label: "Sản phẩm", to: "/products" },
   { key: "categories", label: "Danh mục", to: "/products/categories" },
   { key: "attributes", label: "Thuộc tính", to: "/products/attributes" },
+  { key: "inventory", label: "Phiếu kiểm kê kho", to: "/inventory" },
 ] as const;
 const inventoryTabs = [
-  { key: "inventory", label: "Nhập kho ban đầu", to: "/inventory" },
+  { key: "products", label: "← Quay lại Sản phẩm", to: "/products" },
+  { key: "inventory", label: "Phiếu kiểm kê & Nạp tồn", to: "/inventory" },
   { key: "stock-audit", label: "Kiểm kê tồn kho", to: "/inventory/audit" },
   { key: "stock-log", label: "Nhật ký biến động kho", to: "/inventory/stock-log" },
   { key: "lots", label: "Lô hàng & hạn sử dụng", to: "/inventory/lots" },
@@ -39,8 +57,10 @@ const salesTabs = [
 ] as const;
 
 export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalog", onSearch }: CatalogHeaderProps) {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const { isOwner, isStaff, can } = usePermissions();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const business = profile?.business ?? null;
   const displayName = profile?.user.fullName || profile?.user.email || "Người dùng";
@@ -52,6 +72,15 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
       .map((part) => part[0]?.toUpperCase())
       .join("") || "U";
   const roleLabel = isOwner ? "Chủ cửa hàng" : isStaff ? "Nhân viên" : "Quản trị viên";
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/login", { replace: true });
+    } catch {
+      window.location.assign("/login");
+    }
+  };
 
   return (
     <header className={`sticky top-0 z-40 bg-white border-b border-[#eaecf0]${mode === "purchases" || mode === "sales" ? " order-workspace-header" : ""}`}>
@@ -98,17 +127,89 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
               3
             </span>
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#4f46e5] text-white grid place-items-center text-[12px] font-bold">
-              {avatarText}
-            </div>
-            <div className="leading-tight">
-              <div className="text-[12.5px] font-semibold">{displayName}</div>
-              <div className="text-[10.5px] text-[#98a2b3]">
-                {roleLabel}
-                {business ? ` • ${business.name}` : ""}
+          {/* Dropdown Menu Tài Khoản Người Dùng */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((prev) => !prev)}
+              className="flex items-center gap-2 p-1.5 -mr-1 rounded-xl hover:bg-[#f2f4f7] transition-colors text-left"
+              title="Tài khoản & Thiết lập"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#4f46e5] text-white grid place-items-center text-[12px] font-bold shadow-xs">
+                {avatarText}
               </div>
-            </div>
+              <div className="leading-tight hidden sm:block">
+                <div className="text-[12.5px] font-semibold text-gray-900 flex items-center gap-1">
+                  {displayName}
+                  <Icon name="expand_more" className="text-[16px] text-gray-400" />
+                </div>
+                <div className="text-[10.5px] text-[#98a2b3]">
+                  {roleLabel}
+                  {business ? ` • ${business.name}` : ""}
+                </div>
+              </div>
+            </button>
+
+            {userMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setUserMenuOpen(false)}
+                />
+                <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-white border border-[#eaecf0] shadow-xl p-1.5 z-50 text-[13px] animate-in fade-in zoom-in-95">
+                  <div className="px-3 py-2.5 border-b border-gray-100 mb-1">
+                    <p className="font-bold text-gray-900 truncate">{displayName}</p>
+                    <p className="text-[11px] text-gray-500 truncate">{profile?.user.email}</p>
+                    {business && (
+                      <span className="mt-1.5 inline-block text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+                        {business.name} ({business.industryType || "RETAIL"})
+                      </span>
+                    )}
+                  </div>
+
+                  <Link
+                    to="/app"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <Icon name="dashboard" className="text-[18px] text-[#4f46e5]" />
+                    <span>Không gian làm việc</span>
+                  </Link>
+
+                  <Link
+                    to="/app/security"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <Icon name="person" className="text-[18px] text-gray-500" />
+                    <span>Thông tin cá nhân &amp; Bảo mật</span>
+                  </Link>
+
+                  <Link
+                    to="/inventory"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <Icon name="receipt_long" className="text-[18px] text-emerald-600" />
+                    <span>Sổ phiếu kiểm kê kho A4</span>
+                  </Link>
+
+                  <div className="border-t border-gray-100 my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      void handleLogout();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-left font-semibold"
+                  >
+                    <Icon name="logout" className="text-[18px]" />
+                    <span>Đăng xuất tài khoản</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

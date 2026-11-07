@@ -6,6 +6,81 @@
   --color-brand: #5b4ae8;
 }
 
+@font-face {
+  font-family: 'Fz Poppins';
+  src: url('https://nasani.vn/assets/fonts/FzPoppins-Regular.woff2') format('woff2'),
+       url('https://nasani.vn/assets/fonts/FzPoppins-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Fz Poppins';
+  src: url('https://nasani.vn/assets/fonts/FzPoppins-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Fz Poppins';
+  src: url('https://nasani.vn/assets/fonts/FzPoppins-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Fz Poppins SemiBold';
+  src: url('https://nasani.vn/assets/fonts/FzPoppins-SemiBold.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Fz Poppins Bold';
+  src: url('https://nasani.vn/assets/fonts/FzPoppins-Bold.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --mainColor: #0569C2;
+  --mainColorB: #075AA6;
+  --subColor: #FC9E20;
+  --redColor: #E20702;
+  --bgWebsite: #F0F5FC;
+  --font-Poppins: 'Fz Poppins', sans-serif;
+  --font-Poppins-SemiBold: 'Fz Poppins SemiBold', 'Fz Poppins', sans-serif;
+  --font-Poppins-Bold: 'Fz Poppins Bold', 'Fz Poppins', sans-serif;
+  --font-Oswald: 'Oswald', sans-serif;
+}
+
+#nina-wrapper {
+  font-family: var(--font-Poppins);
+  font-size: 14px;
+  background-color: var(--bgWebsite);
+}
+
+#nina-slider {
+  background: url('https://nasani.vn/assets/imgs/bn/bn_bg_full.jpg') no-repeat center center / cover;
+  padding: 60px 0px;
+  min-height: calc(100vh - 165px);
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 1200px) {
+  #nina-slider {
+    padding: 60px 0px;
+    min-height: auto;
+    display: block;
+  }
+}
+
 :root {
   font-family: "DM Sans", sans-serif;
   color: #17213a;
@@ -1314,6 +1389,749 @@ body { font-size: 15px; }
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+
+
+.flex-slide {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 50px;
+}
+
+@media (max-width: 1200px) {
+  .flex-slide {
+    flex-direction: column;
+  }
+}
+
+
+.flex-slide .col-l {
+  width: 40%;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 2%;
+}
+
+@media (max-width: 1200px) {
+  .flex-slide .col-l {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
+/* Part Head: Hệ Thống Quản Lý */
+.part-head .info {
+  text-align: center;
+}
+
+.part-head .info .r3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.part-head .info .r3 a {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #fff;
+  font-family: var(--font-Poppins);
+  font-size: clamp(14px, 2vw, 16px);
+  padding: 12px 12px 12px 18px;
+  border-radius: 60px;
+  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.07);
+  border: 1px solid #7bdcff;
+  background: linear-gradient(180deg, #0a86fc 0%, #0053ea 100%);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.part-head .info .r3 a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px 0 rgba(10, 134, 252, 0.25);
+}
+
+.part-head .info .r3 button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #111;
+  font-size: clamp(14px, 2vw, 16px);
+  padding: 12px 18px;
+  border-radius: 60px;
+  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.07);
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.part-head .info .r3 button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Thẻ ngành nghề (.grid-nganh) */
+.grid-nganh a {
+  --card-accent: #0a86fc;
+  --card-glow: rgba(10, 134, 252, .13);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 20px 20px;
+  border-radius: 10px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid #036ac236;
+  box-shadow: 1px 4px 4px 0 rgba(0, 0, 0, 0.05);
+  background: #fff;
+  transition: transform .45s cubic-bezier(.22, 1, .36, 1), border-color .35s ease, box-shadow .45s ease;
+}
+
+@media (max-width: 1200px) {
+  .grid-nganh a {
+    flex-direction: column;
+  }
+}
+
+.grid-nganh a:hover {
+  transform: translateY(-3px);
+  border-color: var(--card-accent);
+  box-shadow: 0 10px 20px var(--card-glow);
+}
+
+.grid-nganh .nganh-1 {
+  --card-accent: #BD8B41;
+  --card-glow: rgba(189, 139, 65, .18);
+}
+
+.grid-nganh .nganh-2 {
+  --card-accent: #8B3FD9;
+  --card-glow: rgba(139, 63, 217, .18);
+}
+
+.grid-nganh .nganh-3 {
+  --card-accent: #EA580C;
+  --card-glow: rgba(234, 88, 12, .18);
+}
+
+.grid-nganh .nganh-4 {
+  --card-accent: #E11D48;
+  --card-glow: rgba(225, 29, 72, .18);
+}
+
+.grid-nganh .nganh-5 {
+  --card-accent: #059669;
+  --card-glow: rgba(5, 150, 105, .18);
+}
+
+.grid-nganh .nganh-6 {
+  --card-accent: #0284C7;
+  --card-glow: rgba(2, 132, 199, .18);
+}
+
+
+/* Section 5: #nina-service-page */
+#nina-service-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 60px 0px;
+  position: relative;
+}
+
+@media (max-width: 992px) {
+  #nina-service-page {
+    min-height: auto;
+    padding: 50px 0px 20px;
+    display: block;
+  }
+}
+
+.flex-services {
+  display: flex;
+  gap: 37px;
+  align-items: center;
+  position: relative;
+}
+
+@media (max-width: 1024px) {
+  .flex-services {
+    flex-direction: column;
+  }
+}
+
+.flex-services::before {
+  content: '';
+  position: absolute;
+  width: calc(100% - 300px);
+  height: 100%;
+  background-color: #E8EFFF;
+  top: 55px;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 1;
+  border-radius: 28px;
+}
+
+@media (max-width: 1024px) {
+  .flex-services::before {
+    width: 100%;
+    top: 0;
+  }
+}
+
+.itemService {
+  position: relative;
+  z-index: 2;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(5, 105, 194, 0.08);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.itemService:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(5, 105, 194, 0.18);
+}
+
+.itemService .wrap {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 175px;
+  z-index: 2;
+  position: relative;
+  text-align: center;
+}
+
+
+/* .flex-services columns & .des-service */
+.flex-services .col-l {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  width: 50%;
+}
+
+.flex-services .col-r {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  width: 50%;
+}
+
+@media (max-width: 992px) {
+  .flex-services .col-l,
+  .flex-services .col-r {
+    width: 100%;
+    flex: auto;
+  }
+}
+
+.sloganHome {
+  color: #BD1042;
+  font-size: 15px;
+  font-family: var(--font-Poppins-SemiBold);
+  font-weight: 600;
+  font-style: normal;
+  margin-bottom: 20px;
+  line-height: normal;
+  letter-spacing: 0.05em;
+}
+
+.des-service .r2 {
+  color: #0369C2;
+  font-family: var(--font-Poppins-Bold, var(--font-Poppins-SemiBold));
+  font-size: clamp(24px, 4vw, 42px);
+  margin-bottom: 25px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.des-service .r3 {
+  color: #464646;
+  text-align: justify;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 30px;
+}
+
+.des-service .r3 p {
+  margin-bottom: 1rem;
+}
+
+
+.nina-domain-box .nina-readmore {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.nina-domain-box .nina-readmore a {
+  box-shadow: 5px 9px 15px rgb(212 35 37 / 60%);
+  color: #ffffff !important;
+  text-align: center;
+}
+
+
+#ten-mien-vn,
+#ten-mien-qt {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 992px) {
+  #ten-mien-vn,
+  #ten-mien-qt {
+    min-height: auto;
+    padding: 60px 0;
+    display: block;
+  }
+}
+
+
+/* Hosting Section CSS */
+.nina-tabs-host .nav-list-item {
+  border-radius: 8px;
+  background-color: #fff !important;
+  color: #222;
+  font-family: var(--font-Poppins-SemiBold);
+  font-size: 14px;
+  padding: 13px 20px;
+  font-style: normal;
+  cursor: pointer;
+  transition: all .2s;
+  border: none;
+}
+
+.nina-tabs-host .nav-list-item.active {
+  background-color: rgb(5 105 184) !important;
+  color: rgb(255 255 255) !important;
+}
+
+.nina-item-hosting-home {
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.nina-item-hosting-home:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.nina-item-hosting-home .nina-title-hosting {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
+
+.nina-item-hosting-home .nina-title-hosting .wrap {
+  background: #FFB065;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  flex-direction: column;
+  color: #222;
+  font-size: 20px;
+  line-height: 10px;
+  font-style: normal;
+}
+
+.nina-item-hosting-home .nina-title-hosting .wrap::before {
+  content: '';
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translate(-50%, 0);
+  background: linear-gradient(180deg, #FFEAD5 66.92%, rgba(255, 234, 213, 0.00) 100%);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.nina-item-hosting-home .nina-title-hosting .wrap p {
+  position: relative;
+  z-index: 2;
+  margin-top: 17px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #222;
+}
+
+.nina-item-hosting-home .nina-title-hosting .wrap h3 {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-Poppins-Bold);
+  font-size: 30px;
+  line-height: normal;
+  font-style: normal;
+  font-weight: 700;
+  color: #222;
+}
+
+.nina-item-hosting-home .nina-price-hosting {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  align-items: center;
+  padding-top: 0.75rem;
+}
+
+.nina-item-hosting-home .nina-text-price1 {
+  font-size: 14px;
+  color: #555;
+}
+
+.nina-item-hosting-home .nina-text-price2 {
+  color: #BD1042;
+  text-align: center;
+  font-family: var(--font-Poppins-SemiBold);
+  font-size: clamp(26px, 2.5vw, 36px);
+  font-style: normal;
+  line-height: 48px;
+  font-weight: 700;
+}
+
+.nina-item-hosting-home .nina-text-price3 {
+  font-size: 14px;
+  color: #777;
+}
+
+.nina-item-hosting-home .hosting-bonus {
+  position: absolute;
+  left: 30px;
+  top: 0px;
+  padding: 5px 6px;
+  width: 50px;
+  height: 170px;
+  cursor: pointer;
+  border-radius: 0 0 50px 50px;
+  background: #FFBBBC;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.nina-item-hosting-home .hosting-bonus > div {
+  transform: rotate(90deg);
+  margin-top: 35px;
+}
+
+.nina-item-hosting-home .hosting-bonus img {
+  width: 37px;
+  height: auto;
+  margin-bottom: 8px;
+}
+
+.nina-item-hosting-home .hosting-bonus .txt {
+  font-size: 12px;
+  line-height: 15px;
+  white-space: nowrap;
+  text-align: center;
+  width: 128px;
+  font-family: var(--font-Poppins-SemiBold);
+  color: #a81c20;
+  font-weight: 600;
+}
+
+@keyframes phone-shake {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+  75% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.ringRing {
+  animation: phone-shake 1s infinite;
+  transform-origin: center center;
+}
+
+a.btnGraHome {
+  transition: all .3s;
+  overflow: hidden;
+  padding: 2px;
+  border-radius: 50px;
+  width: 100%;
+  max-width: 250px;
+  margin: 0px auto;
+  color: #222;
+  text-align: center;
+  font-family: var(--font-Poppins-SemiBold);
+  font-size: 14px;
+  font-style: normal;
+  background: linear-gradient(90deg, #ff9a44, #fc6076);
+  display: block;
+  position: relative;
+  text-decoration: none;
+}
+
+a.btnGraHome > span {
+  position: relative;
+  background: #fff;
+  border-radius: 50px;
+  padding: 12px 20px;
+  width: 100%;
+  display: block;
+  transition: all .3s;
+  font-weight: 600;
+  color: #222;
+}
+
+a.btnGraHome:hover > span {
+  background: transparent;
+  color: #fff;
+}
+
+
+/* Ưu Điểm Nổi Bật Của Dịch Vụ Thiết Kế Website */
+#uu-diem {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 992px) {
+  #uu-diem {
+    min-height: auto;
+    display: block;
+  }
+}
+
+.flex-uudiem {
+  display: flex;
+  gap: 30px;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.flex-uudiem .col-l {
+  width: 48%;
+  display: flex;
+  justify-content: center;
+}
+
+.flex-uudiem .col-r {
+  width: 48%;
+}
+
+@media (max-width: 992px) {
+  .flex-uudiem {
+    flex-direction: column;
+  }
+  .flex-uudiem .col-l {
+    width: 100%;
+  }
+  .flex-uudiem .col-r {
+    width: 100%;
+  }
+}
+
+.gridUudiem {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-top: 25px;
+}
+
+@media (max-width: 640px) {
+  .gridUudiem {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+.itemUuDiem {
+  border-radius: 12px;
+  padding: 16px 20px;
+  position: relative;
+  top: 0;
+  transition: all .3s ease;
+  background: #FFF;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  box-shadow: 0 4px 20px 0 rgba(213, 227, 246, 0.7);
+  border: 1px solid rgba(213, 227, 246, 0.4);
+}
+
+.itemUuDiem:hover {
+  top: -4px;
+  box-shadow: 0px 8px 25px 0 rgba(119, 190, 253, 0.45);
+  border-color: rgba(5, 105, 184, 0.3);
+}
+
+.itemUuDiem .img > span {
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.itemUuDiem h3 {
+  color: #222;
+  font-family: var(--font-Poppins-SemiBold);
+  font-size: 15px;
+  font-style: normal;
+  line-height: 1.3;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ==========================================================================
+   NASANI BẢNG GIÁ HOSTING & WEBSITE (.bgHostWeb)
+   ========================================================================== */
+.bgHostWeb {
+  background-image: url('/assets/imgs/bg_banggia_head.png'), url('/assets/imgs/bg_banggia_foot.jpg');
+  background-repeat: no-repeat;
+  background-position: top center, bottom center;
+  background-size: 1920px auto, 1920px auto;
+  background-color: #ffffff;
+  position: relative;
+}
+
+@media (min-width: 1920px) {
+  .bgHostWeb {
+    background-size: 100% auto, 100% auto;
+  }
+}
+
+.sloganHome {
+  color: #BD1042;
+  font-size: 15px;
+  font-family: var(--font-Poppins-SemiBold);
+  font-style: normal;
+  margin-bottom: 20px;
+  line-height: normal;
+}
+
+.sloganHome3 {
+  text-align: center;
+  color: #BD1042;
+  margin-bottom: 10px;
+}
+
+.sloganWeb {
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.titleHome {
+  color: #0369C2;
+  text-align: center;
+  font-family: var(--font-Poppins-SemiBold);
+  font-size: clamp(26px, 5vw, 42px);
+  font-style: normal;
+  line-height: normal;
+  text-transform: capitalize;
+}
+
+.titleHome2 {
+  color: #fff !important;
+}
+
+.txtHome {
+  color: #464646;
+  text-align: center;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  max-width: 910px;
+  margin: auto;
+  margin-top: 10px;
+}
+
+.txtHome2 {
+  color: #fff !important;
+  opacity: 0.95;
+}
+
+/* ==========================================================================
+   NASANI SUPPORT & FOOTER
+   ========================================================================== */
+#nina-support-page {
+  background-color: #E2EEFF;
+}
+
+#nina-support-page h3 {
+  font-family: var(--font-Poppins-Bold);
+}
+
+.nina-support-call a {
+  color: #C5122A;
+  font-family: var(--font-Poppins-SemiBold);
+  transition: all .2s;
+}
+
+.nina-support-call a:hover {
+  color: #0369C2;
+}
+
+.nina-footer-item h3 {
+  font-family: var(--font-Poppins-SemiBold);
+  color: #4B5563;
+}
+
+.nina-title-introduce {
+  font-family: var(--font-Poppins-SemiBold);
+}
+
+.nina-desc-introduce {
+  color: #4B5563;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.nina-view-introduce a {
+  border-color: #d42125;
+  color: #d42125;
+  transition: all .3s;
+}
+
+.nina-view-introduce a:hover {
+  background-color: #d42125;
+  color: #fff;
+}
+
+.footer-title {
+  font-family: var(--font-Poppins-SemiBold);
+}
+
+.nina-copyright {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 
 .admin-page-hero {
   position: relative;

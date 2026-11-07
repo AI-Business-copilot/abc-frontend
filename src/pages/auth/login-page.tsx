@@ -1,21 +1,45 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { Alert } from "@/components/ui/alert";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/common/form-field";
 import { Input } from "@/components/ui/input";
-import { signInWithEmail, signInWithGoogle } from "@/services/auth.service";
+import { AUTH_NOTICE_EVENT, consumeAuthNotice, SESSION_EXPIRED_MESSAGE } from "@/lib/api-client";
+import {
+  getAuthErrorMessage,
+  signInWithEmail,
+  signInWithGoogle,
+} from "@/services/auth.service";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    searchParams.get("session") === "expired"
+      ? SESSION_EXPIRED_MESSAGE
+      : consumeAuthNotice(),
+  );
+
+  useEffect(() => {
+    // The session can expire while this page is already mounted, so listen for
+    // the notice and also pick up anything written before the listener attached.
+    const pending = consumeAuthNotice();
+    if (pending) setError(pending);
+
+    const onNotice = (event: Event) => {
+      const message = (event as CustomEvent<string>).detail;
+      if (message) setError(message);
+    };
+    window.addEventListener(AUTH_NOTICE_EVENT, onNotice);
+    return () => window.removeEventListener(AUTH_NOTICE_EVENT, onNotice);
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -25,7 +49,7 @@ export function LoginPage() {
       await signInWithEmail(email, password);
       navigate("/auth/callback", { replace: true });
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Không thể đăng nhập.");
+      setError(getAuthErrorMessage(reason));
     } finally {
       setBusy(false);
     }
@@ -37,7 +61,7 @@ export function LoginPage() {
     try {
       await signInWithGoogle();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Không thể đăng nhập với Google.");
+      setError(getAuthErrorMessage(reason, "Không thể đăng nhập với Google."));
       setBusy(false);
     }
   }

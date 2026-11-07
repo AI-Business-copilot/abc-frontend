@@ -167,22 +167,32 @@ function CategoryTable({
                   <td className="px-2 py-2.5 align-middle">
                     <div className="flex items-center gap-2">
                       {isChild ? (
-                        <Icon name="subdirectory_arrow_right" className="text-[16px] text-[#98a2b3]" />
-                      ) : (
+                        <Icon name="subdirectory_arrow_right" className="text-[16px] text-[#98a2b3] ml-1" />
+                      ) : (node.children && node.children.length > 0) ? (
                         <button
                           type="button"
                           onClick={() => onToggleCollapse(node.id)}
-                          className="w-6 h-6 grid place-items-center rounded-md text-[#667085] hover:bg-[#f2f4f7]"
+                          className="w-6 h-6 grid place-items-center rounded-md text-[#667085] hover:bg-[#f2f4f7] transition-transform"
+                          title={isCollapsed ? `Mở rộng (${node.children.length} con)` : `Thu gọn (${node.children.length} con)`}
                           aria-label={isCollapsed ? "Mở rộng danh mục" : "Thu gọn danh mục"}
                         >
                           <Icon name={isCollapsed ? "chevron_right" : "expand_more"} className="text-[18px]" />
                         </button>
+                      ) : (
+                        <span className="w-6 h-6 inline-block shrink-0" />
                       )}
                       <span className={`cat-icon tone-${tone} ${isChild ? "sm" : ""}`}>
                         <Icon name={icon} className="text-[17px]" />
                       </span>
                       <div className="leading-tight">
-                        <div className={isChild ? "font-medium text-[#344054]" : "font-semibold"}>{node.name}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={isChild ? "font-medium text-[#344054]" : "font-semibold"}>{node.name}</span>
+                          {!isChild && node.children && node.children.length > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-50 border border-indigo-100 text-[#4f46e5] font-bold">
+                              {node.children.length} con
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-[#98a2b3] font-mono mt-0.5">{node.code}</div>
                       </div>
                     </div>
@@ -284,6 +294,8 @@ export default function CategoriesPage() {
 
   const [mode, setMode] = useState<"list" | "create">("list");
   const [editing, setEditing] = useState<CategoryNode | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<CategoryNode | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -332,13 +344,16 @@ export default function CategoriesPage() {
   }, [data]);
 
   const rows = useMemo<FlatRow[]>(() => {
-    const query = keyword.trim();
+    const query = keyword.trim().toLowerCase();
     const flat: FlatRow[] = [];
     filteredRoots.forEach((root) => {
       const style = styleByRootId.get(root.id) ?? ROOT_STYLES[0];
       flat.push({ node: root, parentName: null, tone: style.tone, icon: style.icon });
-      if (!query && collapsed.has(root.id)) return;
+      if (collapsed.has(root.id)) return;
       for (const child of root.children) {
+        if (query && !child.name.toLowerCase().includes(query) && !child.code.toLowerCase().includes(query) && !root.name.toLowerCase().includes(query) && !root.code.toLowerCase().includes(query)) {
+          continue;
+        }
         flat.push({ node: child, parentName: root.name, tone: style.tone, icon: "label" });
       }
     });
@@ -442,20 +457,24 @@ export default function CategoriesPage() {
     }
   };
 
-  const removeCategory = async (node: CategoryNode) => {
-    const confirmed = window.confirm(
-      `Xoá danh mục "${node.name}"? Hành động này không thể hoàn tác.`,
-    );
-    if (!confirmed) return;
+  const removeCategory = (node: CategoryNode) => {
+    setDeletingCategory(node);
+  };
 
+  const handleConfirmDeleteCategory = async () => {
+    if (!deletingCategory) return;
+    setDeleteBusy(true);
     setError("");
     setNotice("");
     try {
-      await categoriesApi.remove(node.id);
-      setNotice(`Đã xoá danh mục "${node.name}".`);
+      await categoriesApi.remove(deletingCategory.id);
+      setNotice(`Đã xoá danh mục "${deletingCategory.name}". Các sản phẩm liên quan đã được chuyển về "Chưa phân loại" để bạn dễ dàng gán lại đồng loạt.`);
+      setDeletingCategory(null);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không xoá được danh mục.");
+    } finally {
+      setDeleteBusy(false);
     }
   };
 
@@ -729,6 +748,42 @@ export default function CategoriesPage() {
           </div>
         )}
       </main>
+
+      {/* MODAL XÁC NHẬN XÓA DANH MỤC THIẾT KẾ ĐỒNG BỘ (KHÔNG DÙNG POPUP TRÌNH DUYỆT LOCALHOST) */}
+      {deletingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 mb-4">
+              <Icon name="delete_forever" className="text-[26px]" />
+            </div>
+            <h3 className="text-[18px] font-bold text-gray-900">Xóa danh mục sản phẩm</h3>
+            <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
+              Bạn có chắc chắn muốn xóa danh mục <b className="text-gray-900 font-semibold">“{deletingCategory.name}”</b> ({deletingCategory.code})?
+            </p>
+            <div className="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 p-3 text-[12px] text-indigo-900 leading-relaxed">
+              💡 <b>Tự động hỗ trợ gán lại đồng loạt:</b> Nếu danh mục này đang gán cho các sản phẩm, hệ thống sẽ tự động gỡ bỏ danh mục (chuyển về trạng thái <i>Chưa phân loại</i>) để bạn dễ dàng gán lại danh mục mới cho toàn bộ sản phẩm ở trang Sản phẩm.
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={deleteBusy}
+                onClick={() => setDeletingCategory(null)}
+                className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-[13px] font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={deleteBusy}
+                onClick={() => void handleConfirmDeleteCategory()}
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-[13px] font-bold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleteBusy ? "Đang xóa..." : "Xác nhận xóa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

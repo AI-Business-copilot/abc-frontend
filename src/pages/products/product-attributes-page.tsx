@@ -8,6 +8,7 @@ import {
 } from "@/api/product-wizard";
 import { CatalogHeader } from "@/pages/products/catalog-header";
 import { Icon } from "@/pages/products/ui-icon";
+import { getPrimaryImage } from "@/lib/image-utils";
 
 type Selection = {
   attributeId: string;
@@ -74,6 +75,8 @@ export function ProductAttributesPage() {
       .then(([detail, attributeList]) => {
         if (cancelled) return;
         setTemplate(detail);
+        sessionStorage.setItem("abc:wizard:active_template_id", templateId);
+        sessionStorage.setItem("abc:wizard:active_template_name", detail.name);
         setAttributes(attributeList);
         const saved = readSelections(templateId);
         const valid = saved.filter((item) => attributeList.some((attribute) => attribute.id === item.attributeId));
@@ -90,6 +93,12 @@ export function ProductAttributesPage() {
       cancelled = true;
     };
   }, [templateId, navigate]);
+
+  useEffect(() => {
+    if (templateId && selections.length > 0) {
+      persist(selections);
+    }
+  }, [selections, templateId]);
 
   const attrById = useMemo(() => new Map(attributes.map((attribute) => [attribute.id, attribute])), [attributes]);
 
@@ -162,8 +171,8 @@ export function ProductAttributesPage() {
   };
 
   const addAttribute = () => {
-    if (selections.length >= 3) {
-      setError("Tối đa 3 chiều thuộc tính trong ma trận biến thể.");
+    if (selections.length >= 8) {
+      setError("Tối đa 8 chiều thuộc tính trong ma trận biến thể.");
       return;
     }
     const candidate = attributes.find(
@@ -186,6 +195,18 @@ export function ProductAttributesPage() {
   const saveDraft = () => {
     persist(selections);
     setNotice("Đã lưu cấu hình thuộc tính cho mẫu sản phẩm.");
+  };
+
+  const resetStep2Progress = () => {
+    sessionStorage.removeItem(`abc:wizard:selections:${templateId}`);
+    const industry = sessionStorage.getItem(`abc:wizard:industry:${templateId}`) || "BEAUTY";
+    setSelections(defaultSelections(attributes, industry));
+    setNotice("Đã làm mới thiết lập thuộc tính Bước 2 về mặc định.");
+  };
+
+  const goBackToStep1 = () => {
+    persist(selections);
+    navigate(`/products/new?templateId=${templateId}`);
   };
 
   const goNext = () => {
@@ -229,7 +250,7 @@ export function ProductAttributesPage() {
           <div className="flex items-center gap-3">
             <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-lg bg-[#eef0ff] text-[#4338ca]">
               {template?.imageUrl ? (
-                <img alt={template.name} className="h-full w-full object-cover" src={template.imageUrl} />
+                <img alt={template.name} className="h-full w-full object-cover" src={getPrimaryImage(template.imageUrl)} />
               ) : (
                 <Icon name="inventory_2" className="text-[26px]" />
               )}
@@ -248,7 +269,7 @@ export function ProductAttributesPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => navigate(`/products/new?templateId=${templateId}`)} className="rounded-lg bg-[#eef3ff] px-4 py-3 text-[12px] font-semibold text-[#344054]">
+            <button type="button" onClick={goBackToStep1} className="rounded-lg bg-[#eef3ff] px-4 py-3 text-[12px] font-semibold text-[#344054]">
               <Icon name="edit_note" className="mr-1 align-middle text-[17px]" />
               Xem / sửa mẫu cha
             </button>
@@ -256,6 +277,26 @@ export function ProductAttributesPage() {
               <Icon name="info" className="mr-1 align-middle text-[17px]" />
               {categoryLabel}
             </span>
+            <button
+              type="button"
+              onClick={resetStep2Progress}
+              className="flex items-center gap-1 rounded-lg border border-[#fecdca] bg-white px-3 py-3 text-[12px] font-semibold text-[#b42318] hover:bg-[#fef3f2]"
+              title="Xóa lựa chọn thuộc tính đã lưu và đưa về mặc định"
+            >
+              <Icon name="restart_alt" className="text-[17px]" />
+              Bỏ lưu tiến trình Bước 2
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                persist(selections);
+                navigate("/products/attributes");
+              }}
+              className="rounded-lg border border-[#c7cbff] bg-white px-4 py-3 text-[12px] font-semibold text-[#4338ca] hover:bg-[#eef0ff]"
+            >
+              <Icon name="open_in_new" className="mr-1 align-middle text-[17px]" />
+              Quản lý Thư viện Thuộc tính
+            </button>
           </div>
         </div>
 
@@ -290,7 +331,7 @@ export function ProductAttributesPage() {
               <p className="text-[12px] text-[#667085]">Gắn chiều thuộc tính để tự động tổ hợp mã SKU trong ma trận biến thể</p>
             </div>
           </div>
-          <span className="rounded-full bg-[#eef3ff] px-3 py-2 font-mono text-[12px] text-[#667085]">{selections.length}/3 Thuộc tính đã chọn</span>
+          <span className="rounded-full bg-[#eef3ff] px-3 py-2 font-mono text-[12px] text-[#667085]">{selections.length} Thuộc tính đã chọn</span>
         </div>
 
         <div className="mt-4 space-y-3">
@@ -387,7 +428,7 @@ export function ProductAttributesPage() {
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-[#e8eaf0] bg-white py-4 text-[15px] font-bold text-[#4338ca] hover:bg-[#f8f7ff]"
         >
           <Icon name="library_add" className="text-[20px]" />
-          + Thêm thuộc tính khác (Tối đa 3 chiều ma trận)
+          + Thêm thuộc tính khác (Ma trận biến thể đa chiều)
         </button>
 
         <div className="mt-4 grid grid-cols-[1.4fr_1fr] gap-4">
@@ -443,7 +484,7 @@ export function ProductAttributesPage() {
 
       <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-[#eaecf0] bg-white px-5 py-3">
         <div className="mx-auto flex max-w-[1560px] items-center justify-between">
-          <button onClick={() => navigate(`/products/new?templateId=${templateId}`)} className="rounded-lg bg-[#eaf0ff] px-5 py-3 text-[14px] font-semibold text-[#344054]">
+          <button type="button" onClick={goBackToStep1} className="rounded-lg bg-[#eaf0ff] px-5 py-3 text-[14px] font-semibold text-[#344054]">
             ← Quay lại: Bước 1 - Mẫu sản phẩm cha
           </button>
           <div className="flex items-center gap-4">

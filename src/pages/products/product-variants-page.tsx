@@ -3,7 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { productWizardApi, type TemplateDetail } from "@/api/product-wizard";
 import { CatalogHeader } from "@/pages/products/catalog-header";
+import { useAuth } from "@/hooks/use-auth";
+import { BarcodePrintModal } from "@/pages/products/barcode-print-modal";
 import { Icon } from "@/pages/products/ui-icon";
+import { getPrimaryImage } from "@/lib/image-utils";
 
 type Selection = { attributeId: string; displayOrder: number; valueIds: string[] };
 
@@ -41,16 +44,16 @@ function loadTemplateWithVariants(templateId: string, selections: Selection[]): 
 
   const promise = (async () => {
     let detail = await productWizardApi.getTemplate(templateId);
-    if (detail.productVariants.length === 0) {
-      if (selections.length === 0) {
-        throw new Error("Thiếu cấu hình thuộc tính. Vui lòng quay lại Bước 2 và chọn giá trị thuộc tính.");
-      }
+    // Nếu chưa có biến thể HOẶC có cấu hình selections từ Bước 2, đồng bộ tạo các tổ hợp biến thể mới
+    if (selections.length > 0) {
       await productWizardApi.generateVariants(
         templateId,
         selections.map((selection) => ({ attributeId: selection.attributeId, attributeValueIds: selection.valueIds })),
         { costPrice: 75000, basePrice: 145000 },
       );
       detail = await productWizardApi.getTemplate(templateId);
+    } else if (detail.productVariants.length === 0) {
+      throw new Error("Thiếu cấu hình thuộc tính. Vui lòng quay lại Bước 2 và chọn giá trị thuộc tính.");
     }
     return detail;
   })().catch((err) => {
@@ -65,6 +68,8 @@ function loadTemplateWithVariants(templateId: string, selections: Selection[]): 
 export function ProductVariantsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { profile } = useAuth();
+  const businessName = profile?.business?.name || "DOANH NGHIỆP ERP";
   const templateId = searchParams.get("templateId") || "";
 
   const [keyword, setKeyword] = useState("");
@@ -73,6 +78,9 @@ export function ProductVariantsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [baseCost, setBaseCost] = useState(75000);
   const [margin, setMargin] = useState(48.5);
+  const [skuPrefix, setSkuPrefix] = useState("");
+  const [showPrefixHelper, setShowPrefixHelper] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -114,7 +122,36 @@ export function ProductVariantsPage() {
         setTemplate(detail);
         const mapped = mapRows(detail, selections);
         setRows(mapped);
-        setSelectedIds(mapped.map((row) => row.id));
+
+        // Khôi phục danh sách biến thể được tích chọn (để loại bỏ biến thể không mong muốn sang bước 4)
+        const savedActive = sessionStorage.getItem(`abc:wizard:active_variants:${templateId}`);
+        if (savedActive) {
+          try {
+            const parsed = JSON.parse(savedActive);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const valid = parsed.filter((id: string) => mapped.some((m) => m.id === id));
+              setSelectedIds(valid.length > 0 ? valid : mapped.map((row) => row.id));
+            } else {
+              setSelectedIds(mapped.map((row) => row.id));
+            }
+          } catch {
+            setSelectedIds(mapped.map((row) => row.id));
+          }
+        } else {
+          setSelectedIds(mapped.map((row) => row.id));
+        }
+
+        // Khôi phục tiền tố SKU đã lưu hoặc suy luận từ SKU đầu tiên
+        const savedPrefix = sessionStorage.getItem(`abc:wizard:prefix:${templateId}`);
+        if (savedPrefix) {
+          setSkuPrefix(savedPrefix);
+        } else if (mapped[0]?.sku) {
+          const parts = mapped[0].sku.split("-");
+          if (parts.length >= 2) {
+            setSkuPrefix(parts.slice(0, 2).join("-"));
+          }
+        }
+
         const firstWithCost = mapped.find((row) => row.cost > 0);
         if (firstWithCost) {
           setBaseCost(firstWithCost.cost);
@@ -149,6 +186,33 @@ export function ProductVariantsPage() {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   };
 
+  const resyncFromStep2 = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const selections = readSelections(templateId);
+      if (selections.length === 0) {
+        throw new Error("Chưa có cấu hình thuộc tính ở Bước 2.");
+      }
+      pendingLoads.clear();
+      await productWizardApi.generateVariants(
+        templateId,
+        selections.map((selection) => ({ attributeId: selection.attributeId, attributeValueIds: selection.valueIds })),
+        { costPrice: baseCost || 75000, basePrice: 145000 },
+      );
+      const detail = await productWizardApi.getTemplate(templateId);
+      setTemplate(detail);
+      const mapped = mapRows(detail, selections);
+      setRows(mapped);
+      setSelectedIds(mapped.map((row) => row.id));
+      setNotice("Đã đồng bộ và cập nhật lại toàn bộ ma trận biến thể theo cấu hình Bước 2 mới nhất.");
+    } catch (err: any) {
+      setError(err?.message || "Lỗi đồng bộ biến thể.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const applyPricing = () => {
     const target = selectedIds.length ? selectedIds : rows.map((row) => row.id);
     const nextCost = Math.max(0, Number(baseCost) || 0);
@@ -157,11 +221,59 @@ export function ProductVariantsPage() {
     setNotice(`Đã áp dụng giá vốn ${vnd(nextCost)} và margin ${margin}% cho ${target.length} biến thể.`);
   };
 
+  const applyCustomPrefix = () => {
+    const prefix = (skuPrefix || "").trim().toUpperCase();
+    if (!prefix) {
+      setError("Vui lòng nhập tiền tố (ví dụ: ABC-TSHIRT hoặc TENANT-DANHMUC).");
+      return;
+    }
+    sessionStorage.setItem(`abc:wizard:prefix:${templateId}`, prefix);
+    const target = selectedIds.length ? selectedIds : rows.map((row) => row.id);
+    setRows((current) =>
+      current.map((row, idx) => {
+        if (!target.includes(row.id)) return row;
+        const valPart = row.attributeText
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/Đ/g, "D")
+          .toUpperCase()
+          .replace(/[^A-Z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        const newSku = `${prefix}-${valPart || String(idx + 1).padStart(2, "0")}`;
+        return { ...row, sku: newSku };
+      }),
+    );
+    setNotice(`Đã tự động cập nhật tiền tố “${prefix}” cho ${target.length} biến thể.`);
+  };
+
   const persistPrices = async () => {
     if (!template) return;
+    // Kiểm tra SKU hợp lệ và không trùng lặp
+    const emptySku = rows.find((r) => !r.sku.trim());
+    if (emptySku) {
+      throw new Error("Mã SKU không được để trống. Vui lòng kiểm tra lại các dòng.");
+    }
+    const skuSet = new Set<string>();
+    for (const r of rows) {
+      const normalized = r.sku.trim().toUpperCase();
+      if (skuSet.has(normalized)) {
+        throw new Error(`Mã SKU “${normalized}” bị trùng lặp trong bảng. Mỗi biến thể phải có mã SKU duy nhất.`);
+      }
+      skuSet.add(normalized);
+    }
+
     await productWizardApi.bulkUpdateVariants(
       template.id,
-      rows.map((row) => ({ id: row.id, costPrice: row.cost, basePrice: row.price, safetyStockQty: row.safety })),
+      rows.map((row) => ({
+        id: row.id,
+        costPrice: row.cost,
+        basePrice: row.price,
+        safetyStockQty: row.safety,
+        sku: row.sku.trim().toUpperCase(),
+        barcode: row.barcode.trim() || undefined,
+        isActive: selectedIds.includes(row.id),
+      })),
     );
   };
 
@@ -188,6 +300,7 @@ export function ProductVariantsPage() {
     setError("");
     try {
       await persistPrices();
+      sessionStorage.setItem(`abc:wizard:active_variants:${templateId}`, JSON.stringify(selectedIds));
       navigate(`/products/new/inventory?templateId=${templateId}`);
     } catch (err) {
       setError((err as Error).message);
@@ -197,7 +310,9 @@ export function ProductVariantsPage() {
   };
 
   const toggleAll = () => {
-    setSelectedIds((current) => (current.length === rows.length ? [] : rows.map((row) => row.id)));
+    const next = selectedIds.length === rows.length ? [] : rows.map((row) => row.id);
+    setSelectedIds(next);
+    sessionStorage.setItem(`abc:wizard:active_variants:${templateId}`, JSON.stringify(next));
   };
 
   if (loading) {
@@ -224,10 +339,22 @@ export function ProductVariantsPage() {
             </h1>
             <p className="mt-1 text-[11px] text-[#667085]">Quy trình Khởi tạo Hàng hóa &amp; Biến thể SKU Matrix • Chuẩn hóa dữ liệu ERP đa kênh</p>
           </div>
-          <span className="rounded-lg bg-white px-4 py-2 text-[12px] font-semibold shadow-sm">
-            <Icon name="verified_user" className="mr-1 align-middle text-[17px] text-[#067647]" />
-            {template?.code || "TMP"} <span className="ml-2 text-[#98a2b3]">• {rows.length} SKU khả dụng</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={resyncFromStep2}
+              className="flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white px-3.5 py-2 text-[12px] font-bold text-[#4f46e5] hover:bg-[#eef0ff] shadow-sm disabled:opacity-60"
+              title="Đồng bộ lại toàn bộ biến thể theo thay đổi mới nhất từ Bước 2"
+            >
+              <Icon name="sync" className="text-[16px]" />
+              {busy ? "Đang đồng bộ..." : "Đồng bộ lại từ Bước 2"}
+            </button>
+            <span className="rounded-lg bg-white px-4 py-2 text-[12px] font-semibold shadow-sm">
+              <Icon name="verified_user" className="mr-1 align-middle text-[17px] text-[#067647]" />
+              {template?.code || "TMP"} <span className="ml-2 text-[#98a2b3]">• {rows.length} SKU</span>
+            </span>
+          </div>
         </div>
 
         <div className="mt-3 grid grid-cols-4 gap-3">
@@ -254,7 +381,7 @@ export function ProductVariantsPage() {
         <section className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white px-4 py-3">
           <div className="flex items-center gap-3">
             <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-lg bg-[#eef0ff] text-[#4338ca]">
-              {template?.imageUrl ? <img alt={template.name} className="h-full w-full object-cover" src={template.imageUrl} /> : <Icon name="inventory_2" className="text-[25px]" />}
+              {template?.imageUrl ? <img alt={template.name} className="h-full w-full object-cover" src={getPrimaryImage(template.imageUrl)} /> : <Icon name="inventory_2" className="text-[25px]" />}
             </span>
             <div>
               <h2 className="text-[16px] font-bold">{template?.name}</h2>
@@ -304,6 +431,68 @@ export function ProductVariantsPage() {
           </button>
         </section>
 
+        {/* Cấu hình tiền tố SKU & Trợ lý quy tắc [TENANT]-[SLUG]-[VALUE] */}
+        <section className="mt-4 rounded-xl border border-[#c7cbff] bg-gradient-to-r from-[#eef2ff] via-white to-[#f5f6ff] p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#4f46e5] text-white">
+                <Icon name="qr_code" className="text-[22px]" />
+              </span>
+              <div>
+                <h3 className="text-[15px] font-bold text-[#101828]">
+                  Cấu hình Tiền tố SKU: <code className="text-[#4f46e5] font-mono">[TENANT]-[SLUG]-[VALUE]</code>
+                </h3>
+                <p className="text-[12px] text-[#667085]">
+                  Hệ thống hỗ trợ tự động đồng bộ theo danh mục hoặc bạn có thể chỉnh sửa thủ công từng mã SKU trực tiếp trong bảng.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={skuPrefix}
+                onChange={(e) => setSkuPrefix(e.target.value)}
+                placeholder="Ví dụ: ABC-AOTHUN..."
+                className="h-10 w-48 rounded-lg border border-[#d0d5dd] bg-white px-3 font-mono text-[12px] uppercase outline-none focus:border-[#4f46e5]"
+              />
+              <button
+                type="button"
+                onClick={applyCustomPrefix}
+                className="h-10 rounded-lg bg-[#4f46e5] px-4 text-[12.5px] font-bold text-white shadow-sm hover:bg-[#4338ca]"
+              >
+                Gán tiền tố
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPrefixHelper((v) => !v)}
+                className="h-10 rounded-lg border border-[#d0d5dd] bg-white px-3 text-[12px] font-semibold text-[#475467] hover:bg-gray-50"
+              >
+                {showPrefixHelper ? "Ẩn giải thích ▲" : "Ý nghĩa quy tắc ▼"}
+              </button>
+            </div>
+          </div>
+
+          {showPrefixHelper && (
+            <div className="mt-3 rounded-lg border border-[#e0e7ff] bg-white p-3 text-[12px] text-[#475467]">
+              <p className="font-bold text-[#101828] mb-1">Cấu trúc mã SKU chuẩn ERP:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  <b className="font-mono text-[#4f46e5]">[TENANT]</b>: Mã viết tắt của doanh nghiệp/gian hàng của bạn (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">ABC</code>).
+                </li>
+                <li>
+                  <b className="font-mono text-[#4f46e5]">[SLUG]</b>: Tên rút gọn không dấu của danh mục sản phẩm (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">AOTHUN</code>, <code className="bg-gray-100 px-1 py-0.5 rounded">SERUM</code>). Các sản phẩm cùng danh mục sẽ tự động chia sẻ tiền tố này để dễ quản lý kho.
+                </li>
+                <li>
+                  <b className="font-mono text-[#4f46e5]">[VALUE]</b>: Ký hiệu viết tắt của các giá trị thuộc tính (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">DO-XL</code>, <code className="bg-gray-100 px-1 py-0.5 rounded">100ML</code>).
+                </li>
+              </ul>
+              <p className="mt-2 text-[#067647] font-medium">
+                💡 Bạn có thể click trực tiếp vào ô mã SKU bên dưới bảng để tự gõ mã tùy chỉnh theo quy ước riêng của kho bạn!
+              </p>
+            </div>
+          )}
+        </section>
+
         <section className="mt-4 overflow-hidden rounded-xl bg-white">
           <div className="flex items-center justify-between px-4 py-3">
             <h2 className="text-[16px] font-bold">
@@ -315,7 +504,7 @@ export function ProductVariantsPage() {
                 <Icon name="filter_alt" className="mr-1 align-middle text-[15px]" />
                 {dimensionCount} chiều thuộc tính
               </span>
-              <button onClick={() => window.print()} className="rounded-lg bg-[#f2f4f7] px-3 py-2 text-[11px] text-[#667085]">
+              <button type="button" onClick={() => setShowPrintModal(true)} className="rounded-lg bg-[#eef0ff] border border-[#c7cbff] px-3.5 py-2 text-[11.5px] font-bold text-[#4f46e5] hover:bg-[#e0e7ff] shadow-sm flex items-center gap-1.5">
                 <Icon name="print" className="mr-1 align-middle text-[15px]" />
                 In tem mã vạch
               </button>
@@ -347,9 +536,13 @@ export function ProductVariantsPage() {
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(row.id)}
-                          onChange={(event) =>
-                            setSelectedIds((current) => (event.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id)))
-                          }
+                          onChange={(event) => {
+                            const next = event.target.checked
+                              ? [...selectedIds, row.id]
+                              : selectedIds.filter((id) => id !== row.id);
+                            setSelectedIds(next);
+                            sessionStorage.setItem(`abc:wizard:active_variants:${templateId}`, JSON.stringify(next));
+                          }}
                         />
                       </td>
                       <td className="px-2 py-3">
@@ -357,10 +550,20 @@ export function ProductVariantsPage() {
                         <span className="mt-1 inline-block rounded bg-[#eef3ff] px-2 py-1 text-[10px]">{row.attributeText}</span>
                       </td>
                       <td className="px-2">
-                        <code className="rounded bg-[#eef3ff] px-2 py-2 font-semibold">{row.sku}</code>
+                        <input
+                          value={row.sku}
+                          onChange={(e) => updateRow(row.id, { sku: e.target.value })}
+                          placeholder="Mã SKU..."
+                          className="w-36 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-2.5 py-1.5 font-mono text-[11.5px] font-bold text-[#101828] outline-none focus:border-[#4f46e5] focus:bg-white"
+                        />
                       </td>
                       <td className="px-2">
-                        <code className="rounded bg-[#eef3ff] px-2 py-2">{row.barcode || "—"}</code>
+                        <input
+                          value={row.barcode}
+                          onChange={(e) => updateRow(row.id, { barcode: e.target.value })}
+                          placeholder="Mã vạch..."
+                          className="w-32 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-2 py-1.5 font-mono text-[11px] text-[#475467] outline-none focus:border-[#4f46e5] focus:bg-white"
+                        />
                       </td>
                       <td className="px-2">
                         <input
@@ -444,6 +647,21 @@ export function ProductVariantsPage() {
           </div>
         </div>
       </footer>
+
+      {showPrintModal && (
+        <BarcodePrintModal
+          shopName={businessName}
+          variants={rows.map((r) => ({
+            id: r.id,
+            sku: r.sku,
+            barcode: r.barcode,
+            templateName: template?.name || "Sản phẩm",
+            attributeText: r.attributeText,
+            price: r.price,
+          }))}
+          onClose={() => setShowPrintModal(false)}
+        />
+      )}
     </div>
   );
 }
