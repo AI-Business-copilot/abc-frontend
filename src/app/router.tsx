@@ -42,6 +42,7 @@ import { CashShiftsPage } from "@/pages/cash-shifts/cash-shifts-page";
 
 const PurchasesPage = lazy(() => import("@/pages/purchases/purchases-page").then((module) => ({ default: module.PurchasesPage })));
 const SalesPage = lazy(() => import("@/pages/sales/sales-page").then((module) => ({ default: module.SalesPage })));
+const PromotionsPage = lazy(() => import("@/pages/promotions/promotions-page").then((module) => ({ default: module.PromotionsPage })));
 const ReturnsPage = lazy(() => import("@/pages/returns/returns-page").then((module) => ({ default: module.ReturnsPage })));
 const AdminBusinessesPage = lazy(() => import("@/pages/admin/admin-management-page").then((module) => ({ default: module.AdminBusinessesPage })));
 const AdminUsersPage = lazy(() => import("@/pages/admin/admin-management-page").then((module) => ({ default: module.AdminUsersPage })));
@@ -236,6 +237,7 @@ export const router = createBrowserRouter([
         element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><PurchasesPage /></Suspense></RequireBusiness>,
       },
       { path: "/sales/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><SalesPage /></Suspense></RequireBusiness> },
+      { path: "/promotions", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><PromotionsPage /></Suspense></RequireBusiness> },
       { path: "/returns/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><ReturnsPage /></Suspense></RequireBusiness> },
       {
         path: "/inventory/lots",

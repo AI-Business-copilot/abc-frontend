@@ -72,6 +72,7 @@ export interface CustomerReturnRecord {
     id: string;
     returnQty: number;
     refundUnitPrice: number;
+    refundAmount?: number;
     itemCondition: "RESTOCKABLE" | "DAMAGED_QUARANTINE";
     variant: {
       id: string;
@@ -194,4 +195,3 @@ export const returnsApi = {
 
   shift: () => apiRequest<Shift | null>("/sales/cash-shifts/current"),
 };
-

@@ -19,6 +19,22 @@ import {
 import "./returns.css";
 import "@/pages/purchases/purchases.css";
 
+function refundAmountForSelection(item: {
+  subtotal: number;
+  discountAmount: number;
+  quantity: number;
+  previouslyReturnedQty: number;
+}, returnQty: number) {
+  if (!returnQty || !item.quantity) return 0;
+  const netCents = Math.round((item.subtotal - item.discountAmount) * 100);
+  const baseCents = Math.floor(netCents / item.quantity);
+  const extraCentUnits = netCents % item.quantity;
+  const start = item.previouslyReturnedQty;
+  const end = start + returnQty;
+  const extraReturned = Math.max(0, Math.min(end, extraCentUnits) - Math.min(start, extraCentUnits));
+  return (baseCents * returnQty + extraReturned) / 100;
+}
+
 export function ReturnsPage() {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<"f05" | "f06" | "history">("f05");
@@ -88,7 +104,10 @@ function CustomerReturnsTab({ isStaff: _isStaff }: { isStaff: boolean }) {
       sku: string;
       maxQty: number;
       returnQty: number;
-      unitPrice: number;
+      subtotal: number;
+      discountAmount: number;
+      quantity: number;
+      previouslyReturnedQty: number;
       itemCondition: "RESTOCKABLE" | "DAMAGED_QUARANTINE";
       returnReason: string;
     }>
@@ -129,7 +148,10 @@ function CustomerReturnsTab({ isStaff: _isStaff }: { isStaff: boolean }) {
           sku: i.variant.sku,
           maxQty: i.returnableQty,
           returnQty: 0,
-          unitPrice: i.unitPrice,
+          subtotal: i.subtotal,
+          discountAmount: i.discountAmount,
+          quantity: i.quantity,
+          previouslyReturnedQty: i.previouslyReturnedQty,
           itemCondition: "RESTOCKABLE" as const,
           returnReason: "Khách đổi trả tại quầy",
         }));
@@ -139,7 +161,7 @@ function CustomerReturnsTab({ isStaff: _isStaff }: { isStaff: boolean }) {
 
   // Calculations
   const totalRefund = returnItems.reduce(
-    (sum, item) => sum + item.returnQty * item.unitPrice,
+    (sum, item) => sum + refundAmountForSelection(item, item.returnQty),
     0,
   );
 
@@ -172,7 +194,6 @@ function CustomerReturnsTab({ isStaff: _isStaff }: { isStaff: boolean }) {
           variantId: i.variantId,
           lotId: i.lotId,
           returnQty: i.returnQty,
-          refundUnitPrice: i.unitPrice,
           itemCondition: i.itemCondition,
           returnReason: i.returnReason,
         })),
@@ -282,7 +303,7 @@ function CustomerReturnsTab({ isStaff: _isStaff }: { isStaff: boolean }) {
                       <td>
                         <strong>{item.maxQty}</strong>
                       </td>
-                      <td>{money(item.unitPrice)}</td>
+                      <td>{money(item.returnQty ? refundAmountForSelection(item, item.returnQty) / item.returnQty : refundAmountForSelection(item, 1))}</td>
                       <td>
                         <input
                           type="number"

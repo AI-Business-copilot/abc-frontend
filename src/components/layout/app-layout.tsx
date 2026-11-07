@@ -16,6 +16,7 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
+  Tag,
   UsersRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -59,6 +60,7 @@ const navigation: NavigationGroup[] = [
       { to: "/app/cash-shifts", label: "Ca trực & tiền mặt", icon: Wallet, permission: "cash.shift.read" },
       { to: "/app/orders", label: "Đơn hàng & thanh toán", icon: CreditCard, disabled: true },
       { to: "/app/orders", label: "Đơn hàng & thanh toán", icon: CreditCard },
+      { to: "/promotions", label: "Khuyến mãi", icon: Tag, permission: "promotions.manage" },
       { to: "/returns", label: "Đổi trả hàng", icon: RotateCcw },
       { to: "/app/analytics", label: "Báo cáo kinh doanh", icon: BarChart3, disabled: true },
     ],
