@@ -25,6 +25,8 @@ const permissionGroupLabels: Record<string, string> = {
   products: "Sản phẩm",
   inventory: "Kho vận",
   orders: "Đơn hàng",
+  promotions: "Khuyến mãi",
+  business_data: "Dữ liệu kinh doanh",
   cash: "Ca trực & tiền mặt",
   vendor_returns: "Trả hàng nhà cung cấp",
   finance: "Tài chính",
