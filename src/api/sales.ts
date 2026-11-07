@@ -1,4 +1,5 @@
 import { apiRequest } from "@/services/api.service";
+import { promotionsApi } from "@/api/promotions";
 import type { Page, Query, Shift } from "./purchases";
 import type { SearchVariantItem, SearchVariantsResponse } from "./inventory";
 
@@ -6,9 +7,42 @@ export type Customer = { id: string; name: string; phone: string };
 export type SaleVariant = SearchVariantItem;
 export type Sale = {
   id: string; orderCode: string; status: "DRAFT" | "COMPLETED" | "CANCELLED"; cashierId: string; shiftId: string; createdAt: string;
-  totalNetAmount: string; customer: Customer | null;
-  orderItems: { id: string; variantId: string; quantity: number; unitPrice: string; subtotal: string; variant?: { sku: string; template: { name: string } }; lotItem: { expirationDate: string; lot: { lotNumber: string } } | null }[];
-  orderPayments: { id: string; paymentMethod: string; amount: string; paymentReference: string | null; createdAt: string }[];
+  totalGrossAmount: string;
+  discountAmount: string;
+  totalNetAmount: string;
+  customer: Customer | null;
+  promotionId: string | null;
+  promotionSnapshot: {
+    promotionId: string;
+    name: string;
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+    discountValue: string;
+    scope: "STORE" | "CATEGORY" | "PRODUCT";
+    minOrderAmount: string | null;
+    startsAt: string;
+    endsAt: string;
+    priority: number;
+    updatedAt: string;
+    targetIds: string[];
+    discountAmount: string;
+  } | null;
+  orderItems: {
+    id: string;
+    variantId: string;
+    quantity: number;
+    unitPrice: string;
+    discountAmount: string;
+    subtotal: string;
+    variant?: { sku: string; template: { name: string } };
+    lotItem: { expirationDate: string; lot: { lotNumber: string } } | null;
+  }[];
+  orderPayments: {
+    id: string;
+    paymentMethod: "CASH" | "BANK_TRANSFER" | "PROMOTION";
+    amount: string;
+    paymentReference: string | null;
+    createdAt: string;
+  }[];
 };
 export type SaleDetail = Sale & { inventoryLedger: { id: string; variantId: string; createdAt: string; transactionType: string; quantityChanged: number; balanceAfter: number }[] };
 const query = (params: Query) => new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== "").map(([k, v]) => [k, String(v)]));
@@ -18,6 +52,7 @@ export const salesApi = {
   orders: (params: Query) => read<Page<Sale>>(`/orders?${query(params)}`),
   order: (id: string) => read<SaleDetail>(`/orders/${id}`),
   create: (body: { orderCode: string; customerId?: string; shiftId: string; items: { variantId: string; quantity: number }[] }) => write<Sale>("/orders", body),
+  promotionPreview: (items: { variantId: string; quantity: number }[]) => promotionsApi.preview(items),
   pay: (id: string, paymentMethod: "CASH" | "BANK_TRANSFER", amount: string, paymentReference: string) => write<Sale>(`/orders/${id}/payments`, { confirmed: true, paymentMethod, amount, ...(paymentReference.trim() ? { paymentReference: paymentReference.trim() } : {}) }),
   cancel: (id: string) => write<Sale>(`/orders/${id}/cancel`, {}),
   shift: () => read<Shift | null>("/cash-shifts/current"),

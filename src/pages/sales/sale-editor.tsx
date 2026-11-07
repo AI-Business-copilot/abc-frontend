@@ -37,6 +37,11 @@ export function SaleEditor() {
   const [lotVariant, setLotVariant] = useState<SaleVariant | null>(null);
   const lots = useLoad(() => lotVariant ? inventoryApi.getVariantLots(lotVariant.id) : Promise.resolve({ lots: [] }), [lotVariant?.id]);
   const amount = total(lines.map(line => ({ qty: line.qty, price: String(line.variant.basePrice) })));
+  const previewKey = JSON.stringify(lines.map(line => [line.variant.id, line.qty]));
+  const promotionPreview = useLoad(() => {
+    if (!lines.length || invalidLines(lines)) return Promise.resolve(null);
+    return salesApi.promotionPreview(lines.map(line => ({ variantId: line.variant.id, quantity: Number(line.qty) })));
+  }, [previewKey]);
   const products = variants.data?.items.filter(v => !inStock || v.onHand > 0) || [];
   const invalidQty = lines.some(l => !/^\d+$/.test(l.qty) || Number(l.qty) < 1 || Number(l.qty) > l.variant.onHand || Number(l.qty) > 2147483647);
   const add = (variant: SaleVariant) => setLines(current => {
@@ -91,10 +96,23 @@ export function SaleEditor() {
           {addingCustomer && <div className="sales-new-customer"><Field label="Tên khách hàng"><input maxLength={150} value={name} onChange={e => setName(e.target.value)} /></Field><Field label="Số điện thoại"><input type="tel" maxLength={20} value={phone} onChange={e => setPhone(e.target.value)} /></Field><button type="button" onClick={() => void action.run(async () => { if (!name.trim() || !phone.trim()) throw new Error("Nhập tên và số điện thoại khách hàng."); const saved = await salesApi.createCustomer(name, phone); setCustomer(saved); setName(""); setPhone(""); setAddingCustomer(false); customers.reload(); })}>Lưu & chọn khách</button></div>}
           <div className="sales-cart-lines">{lines.length ? lines.map(l => <div className="sales-cart-line" key={l.variant.id}><div><strong>{l.variant.productName}</strong><small>{l.variant.sku} · {money(l.variant.basePrice)}</small><div className="sales-quantity"><button type="button" aria-label={`Giảm ${l.variant.sku}`} disabled={Number(l.qty) <= 1} onClick={() => changeQty(l.variant.id, String(Number(l.qty) - 1))}><Minus size={13} /></button><input aria-label={`Số lượng ${l.variant.sku}`} type="number" required min="1" max={Math.min(l.variant.onHand, 2147483647)} step="1" value={l.qty} onChange={e => changeQty(l.variant.id, e.target.value)} /><button type="button" aria-label={`Tăng ${l.variant.sku}`} disabled={Number(l.qty) >= l.variant.onHand} onClick={() => changeQty(l.variant.id, String((Number(l.qty) || 0) + 1))}><Plus size={13} /></button></div></div><div className="sales-line-end"><strong>{money(total([{ qty: l.qty, price: String(l.variant.basePrice) }]))}</strong><button type="button" aria-label={`Xóa ${l.variant.sku}`} onClick={() => setLines(current => current.filter(row => row.variant.id !== l.variant.id))}><Trash2 size={16} /></button></div></div>) : <Empty><ShoppingCart size={30} className="sales-empty-icon" />Giỏ hàng đang trống<p>Chọn sản phẩm ở bên trái để bắt đầu.</p></Empty>}</div>
           {invalidQty && <ErrorBox error="Số lượng phải là số nguyên dương và không vượt tồn hiển thị." />}
-          <div className="sales-cart-summary"><div className="sales-total"><span>Tổng dự kiến</span><strong>{money(amount)}</strong></div><p className="purchase-hint">Giá được chốt khi tạo đơn. Đơn chờ thanh toán chưa giữ hàng hoặc trừ kho.</p><button className="purchase-primary sales-full" disabled={!lines.length || invalidQty || !shift.data || shift.loading || !!shift.error || !can("inventory.read") || Number(amount) <= 0}>{action.busy ? "Đang lưu đơn…" : <>Tạo đơn & thanh toán <ArrowRight size={17} /></>}</button></div>
+          <div className="sales-cart-summary">
+            <ErrorBox error={promotionPreview.error} />
+            {promotionPreview.error && <button type="button" onClick={promotionPreview.reload}>Tính lại khuyến mãi</button>}
+            <div className="sales-total"><span>Tạm tính</span><strong>{money(promotionPreview.data?.totalGrossAmount ?? amount)}</strong></div>
+            {promotionPreview.data && Number(promotionPreview.data.discountAmount) > 0 && <div className="sales-total"><span>{promotionPreview.data.promotion?.name || "Khuyến mãi tự động"}</span><strong>−{money(promotionPreview.data.discountAmount)}</strong></div>}
+            <div className="sales-total"><span>Tổng cần thu</span><strong>{money(promotionPreview.data?.totalNetAmount ?? amount)}</strong></div>
+            {promotionPreview.loading && <p className="purchase-hint" role="status">Đang kiểm tra khuyến mãi…</p>}
+            <p className="purchase-hint">Khuyến mãi hợp lệ được tự động áp dụng. Giá và ưu đãi được chốt khi tạo đơn.</p>
+            <button className="purchase-primary sales-full" disabled={!lines.length || invalidQty || !shift.data || shift.loading || !!shift.error || !can("inventory.read") || Number(amount) <= 0}>{action.busy ? "Đang lưu đơn…" : <>Tạo đơn & thanh toán <ArrowRight size={17} /></>}</button>
+          </div>
         </fieldset></form>
       </aside>
     </div>
     <Modal open={!!lotVariant} title={`Lô hàng · ${lotVariant?.productName || ""}`} onClose={() => setLotVariant(null)}><p className="purchase-hint">{lotVariant?.sku} · Hệ thống tự chọn lô còn hạn gần nhất khi thanh toán. Tồn lô là tổng tồn, chưa loại trừ hàng hỏng.</p><ErrorBox error={lots.error} />{lots.error && <button onClick={lots.reload}>Thử lại</button>}{lots.loading ? <Empty>Đang tải lô hàng…</Empty> : <div className="purchase-table"><table><thead><tr><th>Số lô</th><th>Hạn sử dụng</th><th>Tồn</th></tr></thead><tbody>{lots.data?.lots.map(l => <tr key={l.id}><td>{l.lotNumber}</td><td>{date(l.expirationDate)}</td><td>{l.quantityOnHand}</td></tr>)}</tbody></table>{!lots.data?.lots.length && !lots.error && <Empty>Chưa có lô hàng.</Empty>}</div>}</Modal>
   </>;
+}
+
+function invalidLines(lines: { variant: SaleVariant; qty: string }[]) {
+  return lines.some(line => !/^\d+$/.test(line.qty) || Number(line.qty) < 1 || Number(line.qty) > 2147483647);
 }
