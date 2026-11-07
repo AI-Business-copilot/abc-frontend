@@ -29,6 +29,7 @@ export function SignupPage() {
     setError("");
     try {
       const data = await signUpWithEmail(email, password, name);
+
       setSent(!data.session);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Không thể tạo tài khoản.");

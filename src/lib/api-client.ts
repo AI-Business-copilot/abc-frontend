@@ -121,7 +121,8 @@ async function readAccessToken(forceRefresh: boolean): Promise<string> {
 function send(url: string, init: RequestInit, token: string): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
-  if (init.body && !headers.has("Content-Type")) {
+  // FormData must go out without a Content-Type so the browser adds the multipart boundary itself.
+  if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
   return fetch(url, { ...init, headers });
