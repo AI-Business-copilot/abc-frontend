@@ -2,6 +2,7 @@ import { apiRequest } from "@/services/api.service";
 
 export type ShopeePreview = {
   platform: "SHOPEE";
+  mappingVersion: number;
   alreadyImported: boolean;
   importedAt: string | null;
   reportFrom: string | null;
@@ -10,6 +11,16 @@ export type ShopeePreview = {
   uniqueRowCount: number;
   counts: Record<"ORDER" | "SKU" | "ADJUSTMENT" | "SERVICE_FEE" | "SHIPPING_DISCREPANCY", number>;
   financeTotals: Record<string, number>;
+  summaryFinancialData: Record<string, number>;
+  reconciliations: Array<{
+    summaryField: string;
+    incomeField: string;
+    summaryAmount: number;
+    incomeAmount: number;
+    difference: number;
+    matches: boolean;
+  }>;
+  unmappedFields: Array<{ sourceSheet: string; header: string; occurrences: number }>;
   notes: string[];
 };
 
@@ -19,7 +30,23 @@ export type BusinessDataBatch = {
   reportTo: string | null;
   sourceRowCount: number;
   importedRowCount: number;
-  summary: { counts?: Record<string, number>; financeTotals?: Record<string, number> } | null;
+  currentMappingVersion?: number;
+  summary: {
+    mappingVersion?: number;
+    counts?: Record<string, number>;
+    uniqueRowCount?: number;
+    financeTotals?: Record<string, number>;
+    summaryFinancialData?: Record<string, number>;
+    reconciliations?: Array<{
+      summaryField: string;
+      incomeField: string;
+      summaryAmount: number;
+      incomeAmount: number;
+      difference: number;
+      matches: boolean;
+    }>;
+    unmappedFields?: Array<{ sourceSheet: string; header: string; occurrences: number }>;
+  } | null;
   createdAt: string;
 };
 
@@ -42,6 +69,7 @@ export type AiReadyData = {
   };
   shopee: {
     financialRecords: Array<{
+      id: string;
       recordType: string;
       externalOrderId: string | null;
       externalProductId: string | null;
@@ -49,10 +77,21 @@ export type AiReadyData = {
       transactionDate: string | null;
       settlementDate: string | null;
       financialData: Record<string, number | string> | null;
+      unmappedFinancialData: Record<string, number> | null;
       sourceSheet: string;
+      sourceRow: number;
+      batch: {
+        id: string;
+        reportFrom: string | null;
+        reportTo: string | null;
+        mappingVersion: number | null;
+      };
     }>;
     recordLimit: number;
-    batches: BusinessDataBatch[];
+    recordsTruncated: boolean;
+    currentMappingVersion: number;
+    quarantinedFinancialRecords: number;
+    batches: Array<Pick<BusinessDataBatch, "id" | "reportFrom" | "reportTo" | "importedRowCount" | "createdAt">>;
     quantityDataAvailable: boolean;
     notes: string[];
   };

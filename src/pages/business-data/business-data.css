@@ -328,6 +328,12 @@
   color: #475569;
 }
 
+.bd-badge.success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
 .bd-badge.warning {
   border-color: #fde68a;
   background: #fffbeb;
@@ -748,6 +754,27 @@
   color: #334155;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+.bd-quarantine {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid #fde68a;
+  border-radius: 0.85rem;
+  background: #fffbeb;
+  padding: 0.85rem;
+}
+
+.bd-quarantine .bd-section-heading h3,
+.bd-quarantine .bd-section-heading h4 {
+  margin: 0;
+  color: #92400e;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.bd-quarantine .bd-section-heading p {
+  color: #a16207;
 }
 
 @media (max-width: 900px) {
