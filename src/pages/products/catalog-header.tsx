@@ -86,13 +86,13 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
     <header className={`sticky top-0 z-40 bg-white border-b border-[#eaecf0]${mode === "purchases" || mode === "sales" ? " order-workspace-header" : ""}`}>
       <div className="h-16 pl-6 pr-5 flex items-center gap-6">
         <Link className="flex items-center gap-2.5 shrink-0" to={(mode === "purchases" || mode === "sales") ? "/app/orders" : "/products"}>
-          <div className="w-9 h-9 rounded-lg bg-[#4f46e5] grid place-items-center text-white shadow-[0_4px_10px_rgba(79,70,229,0.35)]">
+          <div className="w-9 h-9 rounded-lg bg-[#0f4c3a] grid place-items-center text-white shadow-[0_4px_10px_rgba(79,70,229,0.35)]">
             <Icon name="auto_awesome" className="text-[19px]" />
           </div>
           <div className="leading-tight">
             <div className="flex items-baseline gap-2">
               <span className="text-[16px] font-extrabold tracking-tight">ABC Retail</span>
-              <span className="text-[9px] font-bold tracking-[0.14em] text-[#4f46e5] bg-[#eef0ff] px-1.5 py-0.5 rounded">
+              <span className="text-[9px] font-bold tracking-[0.14em] text-[#0f4c3a] bg-[#ecfdf5] px-1.5 py-0.5 rounded">
                 COPILOT
               </span>
             </div>
@@ -101,7 +101,7 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
         </Link>
 
         <div className="flex-1 max-w-[720px]">
-          <div className="h-10 rounded-lg bg-[#f2f4f7] flex items-center gap-2 px-3.5 text-[#667085] focus-within:ring-2 focus-within:ring-[#c7cbff]">
+          <div className="h-10 rounded-lg bg-[#f2f4f7] flex items-center gap-2 px-3.5 text-[#667085] focus-within:ring-2 focus-within:ring-[#a7f3d0]">
             <Icon name="search" className="text-[19px]" />
             <input
               value={keyword}
@@ -135,7 +135,7 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
               className="flex items-center gap-2 p-1.5 -mr-1 rounded-xl hover:bg-[#f2f4f7] transition-colors text-left"
               title="Tài khoản & Thiết lập"
             >
-              <div className="w-8 h-8 rounded-full bg-[#4f46e5] text-white grid place-items-center text-[12px] font-bold shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-[#0f4c3a] text-white grid place-items-center text-[12px] font-bold shadow-xs">
                 {avatarText}
               </div>
               <div className="leading-tight hidden sm:block">
@@ -161,7 +161,7 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
                     <p className="font-bold text-gray-900 truncate">{displayName}</p>
                     <p className="text-[11px] text-gray-500 truncate">{profile?.user.email}</p>
                     {business && (
-                      <span className="mt-1.5 inline-block text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+                      <span className="mt-1.5 inline-block text-[10px] font-bold text-[#0f4c3a] bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">
                         {business.name} ({business.industryType || "RETAIL"})
                       </span>
                     )}
@@ -172,7 +172,7 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                   >
-                    <Icon name="dashboard" className="text-[18px] text-[#4f46e5]" />
+                    <Icon name="dashboard" className="text-[18px] text-[#0f4c3a]" />
                     <span>Không gian làm việc</span>
                   </Link>
 
@@ -224,7 +224,7 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
             className={({ isActive }) =>
               `h-12 inline-flex items-center border-b-2 text-[13px] transition-colors ${
                 isActive || active === tab.key
-                  ? "border-[#4f46e5] text-[#4f46e5] font-semibold"
+                  ? "border-[#0f4c3a] text-[#0f4c3a] font-semibold"
                   : "border-transparent text-[#667085] font-medium hover:text-[#344054]"
               }`
             }
@@ -232,7 +232,7 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
             {tab.label}
           </NavLink>
         ))}
-        {mode !== "purchases" && mode !== "sales" && (can("orders.read") || (can("inventory.read") && can("finance.read"))) && <NavLink to="/app/orders" className="h-12 inline-flex items-center text-[13px] font-medium text-[#667085] hover:text-[#4f46e5]">Đơn hàng &amp; thanh toán</NavLink>}
+        {mode !== "purchases" && mode !== "sales" && (can("orders.read") || (can("inventory.read") && can("finance.read"))) && <NavLink to="/app/orders" className="h-12 inline-flex items-center text-[13px] font-medium text-[#667085] hover:text-[#0f4c3a]">Đơn hàng &amp; thanh toán</NavLink>}
       </nav>
     </header>
   );

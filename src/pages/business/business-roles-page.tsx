@@ -163,9 +163,9 @@ export function BusinessRolesPage() {
       </div>
       {error && <Alert className="mb-5" variant="destructive">{error}</Alert>}
       {notice && <Alert className="mb-5" variant="success">{notice}</Alert>}
-      <Card className="mb-5 border-violet-100 bg-violet-50/60">
-        <CardContent className="flex items-start gap-3 py-4 text-sm text-violet-950">
-          <ShieldCheck className="mt-0.5 shrink-0 text-violet-700" size={18} />
+      <Card className="mb-5 border-emerald-200 bg-emerald-50/60">
+        <CardContent className="flex items-start gap-3 py-4 text-sm text-emerald-950">
+          <ShieldCheck className="mt-0.5 shrink-0 text-[#0f4c3a]" size={18} />
           <p className="m-0">Quyền quản trị doanh nghiệp, xem nhật ký hoạt động và các thao tác duyệt chỉ dành cho Owner luôn được giữ riêng. Thay đổi vai trò được ghi nhận trong nhật ký kiểm toán.</p>
         </CardContent>
       </Card>
@@ -176,7 +176,7 @@ export function BusinessRolesPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><KeyRound size={18} /></span>
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-[#0f4c3a]"><KeyRound size={18} /></span>
                     <div><CardTitle>{role.displayName}</CardTitle><p className="mt-1 text-sm text-slate-500">{role.isDefault ? "Vai trò nhân viên mặc định" : role.description || "Vai trò tùy chỉnh"}</p></div>
                   </div>
                   {role.isArchived && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Đã lưu trữ</span>}
@@ -216,8 +216,8 @@ export function BusinessRolesPage() {
           </label>
           <fieldset className="grid gap-3">
             <legend className="mb-2 text-sm font-semibold">Quyền nghiệp vụ ({selectedPermissions.length} đã chọn)</legend>
-            <div className="flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-900">
-              <span className="h-3 w-3 rounded-sm border border-violet-500 bg-violet-200" aria-hidden="true" />
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-950">
+              <span className="h-3 w-3 rounded-sm border border-emerald-600 bg-emerald-200" aria-hidden="true" />
               Được tô màu và gắn nhãn là quyền đang có trong vai trò Nhân viên mặc định.
             </div>
             <div className="grid max-h-72 gap-4 overflow-y-auto rounded-xl border border-slate-200 p-3">
@@ -227,12 +227,12 @@ export function BusinessRolesPage() {
                   {groupPermissions.map((permission) => {
                     const isDefaultStaffPermission = defaultStaffPermissions.has(permission.code);
                     return (
-                      <label className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2 text-sm transition-colors ${isDefaultStaffPermission ? "border-violet-200 bg-violet-50/80 hover:bg-violet-100" : "border-transparent hover:bg-slate-50"}`} key={permission.code}>
-                        <input checked={selectedPermissions.includes(permission.code)} className="mt-1 accent-violet-600" onChange={() => togglePermission(permission.code)} type="checkbox" />
+                      <label className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2 text-sm transition-colors ${isDefaultStaffPermission ? "border-emerald-200 bg-emerald-50/80 hover:bg-emerald-100" : "border-transparent hover:bg-slate-50"}`} key={permission.code}>
+                        <input checked={selectedPermissions.includes(permission.code)} className="mt-1 accent-[#0f4c3a]" onChange={() => togglePermission(permission.code)} type="checkbox" />
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center gap-1.5">
                             <span className="font-medium text-slate-800">{getPermissionLabel(permission.code)}</span>
-                            {isDefaultStaffPermission && <span className="rounded-full bg-violet-200 px-2 py-0.5 text-[10px] font-semibold text-violet-900">Mặc định Nhân viên</span>}
+                            {isDefaultStaffPermission && <span className="rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-semibold text-emerald-900">Mặc định Nhân viên</span>}
                           </span>
                           <span className="mt-1 block text-xs leading-relaxed text-slate-600">{getPermissionDescription(permission.code)}</span>
                         </span>

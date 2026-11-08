@@ -334,7 +334,7 @@ export function ProductVariantsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[18px] font-bold">
-              <span className="mr-2 rounded bg-[#4f46e5] px-2 py-1 text-[12px] text-white">BƯỚC 3 / 4</span>
+              <span className="mr-2 rounded bg-[#0f4c3a] px-2 py-1 text-[12px] text-white">BƯỚC 3 / 4</span>
               Sinh Biến thể SKU &amp; Định Giá Thương Mại
             </h1>
             <p className="mt-1 text-[11px] text-[#667085]">Quy trình Khởi tạo Hàng hóa &amp; Biến thể SKU Matrix • Chuẩn hóa dữ liệu ERP đa kênh</p>
@@ -344,7 +344,7 @@ export function ProductVariantsPage() {
               type="button"
               disabled={busy}
               onClick={resyncFromStep2}
-              className="flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white px-3.5 py-2 text-[12px] font-bold text-[#4f46e5] hover:bg-[#eef0ff] shadow-sm disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-lg border border-[#a7f3d0] bg-white px-3.5 py-2 text-[12px] font-bold text-[#0f4c3a] hover:bg-[#ecfdf5] shadow-sm disabled:opacity-60"
               title="Đồng bộ lại toàn bộ biến thể theo thay đổi mới nhất từ Bước 2"
             >
               <Icon name="sync" className="text-[16px]" />
@@ -364,15 +364,15 @@ export function ProductVariantsPage() {
             ["3", "BƯỚC 3 • ĐANG THỰC HIỆN", "Sinh biến thể SKU", "Mã SKU, Barcode, Giá vốn / Bán"],
             ["4", "BƯỚC 4 • SẮP TỚI", "Số dư tồn ban đầu", "inventory_balances & Phân kho"],
           ].map(([number, eyebrow, title, subtitle], index) => (
-            <div key={title} className={["rounded-xl px-4 py-3", index === 2 ? "bg-[#4f46e5] text-white" : "bg-white"].join(" ")}>
+            <div key={title} className={["rounded-xl px-4 py-3", index === 2 ? "bg-[#0f4c3a] text-white" : "bg-white"].join(" ")}>
               <div className="flex items-center gap-3">
-                <span className={["grid h-9 w-9 place-items-center rounded-full text-[18px] font-bold", index === 2 ? "bg-white text-[#4f46e5]" : "bg-[#d1fadf] text-[#067647]"].join(" ")}>{number}</span>
+                <span className={["grid h-9 w-9 place-items-center rounded-full text-[18px] font-bold", index === 2 ? "bg-white text-[#0f4c3a]" : "bg-[#d1fadf] text-[#067647]"].join(" ")}>{number}</span>
                 <div>
                   <p className={["text-[10px] font-semibold", index === 2 ? "text-white/80" : "text-[#667085]"].join(" ")}>{eyebrow}</p>
                   <p className="text-[14px] font-bold">{title}</p>
                   <p className={["text-[11px]", index === 2 ? "text-white/80" : "text-[#667085]"].join(" ")}>{subtitle}</p>
                 </div>
-                {index === 2 && <span className="ml-auto rounded bg-white px-2 py-1 text-[10px] font-bold text-[#4338ca]">75%</span>}
+                {index === 2 && <span className="ml-auto rounded bg-white px-2 py-1 text-[10px] font-bold text-[#0a3528]">75%</span>}
               </div>
             </div>
           ))}
@@ -380,7 +380,7 @@ export function ProductVariantsPage() {
 
         <section className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white px-4 py-3">
           <div className="flex items-center gap-3">
-            <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-lg bg-[#eef0ff] text-[#4338ca]">
+            <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-lg bg-[#ecfdf5] text-[#0a3528]">
               {template?.imageUrl ? <img alt={template.name} className="h-full w-full object-cover" src={getPrimaryImage(template.imageUrl)} /> : <Icon name="inventory_2" className="text-[25px]" />}
             </span>
             <div>
@@ -388,17 +388,17 @@ export function ProductVariantsPage() {
               <p className="text-[11px] text-[#667085]">
                 Mã mẫu cha: <b>{template?.code}</b>　•　ĐVT chính: <b>{template?.unitOfMeasure}</b>　•　Lô FEFO: <b>{template?.hasLotTracking ? "Bật" : "Tắt"}</b>
               </p>
-              <p className="text-[11px] text-[#4338ca]">
+              <p className="text-[11px] text-[#0a3528]">
                 {rows.length} biến thể được sinh tự động từ {dimensionCount} chiều thuộc tính.
               </p>
             </div>
           </div>
           <div className="flex gap-2 text-center">
-            <div className="rounded-lg bg-[#eef3ff] px-5 py-2">
+            <div className="rounded-lg bg-[#ecfdf5] px-5 py-2">
               <p className="text-[10px] text-[#667085]">TỔNG GIÁ VỐN</p>
               <b>{vnd(totals.cost)}</b>
             </div>
-            <div className="rounded-lg bg-[#eef3ff] px-5 py-2">
+            <div className="rounded-lg bg-[#ecfdf5] px-5 py-2">
               <p className="text-[10px] text-[#667085]">BIÊN LỢI NHUẬN</p>
               <b className="text-[#067647]">+{totalMargin.toFixed(1)}%</b>
             </div>
@@ -407,40 +407,40 @@ export function ProductVariantsPage() {
 
         <section className="mt-4 grid grid-cols-[1.05fr_1.2fr_1.15fr] items-end gap-3 rounded-xl bg-white p-4">
           <label className="text-[10px] font-bold uppercase">
-            Quy tắc sinh mã SKU <span className="ml-8 font-mono text-[#4338ca]">[BRAND]-[CODE]-[VOL]-[VER]</span>
-            <div className="mt-1 truncate rounded-lg bg-[#eef3ff] px-3 py-3 font-mono text-[13px] font-normal">
+            Quy tắc sinh mã SKU <span className="ml-8 font-mono text-[#0a3528]">[BRAND]-[CODE]-[VOL]-[VER]</span>
+            <div className="mt-1 truncate rounded-lg bg-[#ecfdf5] px-3 py-3 font-mono text-[13px] font-normal">
               <b># {rows[0]?.sku || "SKU"}</b>
             </div>
           </label>
           <div className="text-[10px] font-bold uppercase">
             Định giá cơ sở &amp; biên lợi nhuận (Margin)
             <div className="mt-1 flex items-center gap-2">
-              <span className="flex-1 rounded-lg bg-[#eef3ff] px-3 py-3 text-[12px] font-normal">
+              <span className="flex-1 rounded-lg bg-[#ecfdf5] px-3 py-3 text-[12px] font-normal">
                 Vốn gốc:{" "}
                 <input value={baseCost} onChange={(event) => setBaseCost(Number(event.target.value))} type="number" className="w-24 bg-transparent text-right text-[15px] outline-none" /> đ
               </span>
-              <span className="flex-1 rounded-lg bg-[#eef3ff] px-3 py-3 text-[12px] font-normal">
+              <span className="flex-1 rounded-lg bg-[#ecfdf5] px-3 py-3 text-[12px] font-normal">
                 Margin:{" "}
                 <input value={margin} onChange={(event) => setMargin(Number(event.target.value))} type="number" className="w-14 bg-transparent text-right text-[15px] text-[#067647] outline-none" /> %
               </span>
             </div>
           </div>
-          <button onClick={applyPricing} className="h-12 rounded-lg bg-[#deebff] text-[14px] font-semibold text-[#344054]">
+          <button onClick={applyPricing} className="h-12 rounded-lg bg-[#e2f6ed] text-[14px] font-semibold text-[#344054]">
             <Icon name="payments" className="mr-2 align-middle text-[18px]" />
             Áp dụng cho {selectedIds.length || rows.length} Biến thể
           </button>
         </section>
 
         {/* Cấu hình tiền tố SKU & Trợ lý quy tắc [TENANT]-[SLUG]-[VALUE] */}
-        <section className="mt-4 rounded-xl border border-[#c7cbff] bg-gradient-to-r from-[#eef2ff] via-white to-[#f5f6ff] p-4 shadow-sm">
+        <section className="mt-4 rounded-xl border border-[#a7f3d0] bg-gradient-to-r from-[#ecfdf5] via-white to-[#f5f6ff] p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#4f46e5] text-white">
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#0f4c3a] text-white">
                 <Icon name="qr_code" className="text-[22px]" />
               </span>
               <div>
                 <h3 className="text-[15px] font-bold text-[#101828]">
-                  Cấu hình Tiền tố SKU: <code className="text-[#4f46e5] font-mono">[TENANT]-[SLUG]-[VALUE]</code>
+                  Cấu hình Tiền tố SKU: <code className="text-[#0f4c3a] font-mono">[TENANT]-[SLUG]-[VALUE]</code>
                 </h3>
                 <p className="text-[12px] text-[#667085]">
                   Hệ thống hỗ trợ tự động đồng bộ theo danh mục hoặc bạn có thể chỉnh sửa thủ công từng mã SKU trực tiếp trong bảng.
@@ -453,12 +453,12 @@ export function ProductVariantsPage() {
                 value={skuPrefix}
                 onChange={(e) => setSkuPrefix(e.target.value)}
                 placeholder="Ví dụ: ABC-AOTHUN..."
-                className="h-10 w-48 rounded-lg border border-[#d0d5dd] bg-white px-3 font-mono text-[12px] uppercase outline-none focus:border-[#4f46e5]"
+                className="h-10 w-48 rounded-lg border border-[#d0d5dd] bg-white px-3 font-mono text-[12px] uppercase outline-none focus:border-[#0f4c3a]"
               />
               <button
                 type="button"
                 onClick={applyCustomPrefix}
-                className="h-10 rounded-lg bg-[#4f46e5] px-4 text-[12.5px] font-bold text-white shadow-sm hover:bg-[#4338ca]"
+                className="h-10 rounded-lg bg-[#0f4c3a] px-4 text-[12.5px] font-bold text-white shadow-sm hover:bg-[#0a3528]"
               >
                 Gán tiền tố
               </button>
@@ -477,13 +477,13 @@ export function ProductVariantsPage() {
               <p className="font-bold text-[#101828] mb-1">Cấu trúc mã SKU chuẩn ERP:</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>
-                  <b className="font-mono text-[#4f46e5]">[TENANT]</b>: Mã viết tắt của doanh nghiệp/gian hàng của bạn (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">ABC</code>).
+                  <b className="font-mono text-[#0f4c3a]">[TENANT]</b>: Mã viết tắt của doanh nghiệp/gian hàng của bạn (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">ABC</code>).
                 </li>
                 <li>
-                  <b className="font-mono text-[#4f46e5]">[SLUG]</b>: Tên rút gọn không dấu của danh mục sản phẩm (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">AOTHUN</code>, <code className="bg-gray-100 px-1 py-0.5 rounded">SERUM</code>). Các sản phẩm cùng danh mục sẽ tự động chia sẻ tiền tố này để dễ quản lý kho.
+                  <b className="font-mono text-[#0f4c3a]">[SLUG]</b>: Tên rút gọn không dấu của danh mục sản phẩm (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">AOTHUN</code>, <code className="bg-gray-100 px-1 py-0.5 rounded">SERUM</code>). Các sản phẩm cùng danh mục sẽ tự động chia sẻ tiền tố này để dễ quản lý kho.
                 </li>
                 <li>
-                  <b className="font-mono text-[#4f46e5]">[VALUE]</b>: Ký hiệu viết tắt của các giá trị thuộc tính (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">DO-XL</code>, <code className="bg-gray-100 px-1 py-0.5 rounded">100ML</code>).
+                  <b className="font-mono text-[#0f4c3a]">[VALUE]</b>: Ký hiệu viết tắt của các giá trị thuộc tính (ví dụ: <code className="bg-gray-100 px-1 py-0.5 rounded">DO-XL</code>, <code className="bg-gray-100 px-1 py-0.5 rounded">100ML</code>).
                 </li>
               </ul>
               <p className="mt-2 text-[#067647] font-medium">
@@ -497,14 +497,14 @@ export function ProductVariantsPage() {
           <div className="flex items-center justify-between px-4 py-3">
             <h2 className="text-[16px] font-bold">
               <span className="mr-2 text-[#067647]">●</span>Danh Sách Biến Thể Hàng Hóa
-              <span className="ml-2 rounded bg-[#eef3ff] px-2 py-1 font-mono text-[11px] text-[#667085]">{rows.length} SKUs Generated</span>
+              <span className="ml-2 rounded bg-[#ecfdf5] px-2 py-1 font-mono text-[11px] text-[#667085]">{rows.length} SKUs Generated</span>
             </h2>
             <div className="flex gap-2">
               <span className="rounded-lg bg-[#f2f4f7] px-3 py-2 text-[11px] text-[#667085]">
                 <Icon name="filter_alt" className="mr-1 align-middle text-[15px]" />
                 {dimensionCount} chiều thuộc tính
               </span>
-              <button type="button" onClick={() => setShowPrintModal(true)} className="rounded-lg bg-[#eef0ff] border border-[#c7cbff] px-3.5 py-2 text-[11.5px] font-bold text-[#4f46e5] hover:bg-[#e0e7ff] shadow-sm flex items-center gap-1.5">
+              <button type="button" onClick={() => setShowPrintModal(true)} className="rounded-lg bg-[#ecfdf5] border border-[#a7f3d0] px-3.5 py-2 text-[11.5px] font-bold text-[#0f4c3a] hover:bg-[#e0e7ff] shadow-sm flex items-center gap-1.5">
                 <Icon name="print" className="mr-1 align-middle text-[15px]" />
                 In tem mã vạch
               </button>
@@ -512,7 +512,7 @@ export function ProductVariantsPage() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1180px] text-left text-[12px]">
-              <thead className="bg-[#eef3ff] text-[10px] uppercase text-[#667085]">
+              <thead className="bg-[#ecfdf5] text-[10px] uppercase text-[#667085]">
                 <tr>
                   <th className="w-12 px-4 py-3">
                     <input type="checkbox" checked={selectedIds.length === rows.length && rows.length > 0} onChange={toggleAll} />
@@ -547,14 +547,14 @@ export function ProductVariantsPage() {
                       </td>
                       <td className="px-2 py-3">
                         <b className="block text-[13px]">{template?.name}</b>
-                        <span className="mt-1 inline-block rounded bg-[#eef3ff] px-2 py-1 text-[10px]">{row.attributeText}</span>
+                        <span className="mt-1 inline-block rounded bg-[#ecfdf5] px-2 py-1 text-[10px]">{row.attributeText}</span>
                       </td>
                       <td className="px-2">
                         <input
                           value={row.sku}
                           onChange={(e) => updateRow(row.id, { sku: e.target.value })}
                           placeholder="Mã SKU..."
-                          className="w-36 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-2.5 py-1.5 font-mono text-[11.5px] font-bold text-[#101828] outline-none focus:border-[#4f46e5] focus:bg-white"
+                          className="w-36 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-2.5 py-1.5 font-mono text-[11.5px] font-bold text-[#101828] outline-none focus:border-[#0f4c3a] focus:bg-white"
                         />
                       </td>
                       <td className="px-2">
@@ -562,7 +562,7 @@ export function ProductVariantsPage() {
                           value={row.barcode}
                           onChange={(e) => updateRow(row.id, { barcode: e.target.value })}
                           placeholder="Mã vạch..."
-                          className="w-32 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-2 py-1.5 font-mono text-[11px] text-[#475467] outline-none focus:border-[#4f46e5] focus:bg-white"
+                          className="w-32 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-2 py-1.5 font-mono text-[11px] text-[#475467] outline-none focus:border-[#0f4c3a] focus:bg-white"
                         />
                       </td>
                       <td className="px-2">
@@ -571,7 +571,7 @@ export function ProductVariantsPage() {
                           min={0}
                           type="number"
                           onChange={(event) => updateRow(row.id, { cost: Math.max(0, Number(event.target.value)) })}
-                          className="w-28 rounded bg-[#eef3ff] px-3 py-2 text-right outline-none focus:ring-2 focus:ring-[#c7cbff]"
+                          className="w-28 rounded bg-[#ecfdf5] px-3 py-2 text-right outline-none focus:ring-2 focus:ring-[#a7f3d0]"
                         />
                       </td>
                       <td className="px-2">
@@ -580,7 +580,7 @@ export function ProductVariantsPage() {
                           min={0}
                           type="number"
                           onChange={(event) => updateRow(row.id, { price: Math.max(0, Number(event.target.value)) })}
-                          className="w-28 rounded bg-[#eef0ff] px-3 py-2 text-right font-semibold text-[#4338ca] outline-none focus:ring-2 focus:ring-[#c7cbff]"
+                          className="w-28 rounded bg-[#ecfdf5] px-3 py-2 text-right font-semibold text-[#0a3528] outline-none focus:ring-2 focus:ring-[#a7f3d0]"
                         />
                       </td>
                       <td className="px-2">
@@ -592,7 +592,7 @@ export function ProductVariantsPage() {
                           min={0}
                           type="number"
                           onChange={(event) => updateRow(row.id, { safety: Math.max(0, Math.trunc(Number(event.target.value))) })}
-                          className="w-20 rounded bg-[#eef3ff] px-3 py-2 text-center outline-none focus:ring-2 focus:ring-[#c7cbff]"
+                          className="w-20 rounded bg-[#ecfdf5] px-3 py-2 text-center outline-none focus:ring-2 focus:ring-[#a7f3d0]"
                         />
                       </td>
                       <td className="px-2">
@@ -609,7 +609,7 @@ export function ProductVariantsPage() {
                   </tr>
                 )}
               </tbody>
-              <tfoot className="bg-[#deebff] text-[13px] font-bold">
+              <tfoot className="bg-[#e2f6ed] text-[13px] font-bold">
                 <tr>
                   <td className="px-4 py-3" colSpan={4}>
                     TỔNG CỘNG {rows.length} BIẾN THỂ
@@ -639,7 +639,7 @@ export function ProductVariantsPage() {
             <button
               disabled={busy || rows.length === 0}
               onClick={() => void goNext()}
-              className="rounded-lg bg-[#4f46e5] px-7 py-3 text-[15px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] disabled:opacity-60"
+              className="rounded-lg bg-[#0f4c3a] px-7 py-3 text-[15px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] disabled:opacity-60"
             >
               {busy ? "Đang lưu..." : "Tiếp tục: Bước 4 - Thiết lập Tồn kho Ban đầu"}
               <Icon name="arrow_forward" className="ml-2 align-middle text-[20px]" />

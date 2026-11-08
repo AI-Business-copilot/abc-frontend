@@ -8,7 +8,7 @@ import type { AuditType, VariantLot, VariantOption } from '../../../../types/aud
 import { emptyRow, type AuditRowDraft } from '../audit-rows';
 
 const selectClass =
-  'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100';
+  'mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#0f4c3a] focus:outline-none focus:ring-1 focus:ring-[#0f4c3a] disabled:bg-gray-100';
 
 const formatDate = (value: string | Date) => new Date(value).toLocaleDateString('vi-VN');
 
@@ -98,7 +98,7 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
               <button
                 key={variant.id}
                 type="button"
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-blue-50"
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-emerald-50"
                 onClick={() => {
                   onChange(variant);
                   setOpen(false);

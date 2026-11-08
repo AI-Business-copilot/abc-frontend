@@ -67,7 +67,7 @@ function StatCard({
         <span
           className={[
             'w-10 h-10 shrink-0 rounded-lg grid place-items-center',
-            warning ? 'bg-[#fee4e2] text-[#d92d20]' : 'bg-[#eef0ff] text-[#4f46e5]',
+            warning ? 'bg-[#fee4e2] text-[#d92d20]' : 'bg-[#ecfdf5] text-[#0f4c3a]',
           ].join(' ')}
         >
           <Icon name={icon} className="text-[20px]" />
@@ -175,7 +175,7 @@ function ProductCard({
           </span>
         ) : null}
 
-        <span className="absolute top-2.5 right-2.5 inline-flex items-center h-[22px] px-2.5 rounded-md bg-[#4f46e5] text-white text-[11px] font-semibold shadow-sm">
+        <span className="absolute top-2.5 right-2.5 inline-flex items-center h-[22px] px-2.5 rounded-md bg-[#0f4c3a] text-white text-[11px] font-semibold shadow-sm">
           {product.variantCount} Biến thể SKU
         </span>
 
@@ -199,7 +199,7 @@ function ProductCard({
           <button
             type="button"
             onClick={() => onQuickCategory(product)}
-            className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#4f46e5] bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors"
+            className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#0f4c3a] bg-emerald-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors"
             title="Bấm để thay đổi hoặc gỡ danh mục này"
           >
             <Icon name="sell" className="text-[15px]" />
@@ -211,14 +211,14 @@ function ProductCard({
         <h3 className="mt-1.5 text-[15.5px] leading-snug font-bold text-[#101828] line-clamp-2">{product.name}</h3>
         <p className="mt-1 text-[11.5px] leading-[1.55] text-[#667085] line-clamp-2 min-h-[36px]">{product.description}</p>
 
-        <div className="mt-2.5 rounded-lg bg-[#f6f7ff] px-3 py-2">
+        <div className="mt-2.5 rounded-lg bg-[#ecfdf5] px-3 py-2">
           <div className="flex items-center justify-between text-[11.5px]">
             <span className="text-[#667085]">Giá vốn (AVCO):</span>
             <span className="font-semibold text-[#344054]">{vnd(product.avgCost)}</span>
           </div>
           <div className="mt-1 flex items-center justify-between text-[11.5px]">
             <span className="text-[#667085]">Giá bán lẻ niêm yết:</span>
-            <span className="font-bold text-[#4f46e5]">{vnd(product.avgPrice)}</span>
+            <span className="font-bold text-[#0f4c3a]">{vnd(product.avgPrice)}</span>
           </div>
         </div>
 
@@ -233,7 +233,7 @@ function ProductCard({
               <button
                 type="button"
                 onClick={() => onQuickCategory(product)}
-                className="h-8 px-2.5 inline-flex items-center justify-center gap-1 rounded-md bg-[#eef0ff] text-[#4f46e5] text-[12px] font-bold whitespace-nowrap hover:bg-[#e2e5ff] shadow-2xs"
+                className="h-8 px-2.5 inline-flex items-center justify-center gap-1 rounded-md bg-[#ecfdf5] text-[#0f4c3a] text-[12px] font-bold whitespace-nowrap hover:bg-[#d1fae5] shadow-2xs"
               >
                 <Icon name="sell" className="text-[15px]" />
                 Gán Danh Mục Nhanh
@@ -241,7 +241,7 @@ function ProductCard({
             ) : (
               <button
                 onClick={() => onView(product)}
-                className="h-8 px-2.5 inline-flex items-center justify-center gap-1 rounded-md bg-white border border-[#d7d9e6] text-[#4f46e5] text-[12px] font-semibold whitespace-nowrap hover:bg-[#f6f7ff]"
+                className="h-8 px-2.5 inline-flex items-center justify-center gap-1 rounded-md bg-white border border-[#d7d9e6] text-[#0f4c3a] text-[12px] font-semibold whitespace-nowrap hover:bg-[#ecfdf5]"
               >
                 <Icon name="sell" className="text-[15px]" />
                 Xem {product.variantCount} SKU
@@ -253,7 +253,7 @@ function ProductCard({
               type="button"
               onClick={() => onPrintBarcode(product)}
               title="In tem mã vạch Barcode cho sản phẩm này"
-              className="w-8 h-8 grid place-items-center rounded-md border border-[#d7d9e6] text-[#475467] hover:bg-[#eef2ff] hover:text-[#4f46e5] transition-colors"
+              className="w-8 h-8 grid place-items-center rounded-md border border-[#d7d9e6] text-[#475467] hover:bg-[#ecfdf5] hover:text-[#0f4c3a] transition-colors"
             >
               <Icon name="print" className="text-[15px]" />
             </button>
@@ -262,7 +262,7 @@ function ProductCard({
             <button
               onClick={() => onEdit(product)}
               title="Chỉnh sửa sản phẩm"
-              className="w-8 h-8 grid place-items-center rounded-md border border-[#d7d9e6] text-[#475467] hover:bg-[#eef2ff] hover:text-[#4f46e5] transition-colors"
+              className="w-8 h-8 grid place-items-center rounded-md border border-[#d7d9e6] text-[#475467] hover:bg-[#ecfdf5] hover:text-[#0f4c3a] transition-colors"
             >
               <Icon name="edit" className="text-[15px]" />
             </button>
@@ -327,7 +327,7 @@ function SkuModal({
         <div className="px-6 py-4 border-b border-[#eaecf0] flex items-start justify-between gap-4 bg-gray-50/50">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold tracking-wide text-[#4f46e5] uppercase bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+              <span className="text-[11px] font-mono font-bold tracking-wide text-[#0f4c3a] uppercase bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">
                 {product.code}
               </span>
               <span className="text-[11px] text-[#667085]">{product.categoryPath || 'Chưa phân loại'}</span>
@@ -351,7 +351,7 @@ function SkuModal({
                 }));
                 onPrintVariants(printable);
               }}
-              className="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-[#4f46e5] text-white text-[12px] font-bold shadow-xs hover:bg-[#4338ca] transition-colors"
+              className="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0f4c3a] text-white text-[12px] font-bold shadow-xs hover:bg-[#0a3528] transition-colors"
             >
               <Icon name="print" className="text-[16px]" />
               In {product.variantCount} tem mã vạch
@@ -364,9 +364,9 @@ function SkuModal({
 
         {/* Thư viện góc chụp đa chiều (Multi-angle photos) */}
         {images.length > 0 && (
-          <div className="px-6 py-2.5 bg-indigo-50/30 border-b border-gray-100 flex items-center gap-3 overflow-x-auto">
+          <div className="px-6 py-2.5 bg-emerald-50/30 border-b border-gray-100 flex items-center gap-3 overflow-x-auto">
             <span className="text-[11.5px] font-bold text-gray-700 shrink-0 flex items-center gap-1">
-              <Icon name="photo_camera" className="text-[15px] text-[#4f46e5]" />
+              <Icon name="photo_camera" className="text-[15px] text-[#0f4c3a]" />
               Các góc chụp ({images.length}):
             </span>
             <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ function SkuModal({
                   key={i}
                   type="button"
                   onClick={() => setPreviewImage(img)}
-                  className="w-10 h-10 rounded-lg border-2 border-white shadow-xs overflow-hidden hover:border-[#4f46e5] transition-all hover:scale-105 shrink-0"
+                  className="w-10 h-10 rounded-lg border-2 border-white shadow-xs overflow-hidden hover:border-[#0f4c3a] transition-all hover:scale-105 shrink-0"
                   title={`Bấm để xem ảnh phóng to góc chụp #${i + 1}`}
                 >
                   <img src={img} alt={`Góc chụp #${i + 1}`} className="w-full h-full object-cover" />
@@ -412,7 +412,7 @@ function SkuModal({
                           <button
                             type="button"
                             onClick={() => setPreviewImage(variantImg)}
-                            className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 hover:border-[#4f46e5] shadow-xs block transition-transform group-hover:scale-105"
+                            className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 hover:border-[#0f4c3a] shadow-xs block transition-transform group-hover:scale-105"
                             title="Bấm để xem ảnh phóng to"
                           >
                             <img
@@ -449,7 +449,7 @@ function SkuModal({
                       <div className="font-mono text-[12px] font-bold text-gray-900">{sku.sku}</div>
                       <div className="text-[11px] text-gray-500">Biến thể #{idx + 1}</div>
                     </td>
-                    <td className="px-3 py-2 font-mono text-[11.5px] text-[#4f46e5] font-semibold">
+                    <td className="px-3 py-2 font-mono text-[11.5px] text-[#0f4c3a] font-semibold">
                       {sku.barcode ? (
                         <span className="inline-flex items-center gap-1">
                           <Icon name="qr_code" className="text-[14px]" />
@@ -460,7 +460,7 @@ function SkuModal({
                       )}
                     </td>
                     <td className="px-3 py-2 text-right text-[#475467]">{vnd(sku.costPrice)}</td>
-                    <td className="px-3 py-2 text-right font-bold text-[#4f46e5]">{vnd(sku.basePrice)}</td>
+                    <td className="px-3 py-2 text-right font-bold text-[#0f4c3a]">{vnd(sku.basePrice)}</td>
                     <td className="px-4 py-2 text-right">
                       <div className="flex flex-col items-end">
                         <span className={["font-bold", isLowStock ? "text-red-600 bg-red-50 px-2 py-0.5 rounded text-[11.5px]" : "text-gray-900"].join(" ")}>
@@ -470,7 +470,7 @@ function SkuModal({
                           <button
                             type="button"
                             onClick={() => onOpenLots?.(sku, product)}
-                            className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-bold text-[#4f46e5] hover:text-[#4338ca] bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded transition-colors"
+                            className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-bold text-[#0f4c3a] hover:text-[#0a3528] bg-emerald-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded transition-colors"
                             title="Xem chi tiết phân bổ tồn kho theo từng Lô (FEFO)"
                           >
                             <Icon name="inventory" className="text-[12px]" />
@@ -497,7 +497,7 @@ function SkuModal({
                             price: sku.basePrice,
                           }]);
                         }}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-[#4f46e5] hover:bg-indigo-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-[#0f4c3a] hover:bg-emerald-50 transition-colors"
                         title="In tem mã vạch cho riêng biến thể này"
                       >
                         <Icon name="print" className="text-[16px]" />
@@ -519,7 +519,7 @@ function SkuModal({
                   <h3 className="text-[15px] font-bold text-gray-900">
                     Chọn ảnh cho biến thể
                   </h3>
-                  <p className="font-mono text-[12px] text-[#4f46e5] font-bold mt-0.5">{assigningSku.sku}</p>
+                  <p className="font-mono text-[12px] text-[#0f4c3a] font-bold mt-0.5">{assigningSku.sku}</p>
                 </div>
                 <button
                   onClick={() => setAssigningSku(null)}
@@ -539,11 +539,11 @@ function SkuModal({
                         key={i}
                         type="button"
                         onClick={() => handleAssignImage(assigningSku.id, img)}
-                        className={["relative h-18 w-full rounded-xl border-2 overflow-hidden hover:scale-105 transition-all", isSelected ? "border-[#4f46e5] shadow-md ring-2 ring-indigo-200" : "border-gray-200"].join(" ")}
+                        className={["relative h-18 w-full rounded-xl border-2 overflow-hidden hover:scale-105 transition-all", isSelected ? "border-[#0f4c3a] shadow-md ring-2 ring-emerald-200" : "border-gray-200"].join(" ")}
                       >
                         <img src={img} alt={`Góc #${i + 1}`} className="w-full h-full object-cover" />
                         {isSelected && (
-                          <span className="absolute top-1 right-1 bg-[#4f46e5] text-white rounded-full p-0.5">
+                          <span className="absolute top-1 right-1 bg-[#0f4c3a] text-white rounded-full p-0.5">
                             <Icon name="check" className="text-[12px]" />
                           </span>
                         )}
@@ -734,7 +734,7 @@ function QuickCategoryModal({
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between pb-3 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
-            <span className="p-2 rounded-xl bg-indigo-50 text-[#4f46e5]"><Icon name="sell" className="text-[20px]" /></span>
+            <span className="p-2 rounded-xl bg-emerald-50 text-[#0f4c3a]"><Icon name="sell" className="text-[20px]" /></span>
             <div>
               <h3 className="text-[16px] font-bold text-gray-900">Gán / Gỡ danh mục sản phẩm</h3>
               <p className="text-[11.5px] text-gray-500 truncate max-w-[240px]">{product.name}</p>
@@ -752,7 +752,7 @@ function QuickCategoryModal({
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="w-full h-11 px-3.5 rounded-xl border border-gray-300 bg-white text-[13.5px] font-medium text-gray-800 outline-none focus:border-[#4f46e5]"
+            className="w-full h-11 px-3.5 rounded-xl border border-gray-300 bg-white text-[13.5px] font-medium text-gray-800 outline-none focus:border-[#0f4c3a]"
           >
             <option value="">-- Bỏ gán / Xóa danh mục hiện tại (Không gán) --</option>
             {categories.map((c) => (
@@ -768,7 +768,7 @@ function QuickCategoryModal({
 
         <div className="mt-6 flex items-center justify-end gap-2.5">
           <button onClick={onClose} className="px-4 py-2 rounded-xl border border-gray-200 text-[13px] font-semibold text-gray-600 hover:bg-gray-50">Hủy</button>
-          <button disabled={busy} onClick={() => void handleSave()} className="px-5 py-2 rounded-xl bg-[#4f46e5] text-white text-[13px] font-bold shadow-md hover:bg-[#4338ca] disabled:opacity-50">
+          <button disabled={busy} onClick={() => void handleSave()} className="px-5 py-2 rounded-xl bg-[#0f4c3a] text-white text-[13px] font-bold shadow-md hover:bg-[#0a3528] disabled:opacity-50">
             {busy ? 'Đang lưu...' : selectedId ? 'Lưu thay đổi danh mục' : 'Xác nhận gỡ danh mục'}
           </button>
         </div>
@@ -957,7 +957,7 @@ export default function ProductsPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <nav className="mb-1 flex items-center gap-1.5 text-[11.5px] text-[#98a2b3]" aria-label="Breadcrumb">
-              <Link className="hover:text-[#4f46e5]" to="/app/products">Vận hành</Link>
+              <Link className="hover:text-[#0f4c3a]" to="/app/products">Vận hành</Link>
               <span>/</span>
               <span className="font-semibold text-[#475467]">Sản phẩm</span>
               {business && <><span>•</span><span>{business.name}</span></>}
@@ -970,7 +970,7 @@ export default function ProductsPage() {
           <div className="flex items-center gap-2">
             <Link
               to="/inventory"
-              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white text-[#4f46e5] text-[12.5px] font-semibold hover:bg-[#eef0ff] shadow-sm transition-colors"
+              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#a7f3d0] bg-white text-[#0f4c3a] text-[12.5px] font-semibold hover:bg-[#ecfdf5] shadow-sm transition-colors"
             >
               <Icon name="receipt_long" className="text-[18px]" />
               Phiếu kiểm kê kho
@@ -978,7 +978,7 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={handlePrintAll}
-              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white text-[#4f46e5] text-[12.5px] font-semibold hover:bg-[#eef0ff] shadow-sm transition-colors"
+              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#a7f3d0] bg-white text-[#0f4c3a] text-[12.5px] font-semibold hover:bg-[#ecfdf5] shadow-sm transition-colors"
             >
               <Icon name="print" className="text-[18px]" />
               In tem mã vạch
@@ -986,7 +986,7 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={() => setShowScannerModal(true)}
-              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#cfd2ff] bg-white text-[#4f46e5] text-[12.5px] font-semibold hover:bg-[#eef0ff] shadow-sm transition-colors"
+              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#a7f3d0] bg-white text-[#0f4c3a] text-[12.5px] font-semibold hover:bg-[#ecfdf5] shadow-sm transition-colors"
             >
               <Icon name="qr_code_scanner" className="text-[18px]" />
               Quét mã vạch
@@ -996,7 +996,7 @@ export default function ProductsPage() {
               Nhập/Xuất Excel
               <Icon name="expand_more" className="text-[17px] text-[#98a2b3]" />
             </button>
-            <button onClick={() => navigate('/products/new')} className="h-10 px-4 inline-flex items-center gap-1.5 rounded-lg bg-[#4f46e5] text-white text-[12.5px] font-semibold shadow-[0_4px_12px_rgba(79,70,229,0.3)] hover:bg-[#4338ca]">
+            <button onClick={() => navigate('/products/new')} className="h-10 px-4 inline-flex items-center gap-1.5 rounded-lg bg-[#0f4c3a] text-white text-[12.5px] font-semibold shadow-[0_4px_12px_rgba(79,70,229,0.3)] hover:bg-[#0a3528]">
               <Icon name="add_circle" className="text-[18px]" />
               Thêm sản phẩm mới
             </button>
@@ -1019,8 +1019,8 @@ export default function ProductsPage() {
         {/* Stats */}
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Tổng sản phẩm cha" value={String(stats?.totalTemplates ?? 0)} suffix="mẫu hàng" icon="inventory_2">
-            <div className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#4f46e5] bg-[#eef0ff] rounded-md px-2.5 py-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4f46e5]" />
+            <div className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#0f4c3a] bg-[#ecfdf5] rounded-md px-2.5 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0f4c3a]" />
               {stats?.totalVariants ?? 0} Biến thể SKU
             </div>
           </StatCard>
@@ -1028,7 +1028,7 @@ export default function ProductsPage() {
           <StatCard label="Cơ cấu danh mục" value={String(stats?.totalCategories ?? 0)} suffix="Danh mục cấp 1 & 2" icon="category">
             <div className="flex items-center justify-between gap-2 text-[11.5px]">
               <span className="inline-flex items-center gap-1 text-[#667085] truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4f46e5]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0f4c3a]" />
                 {(stats?.topCategories ?? []).map((c) => `${c.name} (${c.count})`).join(' • ') || 'Chưa có danh mục'}
               </span>
               <span className="font-bold text-[#101828] whitespace-nowrap">{stats?.activePercent ?? 0}% Active</span>
@@ -1063,7 +1063,7 @@ export default function ProductsPage() {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="Tìm kiếm sản phẩm theo tên, mã sản phẩm hoặc SKU (Tra cứu tức thì < 15ms)..."
-              className="w-full h-10 pl-9 pr-3 rounded-lg border border-[#e4e7ec] text-[12.5px] outline-none focus:border-[#4f46e5] focus:ring-2 focus:ring-[#e0e2ff] placeholder:text-[#98a2b3]"
+              className="w-full h-10 pl-9 pr-3 rounded-lg border border-[#e4e7ec] text-[12.5px] outline-none focus:border-[#0f4c3a] focus:ring-2 focus:ring-[#a7f3d0] placeholder:text-[#98a2b3]"
             />
           </div>
 
@@ -1071,7 +1071,7 @@ export default function ProductsPage() {
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="h-10 min-w-[190px] appearance-none pl-9 pr-9 rounded-lg border border-[#e4e7ec] bg-white text-[12.5px] font-medium text-[#344054] outline-none focus:border-[#4f46e5]"
+              className="h-10 min-w-[190px] appearance-none pl-9 pr-9 rounded-lg border border-[#e4e7ec] bg-white text-[12.5px] font-medium text-[#344054] outline-none focus:border-[#0f4c3a]"
             >
               <option value="">Tất cả danh mục ({stats?.totalCategories ?? 0})</option>
               {categories
@@ -1097,7 +1097,7 @@ export default function ProductsPage() {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="h-10 min-w-[175px] appearance-none pl-9 pr-9 rounded-lg border border-[#e4e7ec] bg-white text-[12.5px] font-medium text-[#344054] outline-none focus:border-[#4f46e5]"
+              className="h-10 min-w-[175px] appearance-none pl-9 pr-9 rounded-lg border border-[#e4e7ec] bg-white text-[12.5px] font-medium text-[#344054] outline-none focus:border-[#0f4c3a]"
             >
               <option value="">Tất cả trạng thái</option>
               <option value="active">Đang bán (Active)</option>
@@ -1113,7 +1113,7 @@ export default function ProductsPage() {
               onClick={() => setView('grid')}
               className={[
                 'h-8 px-3 inline-flex items-center gap-1.5 rounded-md text-[12px] font-semibold',
-                view === 'grid' ? 'bg-[#eef0ff] text-[#4f46e5]' : 'text-[#667085] hover:bg-[#f9fafb]',
+                view === 'grid' ? 'bg-[#ecfdf5] text-[#0f4c3a]' : 'text-[#667085] hover:bg-[#f9fafb]',
               ].join(' ')}
             >
               <Icon name="grid_view" className="text-[16px]" />
@@ -1123,7 +1123,7 @@ export default function ProductsPage() {
               onClick={() => setView('table')}
               className={[
                 'h-8 px-3 inline-flex items-center gap-1.5 rounded-md text-[12px] font-semibold',
-                view === 'table' ? 'bg-[#eef0ff] text-[#4f46e5]' : 'text-[#667085] hover:bg-[#f9fafb]',
+                view === 'table' ? 'bg-[#ecfdf5] text-[#0f4c3a]' : 'text-[#667085] hover:bg-[#f9fafb]',
               ].join(' ')}
             >
               <Icon name="table_rows" className="text-[16px]" />
@@ -1178,11 +1178,11 @@ export default function ProductsPage() {
               <tbody>
                 {items.map((product) => (
                   <tr key={product.id} className="border-t border-[#f2f4f7] hover:bg-[#fafbff]">
-                    <td className="px-4 py-3 font-mono text-[11.5px] font-semibold text-[#4f46e5]">{product.code}</td>
+                    <td className="px-4 py-3 font-mono text-[11.5px] font-semibold text-[#0f4c3a]">{product.code}</td>
                     <td className="px-4 py-3 font-semibold text-[#101828]">
                       <button
                         onClick={() => setSelected(product)}
-                        className="text-left hover:text-[#4f46e5]"
+                        className="text-left hover:text-[#0f4c3a]"
                       >
                         {product.name}
                       </button>
@@ -1201,7 +1201,7 @@ export default function ProductsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right text-[#475467]">{vnd(product.avgCost)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-[#4f46e5]">{vnd(product.avgPrice)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-[#0f4c3a]">{vnd(product.avgPrice)}</td>
                     <td className="px-4 py-3 text-right">{product.variantCount}</td>
                     <td className="px-4 py-3 text-right">{product.stockQty}</td>
                     <td className="px-4 py-3 text-center">
@@ -1220,14 +1220,14 @@ export default function ProductsPage() {
                         <button
                           onClick={() => handlePrintProduct(product)}
                           title="In tem mã vạch Barcode"
-                          className="w-7 h-7 grid place-items-center rounded border border-[#d7d9e6] text-[#475467] hover:bg-[#eef2ff] hover:text-[#4f46e5]"
+                          className="w-7 h-7 grid place-items-center rounded border border-[#d7d9e6] text-[#475467] hover:bg-[#ecfdf5] hover:text-[#0f4c3a]"
                         >
                           <Icon name="print" className="text-[14px]" />
                         </button>
                         <button
                           onClick={() => handleEditProduct(product)}
                           title="Chỉnh sửa sản phẩm"
-                          className="w-7 h-7 grid place-items-center rounded border border-[#d7d9e6] text-[#475467] hover:bg-[#eef2ff] hover:text-[#4f46e5]"
+                          className="w-7 h-7 grid place-items-center rounded border border-[#d7d9e6] text-[#475467] hover:bg-[#ecfdf5] hover:text-[#0f4c3a]"
                         >
                           <Icon name="edit" className="text-[14px]" />
                         </button>
@@ -1286,7 +1286,7 @@ export default function ProductsPage() {
                   onClick={() => setPage(p)}
                   className={[
                     'min-w-8 h-8 px-2 rounded-md text-[12.5px] font-semibold',
-                    p === pagination.page ? 'bg-[#4f46e5] text-white' : 'text-[#475467] hover:bg-[#f2f4f7]',
+                    p === pagination.page ? 'bg-[#0f4c3a] text-white' : 'text-[#475467] hover:bg-[#f2f4f7]',
                   ].join(' ')}
                 >
                   {p}

@@ -526,7 +526,7 @@ export function BarcodeScannerModal({
         {/* Header Modal */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-3.5 bg-gray-50 shrink-0">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0f4c3a] text-white">
               <Icon name="qr_code_scanner" className="text-[22px]" />
             </span>
             <div>
@@ -553,7 +553,7 @@ export function BarcodeScannerModal({
             className={[
               "flex items-center gap-2 border-b-2 py-3 px-4 text-[13px] font-bold transition-colors",
               activeTab === "camera"
-                ? "border-[#4f46e5] text-[#4f46e5]"
+                ? "border-[#0f4c3a] text-[#0f4c3a]"
                 : "border-transparent text-gray-500 hover:text-gray-700",
             ].join(" ")}
           >
@@ -568,7 +568,7 @@ export function BarcodeScannerModal({
             className={[
               "flex items-center gap-2 border-b-2 py-3 px-4 text-[13px] font-bold transition-colors",
               activeTab === "hardware"
-                ? "border-[#4f46e5] text-[#4f46e5]"
+                ? "border-[#0f4c3a] text-[#0f4c3a]"
                 : "border-transparent text-gray-500 hover:text-gray-700",
             ].join(" ")}
           >
@@ -583,7 +583,7 @@ export function BarcodeScannerModal({
             className={[
               "flex items-center gap-2 border-b-2 py-3 px-4 text-[13px] font-bold transition-colors",
               activeTab === "upload"
-                ? "border-[#4f46e5] text-[#4f46e5]"
+                ? "border-[#0f4c3a] text-[#0f4c3a]"
                 : "border-transparent text-gray-500 hover:text-gray-700",
             ].join(" ")}
           >
@@ -598,7 +598,7 @@ export function BarcodeScannerModal({
             className={[
               "flex items-center gap-2 border-b-2 py-3 px-4 text-[13px] font-bold transition-colors",
               activeTab === "sample"
-                ? "border-[#4f46e5] text-[#4f46e5]"
+                ? "border-[#0f4c3a] text-[#0f4c3a]"
                 : "border-transparent text-gray-500 hover:text-gray-700",
             ].join(" ")}
           >
@@ -616,7 +616,7 @@ export function BarcodeScannerModal({
                 {/* Bộ lọc định dạng chuyên biệt (Chống đọc nhầm mã) */}
                 <div className="mb-2 flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-200 text-[11.5px]">
                   <span className="font-semibold text-gray-600">Loại mã cần quét:</span>
-                  <label className="flex items-center gap-1 cursor-pointer font-bold text-[#4f46e5]">
+                  <label className="flex items-center gap-1 cursor-pointer font-bold text-[#0f4c3a]">
                     <input
                       type="radio"
                       name="barcodemode"
@@ -698,12 +698,12 @@ export function BarcodeScannerModal({
                 </div>
 
                 {/* Hướng dẫn ngắn gọn */}
-                <div className="mt-3.5 w-full max-w-md rounded-xl border border-indigo-100 bg-white p-3 text-center shadow-sm">
+                <div className="mt-3.5 w-full max-w-md rounded-xl border border-emerald-100 bg-white p-3 text-center shadow-sm">
                   <p className="text-[12px] font-bold text-gray-800 flex items-center justify-center gap-1.5">
                     <span>⚡ Giữ mã vạch cách camera 15–20cm, vuông góc với tia quét</span>
                   </p>
                   <p className="mt-1 text-[11px] text-gray-500">
-                    Động cơ quét: <b className="text-[#4f46e5]">{scanEngine === "native" ? "Hardware GPU Detector (<5ms)" : "C++ WebAssembly Engine (<1ms)"}</b>
+                    Động cơ quét: <b className="text-[#0f4c3a]">{scanEngine === "native" ? "Hardware GPU Detector (<5ms)" : "C++ WebAssembly Engine (<1ms)"}</b>
                   </p>
                 </div>
 
@@ -729,7 +729,7 @@ export function BarcodeScannerModal({
 
             {activeTab === "hardware" && (
               <div className="flex flex-col items-center justify-center py-6 text-center">
-                <div className="relative mb-4 grid h-20 w-20 place-items-center rounded-3xl bg-indigo-100 text-[#4f46e5]">
+                <div className="relative mb-4 grid h-20 w-20 place-items-center rounded-3xl bg-indigo-100 text-[#0f4c3a]">
                   <Icon name="barcode_scanner" className="text-[44px]" />
                   <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -758,7 +758,7 @@ export function BarcodeScannerModal({
                         }
                       }}
                       placeholder="Gõ hoặc dán mã vạch để kiểm tra..."
-                      className="h-10 flex-1 rounded-xl border border-gray-300 bg-white px-3 font-mono text-[12.5px] outline-none focus:border-[#4f46e5]"
+                      className="h-10 flex-1 rounded-xl border border-gray-300 bg-white px-3 font-mono text-[12.5px] outline-none focus:border-[#0f4c3a]"
                     />
                     <button
                       type="button"
@@ -766,7 +766,7 @@ export function BarcodeScannerModal({
                         handleBarcodeDetected(inputVal);
                         setInputVal("");
                       }}
-                      className="rounded-xl bg-[#4f46e5] px-4 font-bold text-white text-[12.5px] hover:bg-[#4338ca]"
+                      className="rounded-xl bg-[#0f4c3a] px-4 font-bold text-white text-[12.5px] hover:bg-[#0a3528]"
                     >
                       Kiểm tra
                     </button>
@@ -777,7 +777,7 @@ export function BarcodeScannerModal({
 
             {activeTab === "upload" && (
               <div className="flex flex-col items-center justify-center py-6 text-center">
-                <div className="mb-4 grid h-20 w-20 place-items-center rounded-3xl bg-indigo-50 text-[#4f46e5]">
+                <div className="mb-4 grid h-20 w-20 place-items-center rounded-3xl bg-emerald-50 text-[#0f4c3a]">
                   <Icon name="add_photo_alternate" className="text-[44px]" />
                 </div>
                 <h3 className="text-[16px] font-bold text-gray-900">
@@ -786,7 +786,7 @@ export function BarcodeScannerModal({
                 <p className="mt-1 max-w-md text-[12px] text-gray-500 leading-relaxed">
                   Nếu webcam máy tính bị mờ không lấy nét được, bạn chỉ cần dùng điện thoại chụp ảnh mã vạch rồi tải ảnh lên đây để giải mã chính xác.
                 </p>
-                <label className="mt-4 inline-flex items-center gap-2 cursor-pointer rounded-xl bg-[#4f46e5] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#4338ca] transition-colors">
+                <label className="mt-4 inline-flex items-center gap-2 cursor-pointer rounded-xl bg-[#0f4c3a] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#0a3528] transition-colors">
                   <Icon name="upload" className="text-[18px]" />
                   {isProcessingUpload ? "Đang xử lý ảnh..." : "Chọn file ảnh chụp mã vạch"}
                   <input
@@ -799,7 +799,7 @@ export function BarcodeScannerModal({
                 </label>
 
                 {isProcessingUpload && (
-                  <div className="mt-4 flex items-center gap-2 text-indigo-600 text-[12.5px] font-semibold animate-pulse">
+                  <div className="mt-4 flex items-center gap-2 text-[#0f4c3a] text-[12.5px] font-semibold animate-pulse">
                     <Icon name="progress_activity" className="animate-spin text-[18px]" />
                     <span>Đang quét phân tích mã vạch qua 4 tầng thuật toán...</span>
                   </div>
@@ -833,7 +833,7 @@ export function BarcodeScannerModal({
                         }
                       }}
                       placeholder="Hoặc gõ/dán mã số (VD: 8938506248782)..."
-                      className="h-10 flex-1 rounded-xl border border-gray-300 bg-white px-3 font-mono text-[12.5px] outline-none focus:border-[#4f46e5]"
+                      className="h-10 flex-1 rounded-xl border border-gray-300 bg-white px-3 font-mono text-[12.5px] outline-none focus:border-[#0f4c3a]"
                     />
                     <button
                       type="button"
@@ -843,7 +843,7 @@ export function BarcodeScannerModal({
                           setInputVal("");
                         }
                       }}
-                      className="rounded-xl bg-[#4f46e5] px-4 font-bold text-white text-[12.5px] hover:bg-[#4338ca]"
+                      className="rounded-xl bg-[#0f4c3a] px-4 font-bold text-white text-[12.5px] hover:bg-[#0a3528]"
                     >
                       Kiểm tra
                     </button>
@@ -870,14 +870,14 @@ export function BarcodeScannerModal({
                           <span>•</span>
                           <span className="font-bold text-[#d92d20]">{vnd(item.price)}</span>
                         </div>
-                        <p className="font-mono text-[12px] font-bold text-[#4f46e5]">
+                        <p className="font-mono text-[12px] font-bold text-[#0f4c3a]">
                           Mã: {item.barcode}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleBarcodeDetected(item.barcode)}
-                        className="flex items-center gap-1.5 rounded-lg bg-[#eef0ff] px-2.5 py-1.5 text-[11.5px] font-bold text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white transition-colors"
+                        className="flex items-center gap-1.5 rounded-lg bg-[#ecfdf5] px-2.5 py-1.5 text-[11.5px] font-bold text-[#0f4c3a] hover:bg-[#0f4c3a] hover:text-white transition-colors"
                       >
                         <Icon name="bolt" className="text-[15px]" />
                         Bắn thử mã này
@@ -896,14 +896,14 @@ export function BarcodeScannerModal({
             {/* Trạng thái mã vừa quét */}
             <div className="mt-3 rounded-xl bg-white border border-gray-200 p-2.5 flex items-center justify-between text-[11.5px]">
               <span className="text-gray-500 flex items-center gap-1">
-                <Icon name="info" className="text-[15px] text-[#4f46e5]" />
+                <Icon name="info" className="text-[15px] text-[#0f4c3a]" />
                 Trạng thái:{" "}
                 <b className={scannedCode ? "text-green-600 font-bold" : "text-gray-700"}>
                   {scannedCode ? `✓ ĐÃ BẮT MÃ (${scanLatencyMs}ms): ${scannedCode}` : "Đang chờ quét..."}
                 </b>
               </span>
               {scannedCode && (
-                <span className="font-mono text-[#4f46e5] font-bold bg-[#eef0ff] px-2 py-0.5 rounded text-[11px]">
+                <span className="font-mono text-[#0f4c3a] font-bold bg-[#ecfdf5] px-2 py-0.5 rounded text-[11px]">
                   {scannedCode}
                 </span>
               )}
@@ -930,7 +930,7 @@ export function BarcodeScannerModal({
                       {matchResult.product.name}
                     </h4>
                     <p className="mt-0.5 text-[11.5px] text-gray-600">
-                      Mẫu cha: <b className="font-mono text-[#4f46e5]">{matchResult.product.code}</b>
+                      Mẫu cha: <b className="font-mono text-[#0f4c3a]">{matchResult.product.code}</b>
                     </p>
                   </div>
 
@@ -941,7 +941,7 @@ export function BarcodeScannerModal({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Mã Barcode:</span>
-                      <b className="font-mono text-[#4f46e5]">{matchResult.sku.barcode || "—"}</b>
+                      <b className="font-mono text-[#0f4c3a]">{matchResult.sku.barcode || "—"}</b>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Giá bán lẻ niêm yết:</span>
@@ -971,7 +971,7 @@ export function BarcodeScannerModal({
                     <p className="mt-1.5 text-[14px] font-bold text-gray-900">
                       Đã đọc thành công mã sản phẩm thật!
                     </p>
-                    <div className="font-mono text-[16px] font-black text-[#4f46e5] mt-2 bg-white py-1.5 px-3 rounded-lg border border-amber-200 tracking-wider inline-block">
+                    <div className="font-mono text-[16px] font-black text-[#0f4c3a] mt-2 bg-white py-1.5 px-3 rounded-lg border border-amber-200 tracking-wider inline-block">
                       {scannedCode}
                     </div>
                     <p className="text-[11.5px] text-gray-600 mt-2 text-left leading-relaxed">
@@ -984,7 +984,7 @@ export function BarcodeScannerModal({
                         setCopiedCode(scannedCode);
                         setTimeout(() => setCopiedCode(""), 2000);
                       }}
-                      className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-[12px] font-bold text-white hover:bg-indigo-700 transition-colors shadow-xs"
+                      className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#0f4c3a] px-3 py-2 text-[12px] font-bold text-white hover:bg-indigo-700 transition-colors shadow-xs"
                     >
                       <Icon name="content_copy" className="text-[15px]" />
                       {copiedCode === scannedCode ? "Đã sao chép vào bộ nhớ tạm!" : "Sao chép dãy số mã vạch"}
@@ -1022,7 +1022,7 @@ export function BarcodeScannerModal({
                     onSelectProduct(matchResult.product);
                     handleClose();
                   }}
-                  className="w-full rounded-xl bg-[#4f46e5] py-2.5 text-[12.5px] font-bold text-white shadow hover:bg-[#4338ca] transition-colors"
+                  className="w-full rounded-xl bg-[#0f4c3a] py-2.5 text-[12.5px] font-bold text-white shadow hover:bg-[#0a3528] transition-colors"
                 >
                   Xem biến thể sản phẩm này
                 </button>

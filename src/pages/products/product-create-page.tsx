@@ -349,7 +349,7 @@ export function ProductCreatePage() {
               Bỏ lưu tiến trình Bước 1
             </button>
             <span className="text-[12px] text-[#667085]">
-              Tiến độ: <b className="text-[#4f46e5]">25%</b>
+              Tiến độ: <b className="text-[#0f4c3a]">25%</b>
             </span>
           </div>
         </div>
@@ -366,13 +366,13 @@ export function ProductCreatePage() {
               <span
                 className={[
                   "grid h-11 w-11 shrink-0 place-items-center rounded-lg text-[20px] font-bold",
-                  step.number === 1 ? "bg-[#4f46e5] text-white" : "bg-[#deebff] text-[#667085]",
+                  step.number === 1 ? "bg-[#0f4c3a] text-white" : "bg-[#e2f6ed] text-[#667085]",
                 ].join(" ")}
               >
                 {step.number}
               </span>
               <div>
-                <p className={["text-[15px] font-bold", step.number === 1 ? "text-[#4338ca]" : "text-[#475467]"].join(" ")}>
+                <p className={["text-[15px] font-bold", step.number === 1 ? "text-[#0a3528]" : "text-[#475467]"].join(" ")}>
                   {step.title} {step.number === 1 && <span className="text-[12px]">●</span>}
                 </p>
                 <p className="text-[11.5px] text-[#98a2b3]">{step.subtitle}</p>
@@ -393,7 +393,7 @@ export function ProductCreatePage() {
             <div>
               <div className="flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-[17px] font-bold">
-                  <Icon name="photo_library" className="text-[22px] text-[#4f46e5]" />
+                  <Icon name="photo_library" className="text-[22px] text-[#0f4c3a]" />
                   Hình ảnh Mẫu cha
                 </h2>
                 <span className="text-[12px] font-semibold text-[#667085]">
@@ -434,7 +434,7 @@ export function ProductCreatePage() {
                     onClick={() => fileInputRef.current?.click()}
                     className="h-9 flex-1 rounded-lg bg-white/95 text-[12px] font-semibold text-[#344054] shadow-sm hover:bg-white"
                   >
-                    <Icon name="add_photo_alternate" className="mr-1 align-middle text-[16px] text-[#4f46e5]" />
+                    <Icon name="add_photo_alternate" className="mr-1 align-middle text-[16px] text-[#0f4c3a]" />
                     Thêm ảnh
                   </button>
                   {images.length > 0 && activeImageIndex !== 0 && (
@@ -442,7 +442,7 @@ export function ProductCreatePage() {
                       type="button"
                       onClick={() => setAsPrimary(activeImageIndex)}
                       title="Đặt ảnh này làm ảnh đại diện chính"
-                      className="h-9 px-3 rounded-lg bg-white/95 text-[12px] font-semibold text-[#4338ca] shadow-sm hover:bg-white"
+                      className="h-9 px-3 rounded-lg bg-white/95 text-[12px] font-semibold text-[#0a3528] shadow-sm hover:bg-white"
                     >
                       <Icon name="star" className="mr-1 align-middle text-[16px] text-[#f59e0b]" />
                       Đặt làm đại diện
@@ -475,7 +475,7 @@ export function ProductCreatePage() {
                         onClick={() => setActiveImageIndex(idx)}
                         className={[
                           "group relative h-14 w-14 cursor-pointer overflow-hidden rounded-lg border-2 transition-all bg-white",
-                          activeImageIndex === idx ? "border-[#4f46e5] ring-2 ring-[#c7cbff]" : "border-[#e4e7ec] hover:border-[#b2ccff]",
+                          activeImageIndex === idx ? "border-[#0f4c3a] ring-2 ring-[#a7f3d0]" : "border-[#e4e7ec] hover:border-[#b2ccff]",
                         ].join(" ")}
                       >
                         <img src={img} alt={`Thumb ${idx + 1}`} className="h-full w-full object-cover" />
@@ -499,7 +499,7 @@ export function ProductCreatePage() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="h-14 w-14 grid place-items-center rounded-lg border-2 border-dashed border-[#cfd2ff] bg-[#f8f9ff] text-[#4f46e5] hover:bg-[#eef0ff]"
+                      className="h-14 w-14 grid place-items-center rounded-lg border-2 border-dashed border-[#a7f3d0] bg-[#f8f9ff] text-[#0f4c3a] hover:bg-[#ecfdf5]"
                       title="Tải thêm ảnh"
                     >
                       <Icon name="add" className="text-[20px]" />
@@ -520,8 +520,8 @@ export function ProductCreatePage() {
 
             {/* Information & Guidance */}
             <div className="mt-4 space-y-2.5">
-              <div className="rounded-lg bg-[#eef4ff] p-3 text-[11.5px] leading-[1.5] text-[#475467]">
-                <div className="flex items-start gap-1.5 font-semibold text-[#3538cd] mb-1">
+              <div className="rounded-lg bg-[#ecfdf5] p-3 text-[11.5px] leading-[1.5] text-[#475467]">
+                <div className="flex items-start gap-1.5 font-semibold text-[#0f4c3a] mb-1">
                   <Icon name="lightbulb" className="text-[16px] shrink-0 text-[#f59e0b]" />
                   <span>Ảnh sản phẩm cha vs. Ảnh biến thể SKU:</span>
                 </div>
@@ -537,21 +537,21 @@ export function ProductCreatePage() {
             <div className="flex items-start justify-between border-b border-[#eaecf0] pb-3">
               <h2 className="text-[20px] font-bold">
                 Thông tin Mẫu Sản Phẩm Cha{" "}
-                <span className={["ml-1 rounded px-1.5 py-0.5 text-[11px]", template?.isActive ? "bg-[#6ce7b7]" : "bg-[#eef0ff] text-[#4338ca]"].join(" ")}>
+                <span className={["ml-1 rounded px-1.5 py-0.5 text-[11px]", template?.isActive ? "bg-[#6ce7b7]" : "bg-[#ecfdf5] text-[#0a3528]"].join(" ")}>
                   {template?.isActive ? "ACTIVE" : "BẢN NHÁP"}
                 </span>
               </h2>
               <span className="text-[12px] text-[#667085]">
                 Mã hiện tại:{" "}
-                <b className="rounded bg-[#eef0ff] px-1.5 py-1 font-mono text-[#4338ca]">{customCode || template?.code || "Tự động cấp"}</b>
+                <b className="rounded bg-[#ecfdf5] px-1.5 py-1 font-mono text-[#0a3528]">{customCode || template?.code || "Tự động cấp"}</b>
               </span>
             </div>
 
             {/* Mã định danh Template Code (Người dùng có thể tự đặt hoặc để tự sinh) */}
-            <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3.5">
+            <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3.5">
               <div className="flex items-center justify-between">
                 <label htmlFor="product-code" className="text-[12px] font-bold text-gray-800 flex items-center gap-1.5">
-                  <Icon name="tag" className="text-[16px] text-[#4f46e5]" />
+                  <Icon name="tag" className="text-[16px] text-[#0f4c3a]" />
                   <span>Mã Mẫu Sản Phẩm (Template Code)</span>
                 </label>
                 <span className="text-[11px] text-gray-500">Tùy chỉnh mã gợi nhớ cho kho</span>
@@ -562,7 +562,7 @@ export function ProductCreatePage() {
                   value={customCode}
                   placeholder="Ví dụ: AOHOODIE-NU-02 (để trống hệ thống sẽ tự sinh TMP-...)"
                   onChange={(e) => setCustomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))}
-                  className="h-10 flex-1 rounded-lg border border-gray-300 bg-white px-3 font-mono text-[13px] font-bold text-[#4338ca] uppercase outline-none focus:border-[#4f46e5] focus:ring-1 focus:ring-[#4f46e5]"
+                  className="h-10 flex-1 rounded-lg border border-gray-300 bg-white px-3 font-mono text-[13px] font-bold text-[#0a3528] uppercase outline-none focus:border-[#0f4c3a] focus:ring-1 focus:ring-[#0f4c3a]"
                 />
                 <button
                   type="button"
@@ -571,7 +571,7 @@ export function ProductCreatePage() {
                     const rand = Math.floor(1000 + Math.random() * 9000);
                     setCustomCode(`TMP-${year}-${rand}`);
                   }}
-                  className="h-10 px-3 inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-white text-[12px] font-semibold text-[#4f46e5] hover:bg-indigo-50 shadow-xs"
+                  className="h-10 px-3 inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-white text-[12px] font-semibold text-[#0f4c3a] hover:bg-emerald-50 shadow-xs"
                 >
                   <Icon name="autorenew" className="text-[16px]" />
                   Tự sinh mã
@@ -592,11 +592,11 @@ export function ProductCreatePage() {
             <label className="mt-4 block text-[12px] font-semibold">
               Phân loại Ngành Hàng <span className="text-[#d92d20]">*</span>
             </label>
-            <div className="mt-2 grid grid-cols-2 overflow-hidden rounded-lg bg-[#eef0ff] p-1">
+            <div className="mt-2 grid grid-cols-2 overflow-hidden rounded-lg bg-[#ecfdf5] p-1">
               <button
                 type="button"
                 onClick={() => selectIndustry("FASHION")}
-                className={["rounded-md py-3 text-[14px] font-bold", industry === "FASHION" ? "bg-white text-[#4338ca] shadow-sm" : "text-[#667085]"].join(" ")}
+                className={["rounded-md py-3 text-[14px] font-bold", industry === "FASHION" ? "bg-white text-[#0a3528] shadow-sm" : "text-[#667085]"].join(" ")}
               >
                 <Icon name="checkroom" className="mr-2 align-middle text-[19px]" />
                 Thời trang &amp; May mặc
@@ -604,7 +604,7 @@ export function ProductCreatePage() {
               <button
                 type="button"
                 onClick={() => selectIndustry("BEAUTY")}
-                className={["rounded-md py-3 text-[14px] font-bold", industry === "BEAUTY" ? "bg-white text-[#4338ca] shadow-sm" : "text-[#667085]"].join(" ")}
+                className={["rounded-md py-3 text-[14px] font-bold", industry === "BEAUTY" ? "bg-white text-[#0a3528] shadow-sm" : "text-[#667085]"].join(" ")}
               >
                 <Icon name="health_and_safety" className="mr-2 align-middle text-[19px]" />
                 Mỹ phẩm &amp; Làm đẹp
@@ -623,17 +623,17 @@ export function ProductCreatePage() {
               maxLength={255}
               placeholder="Ví dụ: Serum Dưỡng Ẩm Phục Hồi Da B5"
               onChange={(event) => setName(event.target.value)}
-              className="mt-2 h-12 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[15px] outline-none focus:ring-2 focus:ring-[#c7cbff]"
+              className="mt-2 h-12 w-full rounded-lg border-0 bg-[#ecfdf5] px-3 text-[15px] outline-none focus:ring-2 focus:ring-[#a7f3d0]"
             />
 
             <div className="mt-4 grid grid-cols-[1.25fr_0.85fr] gap-3">
               <label className="text-[12px] font-semibold">
                 Danh Mục Sản Phẩm <span className="text-[#d92d20]">*</span>
-                <button type="button" onClick={() => setShowQuickCat(true)} className="float-right text-[#4338ca] hover:underline font-semibold">＋ Thêm nhanh danh mục</button>
+                <button type="button" onClick={() => setShowQuickCat(true)} className="float-right text-[#0a3528] hover:underline font-semibold">＋ Thêm nhanh danh mục</button>
                 <select
                   value={categoryId}
                   onChange={(event) => handleCategoryChange(event.target.value)}
-                  className="mt-2 h-12 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[13px] font-normal outline-none"
+                  className="mt-2 h-12 w-full rounded-lg border-0 bg-[#ecfdf5] px-3 text-[13px] font-normal outline-none"
                 >
                   <option value="">Chọn danh mục sản phẩm</option>
                   {categoryOptions.map((option) => (
@@ -648,7 +648,7 @@ export function ProductCreatePage() {
                 <select
                   value={unit}
                   onChange={(event) => setUnit(event.target.value)}
-                  className="mt-2 h-12 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[13px] font-normal outline-none"
+                  className="mt-2 h-12 w-full rounded-lg border-0 bg-[#ecfdf5] px-3 text-[13px] font-normal outline-none"
                 >
                   {units.map((item) => (
                     <option key={item}>{item}</option>
@@ -658,7 +658,7 @@ export function ProductCreatePage() {
               </label>
             </div>
 
-            <div className="mt-5 rounded-xl bg-[#eef4ff] p-4">
+            <div className="mt-5 rounded-xl bg-[#ecfdf5] p-4">
               <div className="flex items-start gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#dff2ef] text-[#067647]">
                   <Icon name="verified_user" className="text-[22px]" />
@@ -686,11 +686,11 @@ export function ProductCreatePage() {
               maxLength={1000}
               placeholder="Mô tả công dụng, thành phần hoặc đặc điểm nổi bật của dòng sản phẩm..."
               onChange={(event) => setDescription(event.target.value)}
-              className="mt-2 h-24 w-full resize-none rounded-lg border-0 bg-[#eef3ff] px-3 py-3 text-[13px] outline-none focus:ring-2 focus:ring-[#c7cbff]"
+              className="mt-2 h-24 w-full resize-none rounded-lg border-0 bg-[#ecfdf5] px-3 py-3 text-[13px] outline-none focus:ring-2 focus:ring-[#a7f3d0]"
             />
 
-            <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#eef4ff] px-3 py-3">
-              <Icon name="toggle_on" className="text-[23px] text-[#4338ca]" />
+            <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#ecfdf5] px-3 py-3">
+              <Icon name="toggle_on" className="text-[23px] text-[#0a3528]" />
               <div className="flex-1">
                 <b className="text-[14px]">Kích hoạt kinh doanh ngay sau khi tạo</b>
                 <p className="text-[11px] text-[#667085]">Sản phẩm chỉ được publish sau khi hoàn tất bước 4.</p>
@@ -698,7 +698,7 @@ export function ProductCreatePage() {
               <button
                 type="button"
                 onClick={() => setActiveAfterCreate((value) => !value)}
-                className={["relative h-7 w-14 rounded-full p-1", activeAfterCreate ? "bg-[#4338ca]" : "bg-[#98a2b3]"].join(" ")}
+                className={["relative h-7 w-14 rounded-full p-1", activeAfterCreate ? "bg-[#0a3528]" : "bg-[#98a2b3]"].join(" ")}
                 aria-label="Kích hoạt kinh doanh"
               >
                 <span className={["block h-5 w-5 rounded-full bg-white", activeAfterCreate ? "translate-x-7" : ""].join(" ")} />
@@ -726,7 +726,7 @@ export function ProductCreatePage() {
             type="button"
             disabled={busy}
             onClick={() => void save(false)}
-            className="h-12 rounded-lg bg-[#eef3ff] px-5 text-[14px] font-semibold text-[#344054] disabled:opacity-60"
+            className="h-12 rounded-lg bg-[#ecfdf5] px-5 text-[14px] font-semibold text-[#344054] disabled:opacity-60"
           >
             <Icon name="save" className="mr-2 align-middle text-[17px]" />
             Lưu bản nháp
@@ -735,7 +735,7 @@ export function ProductCreatePage() {
             type="button"
             disabled={busy}
             onClick={() => void save(true)}
-            className="h-12 rounded-lg bg-[#4f46e5] px-8 text-[15px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] disabled:opacity-60"
+            className="h-12 rounded-lg bg-[#0f4c3a] px-8 text-[15px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] disabled:opacity-60"
           >
             {busy ? "Đang lưu..." : "Tiếp tục: Bước 2 - Thiết lập thuộc tính"}
             <Icon name="arrow_forward" className="ml-2 align-middle text-[20px]" />
@@ -749,7 +749,7 @@ export function ProductCreatePage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <h3 className="text-[17px] font-bold text-gray-900 flex items-center gap-2">
-                <Icon name="category" className="text-[22px] text-[#4f46e5]" />
+                <Icon name="category" className="text-[22px] text-[#0f4c3a]" />
                 Thêm nhanh danh mục sản phẩm
               </h3>
               <button
@@ -773,7 +773,7 @@ export function ProductCreatePage() {
                   onChange={(e) => setQuickCatName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && void handleCreateQuickCategory()}
                   placeholder="Ví dụ: Áo hoodie, Giày sneaker, Túi xách, Serum..."
-                  className="mt-1.5 h-11 w-full rounded-xl border border-gray-300 bg-white px-3.5 text-[14px] outline-none focus:border-[#4f46e5] focus:ring-2 focus:ring-[#4f46e5]/20"
+                  className="mt-1.5 h-11 w-full rounded-xl border border-gray-300 bg-white px-3.5 text-[14px] outline-none focus:border-[#0f4c3a] focus:ring-2 focus:ring-[#0f4c3a]/20"
                 />
               </div>
 
@@ -784,7 +784,7 @@ export function ProductCreatePage() {
                 <select
                   value={quickCatParentId}
                   onChange={(e) => setQuickCatParentId(e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-[13px] outline-none focus:border-[#4f46e5]"
+                  className="mt-1.5 h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-[13px] outline-none focus:border-[#0f4c3a]"
                 >
                   <option value="">(Không có - Tạo làm danh mục gốc)</option>
                   {categories?.items.map((cat) => (
@@ -809,7 +809,7 @@ export function ProductCreatePage() {
                 type="button"
                 disabled={quickCatBusy || !quickCatName.trim()}
                 onClick={() => void handleCreateQuickCategory()}
-                className="rounded-xl bg-[#4f46e5] px-5 py-2.5 text-[13px] font-bold text-white hover:bg-[#4338ca] disabled:opacity-60"
+                className="rounded-xl bg-[#0f4c3a] px-5 py-2.5 text-[13px] font-bold text-white hover:bg-[#0a3528] disabled:opacity-60"
               >
                 {quickCatBusy ? "Đang tạo..." : "Tạo danh mục ngay"}
               </button>

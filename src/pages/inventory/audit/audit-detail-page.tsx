@@ -126,7 +126,7 @@ export function AuditDetailPage() {
       )}
 
       {audit.status === 'IN_PROGRESS' && can('inventory.audit.approve_item') && (
-        <Alert className="bg-blue-50 border-blue-200 text-blue-800 text-sm">
+        <Alert className="bg-emerald-50 border-emerald-200 text-emerald-800 text-sm">
           Duyệt từng dòng bên dưới. Đợt kiểm kê sẽ được áp dụng vào tồn kho ngay khi dòng cuối cùng được
           duyệt, sau đó chuyển sang trạng thái Hoàn thành.
         </Alert>

@@ -23,7 +23,7 @@ type StockRow = {
 };
 
 const vnd = (value: number) => new Intl.NumberFormat("vi-VN").format(Math.round(value || 0)) + " đ";
-const palette = ["#4f46e5", "#12b76a", "#f79009", "#0ba5ec", "#9e77ed", "#f04438"];
+const palette = ["#0f4c3a", "#12b76a", "#f79009", "#0ba5ec", "#9e77ed", "#f04438"];
 
 const displayUnit = (unit: string | null | undefined) => (unit || "Cái").split(" (")[0];
 
@@ -277,7 +277,7 @@ export function ProductInventoryPage() {
 
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[#4338ca]">QUY TRÌNH KHỞI TẠO HÀNG HÓA CHUẨN ERP RETAIL</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#0a3528]">QUY TRÌNH KHỞI TẠO HÀNG HÓA CHUẨN ERP RETAIL</p>
             <div className="mt-1 flex items-center gap-2">
               <h1 className="text-[19px] font-bold">Bước 4: Tồn kho &amp; Phân bổ</h1>
             </div>
@@ -292,8 +292,8 @@ export function ProductInventoryPage() {
             ["✓", "BƯỚC 3 • ĐÃ TẠO MÃ", `${rows.length} SKU, Barcode & Giá vốn`],
             ["4", "BƯỚC 4 • CHỐT SỔ 100%", "Số dư tồn đầu kỳ (Kho hàng)"],
           ].map(([number, label, title], index) => (
-            <div key={label} className={["rounded-xl px-4 py-3", index === 3 ? "bg-[#4f46e5] text-white" : "bg-white"].join(" ")}>
-              <span className={["mr-2 inline-grid h-7 w-7 place-items-center rounded-full font-bold", index === 3 ? "bg-white text-[#4338ca]" : "bg-[#d1fadf] text-[#067647]"].join(" ")}>{number}</span>
+            <div key={label} className={["rounded-xl px-4 py-3", index === 3 ? "bg-[#0f4c3a] text-white" : "bg-white"].join(" ")}>
+              <span className={["mr-2 inline-grid h-7 w-7 place-items-center rounded-full font-bold", index === 3 ? "bg-white text-[#0a3528]" : "bg-[#d1fadf] text-[#067647]"].join(" ")}>{number}</span>
               <span className="text-[10px] font-semibold">{label}</span>
               <p className="ml-9 text-[13px] font-bold">{title}</p>
             </div>
@@ -302,13 +302,13 @@ export function ProductInventoryPage() {
 
         <section className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-lg bg-[#eef0ff] text-[#4338ca]">
+            <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-lg bg-[#ecfdf5] text-[#0a3528]">
               {template?.imageUrl ? <img alt={template.name} className="h-full w-full object-cover" src={getPrimaryImage(template.imageUrl)} /> : <Icon name="inventory_2" className="text-[28px]" />}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded bg-[#eef0ff] px-2 py-1 font-mono text-[11px] font-bold text-[#4338ca]">{template?.code}</span>
-                <span className="rounded bg-[#eef3ff] px-2 py-1 text-[11px]">{template?.category?.name || "Chưa phân loại"}</span>
+                <span className="rounded bg-[#ecfdf5] px-2 py-1 font-mono text-[11px] font-bold text-[#0a3528]">{template?.code}</span>
+                <span className="rounded bg-[#ecfdf5] px-2 py-1 text-[11px]">{template?.category?.name || "Chưa phân loại"}</span>
                 <span className={["rounded-full px-2 py-1 text-[11px] font-semibold", template?.hasLotTracking ? "bg-[#6ce7b7] text-[#067647]" : "bg-[#f2f4f7] text-[#667085]"].join(" ")}>
                   ⚙ FEFO Date Lô: {template?.hasLotTracking ? "ĐANG BẬT" : "ĐANG TẮT"}
                 </span>
@@ -317,16 +317,16 @@ export function ProductInventoryPage() {
             </div>
           </div>
           <div className="flex gap-3 text-center">
-            <div className="rounded-lg bg-[#eef3ff] px-5 py-2">
+            <div className="rounded-lg bg-[#ecfdf5] px-5 py-2">
               <p className="text-[10px] text-[#667085]">TỔNG BIẾN THỂ</p>
               <b>{rows.length} SKU</b>
               <small className="block text-[#667085]">{rows[0]?.attributeText || ""}</small>
             </div>
-            <div className="rounded-lg bg-[#eef3ff] px-5 py-2">
+            <div className="rounded-lg bg-[#ecfdf5] px-5 py-2">
               <p className="text-[10px] text-[#667085]">TỔNG TỒN BAN ĐẦU</p>
-              <b className="text-[#4338ca]">{totals.quantity} {unit}</b>
+              <b className="text-[#0a3528]">{totals.quantity} {unit}</b>
             </div>
-            <div className="rounded-lg bg-[#eef3ff] px-5 py-2">
+            <div className="rounded-lg bg-[#ecfdf5] px-5 py-2">
               <p className="text-[10px] text-[#667085]">GIÁ TRỊ TÀI SẢN KHO</p>
               <b>{vnd(totals.value)}</b>
               <small className="block text-[#667085]">Theo đơn giá vốn net</small>
@@ -337,7 +337,7 @@ export function ProductInventoryPage() {
         {template?.hasLotTracking ? (
           <section className="mt-4 rounded-xl border border-[#e1e7f2] bg-white p-4">
             <h2 className="text-[16px] font-bold">
-              <Icon name="qr_code_2" className="mr-2 align-middle text-[21px] text-[#4338ca]" />
+              <Icon name="qr_code_2" className="mr-2 align-middle text-[21px] text-[#0a3528]" />
               Thiết Lập Lô &amp; Hạn Sử Dụng Mặc Định (FEFO Tracking)
               <span className="ml-2 rounded-full bg-[#6ce7b7] px-2 py-1 text-[10px] text-[#067647]">⚙ Quản lý Date: Đang Bật</span>
             </h2>
@@ -345,18 +345,18 @@ export function ProductInventoryPage() {
             <div className="mt-3 grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-3">
               <label className="text-[10px] font-bold uppercase">
                 Mã số lô (Lot Number)
-                <input value={lotNumber} onChange={(event) => setLotNumber(event.target.value)} placeholder="VD: LOT-2026-B5" className="mt-1 h-10 w-full rounded-lg border-0 bg-[#eef3ff] px-3 font-mono text-[13px] outline-none" />
+                <input value={lotNumber} onChange={(event) => setLotNumber(event.target.value)} placeholder="VD: LOT-2026-B5" className="mt-1 h-10 w-full rounded-lg border-0 bg-[#ecfdf5] px-3 font-mono text-[13px] outline-none" />
               </label>
               <label className="text-[10px] font-bold uppercase">
                 Hạn sử dụng (EXP Date)
-                <input value={expirationDate} onChange={(event) => setExpirationDate(event.target.value)} type="date" className="mt-1 h-10 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[13px] outline-none" />
+                <input value={expirationDate} onChange={(event) => setExpirationDate(event.target.value)} type="date" className="mt-1 h-10 w-full rounded-lg border-0 bg-[#ecfdf5] px-3 text-[13px] outline-none" />
                 {expirationDate && <span className="mt-1 block text-[10px] font-normal text-[#067647]">Hạn dùng: {expirationDate}</span>}
               </label>
               <label className="text-[10px] font-bold uppercase">
                 Ngày sản xuất (MFG)
-                <input value={manufacturingDate} onChange={(event) => setManufacturingDate(event.target.value)} type="date" className="mt-1 h-10 w-full rounded-lg border-0 bg-[#eef3ff] px-3 text-[13px] outline-none" />
+                <input value={manufacturingDate} onChange={(event) => setManufacturingDate(event.target.value)} type="date" className="mt-1 h-10 w-full rounded-lg border-0 bg-[#ecfdf5] px-3 text-[13px] outline-none" />
               </label>
-              <button onClick={assignLotToAll} className="h-10 rounded-lg bg-[#4f46e5] px-7 text-[14px] font-bold text-white">
+              <button onClick={assignLotToAll} className="h-10 rounded-lg bg-[#0f4c3a] px-7 text-[14px] font-bold text-white">
                 Gán toàn bộ SKU
               </button>
             </div>
@@ -371,13 +371,13 @@ export function ProductInventoryPage() {
           <div className="px-4 py-4">
             <h2 className="text-[16px] font-bold">
               Thiết Lập Số Dư Tồn Đầu Kỳ (Kho Cửa Hàng Chính)
-              <span className="ml-2 rounded-full bg-[#eef0ff] px-2 py-1 text-[11px] font-semibold text-[#4338ca]">▣ Địa điểm: Kho Cửa Hàng Chính (Mặc định)</span>
+              <span className="ml-2 rounded-full bg-[#ecfdf5] px-2 py-1 text-[11px] font-semibold text-[#0a3528]">▣ Địa điểm: Kho Cửa Hàng Chính (Mặc định)</span>
             </h2>
             <p className="text-[11px] text-[#667085]">Mô hình đơn kho tập trung: Nhập số lượng tồn đầu kỳ cho từng biến thể để ghi sổ cái.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-left text-[12px]">
-              <thead className="bg-[#eef3ff] text-[10px] uppercase text-[#667085]">
+              <thead className="bg-[#ecfdf5] text-[10px] uppercase text-[#667085]">
                 <tr>
                   <th className="px-4 py-3">Thông tin biến thể &amp; giá vốn</th>
                   <th className="w-72 px-4 py-3">Số lượng tồn đầu kỳ</th>
@@ -389,9 +389,9 @@ export function ProductInventoryPage() {
                   <tr key={row.id} className="border-b border-[#eaecf0]">
                     <td className="px-4 py-3">
                       <b className="block text-[14px]">
-                        {template?.name} <span className="rounded bg-[#eef3ff] px-1.5 py-1 text-[10px]">{row.attributeText}</span>
+                        {template?.name} <span className="rounded bg-[#ecfdf5] px-1.5 py-1 text-[10px]">{row.attributeText}</span>
                       </b>
-                      <code className="font-semibold text-[#4338ca]">{row.sku}</code>　
+                      <code className="font-semibold text-[#0a3528]">{row.sku}</code>　
                       <span className="font-mono text-[#667085]">• Vốn: {vnd(row.cost)}　• An toàn: {row.safety}</span>
                       {template?.hasLotTracking && (
                         <small className="block text-[#667085]">
@@ -406,7 +406,7 @@ export function ProductInventoryPage() {
                           min={0}
                           value={row.quantity}
                           onChange={(event) => updateRow(row.id, { quantity: Math.max(0, Math.trunc(Number(event.target.value) || 0)) })}
-                          className="h-10 w-36 rounded-lg border-0 bg-[#eef3ff] px-3 text-center text-[15px] outline-none focus:ring-2 focus:ring-[#c7cbff]"
+                          className="h-10 w-36 rounded-lg border-0 bg-[#ecfdf5] px-3 text-center text-[15px] outline-none focus:ring-2 focus:ring-[#a7f3d0]"
                         />
                         <span className="text-[#667085]">{unit}</span>
                       </div>
@@ -415,7 +415,7 @@ export function ProductInventoryPage() {
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="bg-[#deebff]">
+              <tfoot className="bg-[#e2f6ed]">
                 <tr>
                   <td className="px-4 py-3 text-[16px] font-bold">▥ TỔNG CỘNG HỆ THỐNG KHO</td>
                   <td className="px-4 py-3 text-[16px] font-bold">{totals.quantity} {unit}</td>
@@ -434,14 +434,14 @@ export function ProductInventoryPage() {
                 <button
                   type="button"
                   onClick={() => setChartMetric("quantity")}
-                  className={["px-2 py-0.5 rounded font-bold transition-all", chartMetric === "quantity" ? "bg-white text-[#4f46e5] shadow-xs" : "text-gray-500"].join(" ")}
+                  className={["px-2 py-0.5 rounded font-bold transition-all", chartMetric === "quantity" ? "bg-white text-[#0f4c3a] shadow-xs" : "text-gray-500"].join(" ")}
                 >
                   Số lượng
                 </button>
                 <button
                   type="button"
                   onClick={() => setChartMetric("value")}
-                  className={["px-2 py-0.5 rounded font-bold transition-all", chartMetric === "value" ? "bg-white text-[#4f46e5] shadow-xs" : "text-gray-500"].join(" ")}
+                  className={["px-2 py-0.5 rounded font-bold transition-all", chartMetric === "value" ? "bg-white text-[#0f4c3a] shadow-xs" : "text-gray-500"].join(" ")}
                 >
                   Giá trị
                 </button>
@@ -457,7 +457,7 @@ export function ProductInventoryPage() {
                     name="breakdown"
                     checked={chartBreakdown === "attribute"}
                     onChange={() => setChartBreakdown("attribute")}
-                    className="accent-[#4f46e5]"
+                    className="accent-[#0f4c3a]"
                   />
                   <span>Thuộc tính</span>
                 </label>
@@ -467,7 +467,7 @@ export function ProductInventoryPage() {
                     name="breakdown"
                     checked={chartBreakdown === "sku"}
                     onChange={() => setChartBreakdown("sku")}
-                    className="accent-[#4f46e5]"
+                    className="accent-[#0f4c3a]"
                   />
                   <span>Từng SKU</span>
                 </label>
@@ -509,7 +509,7 @@ export function ProductInventoryPage() {
           <section className="rounded-xl bg-white p-4">
             <h2 className="font-bold flex items-center justify-between">
               <span className="flex items-center">
-                <Icon name="print" className="mr-2 text-[19px] text-[#4338ca]" />
+                <Icon name="print" className="mr-2 text-[19px] text-[#0a3528]" />
                 Tùy chọn Xuất phiếu &amp; Tài liệu Đính kèm
               </span>
               <span className="rounded bg-[#6ce7b7] px-2 py-0.5 text-[10px] font-bold text-[#067647]">
@@ -520,11 +520,11 @@ export function ProductInventoryPage() {
               Xem trước chứng từ kiểm kê kho chuẩn A4 hoặc in tem mã vạch barcode trước khi đưa vào kinh doanh.
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 text-left flex flex-col justify-between">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 text-left flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
                     <b className="text-[13px] text-gray-900">Phiếu kiểm kê F02</b>
-                    <span className="text-[10px] font-bold text-[#4f46e5] bg-white px-2 py-0.5 rounded border border-indigo-100">Khổ A4</span>
+                    <span className="text-[10px] font-bold text-[#0f4c3a] bg-white px-2 py-0.5 rounded border border-emerald-100">Khổ A4</span>
                   </div>
                   <p className="mt-1.5 text-[11px] text-[#667085] leading-relaxed">
                     Bao gồm chữ ký thủ kho, kế toán &amp; chủ shop, xuất file PDF A4 chuẩn ISO.
@@ -540,7 +540,7 @@ export function ProductInventoryPage() {
                     setError("");
                     setShowVoucherModal(true);
                   }}
-                  className="mt-4 w-full rounded-lg bg-[#4f46e5] py-2 text-[12px] font-bold text-white shadow-sm hover:bg-[#4338ca] transition-colors flex items-center justify-center gap-1.5"
+                  className="mt-4 w-full rounded-lg bg-[#0f4c3a] py-2 text-[12px] font-bold text-white shadow-sm hover:bg-[#0a3528] transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Icon name="visibility" className="text-[16px]" />
                   Xem trước Phiếu kiểm kê A4
@@ -562,7 +562,7 @@ export function ProductInventoryPage() {
                   onClick={() => setShowBarcodePrintModal(true)}
                   className="mt-4 w-full rounded-lg border border-gray-300 bg-white py-2 text-[12px] font-bold text-gray-800 shadow-sm hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <Icon name="qr_code_2" className="text-[16px] text-[#4f46e5]" />
+                  <Icon name="qr_code_2" className="text-[16px] text-[#0f4c3a]" />
                   In Tem Mã Vạch (Decal)
                 </button>
               </div>
@@ -587,7 +587,7 @@ export function ProductInventoryPage() {
                 setError("");
                 setShowVoucherModal(true);
               }}
-              className="rounded-lg border border-[#cfd2ff] bg-white px-4 py-2.5 text-[13px] font-bold text-[#4f46e5] hover:bg-[#eef0ff] shadow-sm transition-colors inline-flex items-center gap-1.5"
+              className="rounded-lg border border-[#a7f3d0] bg-white px-4 py-2.5 text-[13px] font-bold text-[#0f4c3a] hover:bg-[#ecfdf5] shadow-sm transition-colors inline-flex items-center gap-1.5"
             >
               <Icon name="receipt_long" className="text-[18px]" />
               Xem trước Phiếu kiểm kê (A4)
@@ -598,7 +598,7 @@ export function ProductInventoryPage() {
             <button
               disabled={busy}
               onClick={() => void publish(false)}
-              className="rounded-lg bg-[#4f46e5] px-7 py-3 text-[14px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] disabled:opacity-60"
+              className="rounded-lg bg-[#0f4c3a] px-7 py-3 text-[14px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] disabled:opacity-60"
             >
               {busy ? "Đang hoàn tất..." : "🚀 Hoàn tất & Đưa vào Kinh doanh (Publish)"}
             </button>

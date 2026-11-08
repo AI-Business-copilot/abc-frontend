@@ -203,7 +203,7 @@ export function StockLogPage() {
         <div className="flex items-center justify-between border-b border-gray-200 pb-4">
           <div>
             <div className="flex items-center gap-2 text-[12px] text-gray-500 mb-1">
-              <Link to="/products" className="hover:text-[#4f46e5]">Sản phẩm</Link>
+              <Link to="/products" className="hover:text-[#0f4c3a]">Sản phẩm</Link>
               <span>/</span>
               <span className="font-semibold text-gray-700">Kho hàng &amp; Kiểm kê</span>
             </div>
@@ -225,7 +225,7 @@ export function StockLogPage() {
             </Link>
             <button
               onClick={() => void fetchLedger()}
-              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[12.5px] font-bold text-[#4f46e5] hover:bg-indigo-100 transition-colors"
+              className="h-10 px-3.5 inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 text-[12.5px] font-bold text-[#0f4c3a] hover:bg-indigo-100 transition-colors"
             >
               <Icon name="refresh" className="text-[18px]" />
               Làm mới
@@ -245,7 +245,7 @@ export function StockLogPage() {
                   {totalEntries.toLocaleString("vi-VN")}
                 </p>
               </div>
-              <span className="grid h-12 w-12 place-items-center rounded-xl bg-indigo-50 text-[#4f46e5]">
+              <span className="grid h-12 w-12 place-items-center rounded-xl bg-emerald-50 text-[#0f4c3a]">
                 <Icon name="list_alt" className="text-[24px]" />
               </span>
             </div>
@@ -304,7 +304,7 @@ export function StockLogPage() {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="Tìm theo tên sản phẩm, mã SKU, mã phiếu hoặc người tạo..."
-              className="h-11 w-full rounded-xl bg-gray-50 pl-10 pr-4 text-[13px] text-gray-800 outline-none border border-transparent focus:border-[#4f46e5] focus:bg-white transition-all"
+              className="h-11 w-full rounded-xl bg-gray-50 pl-10 pr-4 text-[13px] text-gray-800 outline-none border border-transparent focus:border-[#0f4c3a] focus:bg-white transition-all"
             />
           </div>
 
@@ -334,7 +334,7 @@ export function StockLogPage() {
             <div>
               <h2 className="text-[16px] font-bold text-gray-900">
                 Sổ Nhật Ký Biến Động Kho (Ledger)
-                <span className="ml-2.5 rounded-full bg-indigo-50 border border-indigo-100 px-3 py-0.5 text-[11px] font-bold text-[#4f46e5]">
+                <span className="ml-2.5 rounded-full bg-emerald-50 border border-emerald-100 px-3 py-0.5 text-[11px] font-bold text-[#0f4c3a]">
                   Trang {pagination.page} / {pagination.totalPages || 1}
                 </span>
               </h2>
@@ -387,7 +387,7 @@ export function StockLogPage() {
                     const voucherCode = (row as any).sheetCode || (row as any).reference || (row as any).sheet_code;
 
                     return (
-                      <tr key={row.id} className="hover:bg-indigo-50/20 transition-colors">
+                      <tr key={row.id} className="hover:bg-emerald-50/20 transition-colors">
                         <td className="px-5 py-3.5">
                           <span className="font-mono font-bold text-gray-900">{timeStr}</span>{" "}
                           <span className="text-gray-400 text-[11px]">{dateStr}</span>
@@ -395,7 +395,7 @@ export function StockLogPage() {
                             <button
                               type="button"
                               onClick={() => void openVoucherByCode(voucherCode)}
-                              className="mt-1.5 flex items-center gap-1 font-mono font-bold text-[#4f46e5] hover:text-[#4338ca] text-[11px] bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded px-1.5 py-0.5 w-fit cursor-pointer transition-colors"
+                              className="mt-1.5 flex items-center gap-1 font-mono font-bold text-[#0f4c3a] hover:text-[#0a3528] text-[11px] bg-emerald-50 hover:bg-indigo-100 border border-emerald-200 rounded px-1.5 py-0.5 w-fit cursor-pointer transition-colors"
                               title="Bấm để xem và in phiếu chứng từ gốc"
                             >
                               <Icon name="receipt" className="text-[13px]" />
@@ -421,7 +421,7 @@ export function StockLogPage() {
                             className={[
                               "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold",
                               String(rawType).toUpperCase() === "OPENING_STOCK"
-                                ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                ? "bg-emerald-50 text-[#0f4c3a] border border-emerald-200"
                                 : isPositive
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                 : "bg-amber-50 text-amber-700 border border-amber-200",
@@ -514,7 +514,7 @@ export function StockLogPage() {
       {previewLoading && (
         <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-xs grid place-items-center">
           <div className="rounded-xl bg-white p-5 shadow-xl flex items-center gap-3">
-            <Icon name="progress_activity" className="animate-spin text-[22px] text-[#4f46e5]" />
+            <Icon name="progress_activity" className="animate-spin text-[22px] text-[#0f4c3a]" />
             <span className="text-[13px] font-semibold text-gray-800">Đang tải chứng từ kiểm kê...</span>
           </div>
         </div>

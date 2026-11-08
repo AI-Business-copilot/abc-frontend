@@ -7,7 +7,7 @@ const lotStatusStyle: Record<LotStatus, { label: string; className: string }> = 
   HEALTHY: { label: "Bình thường", className: "bg-emerald-100 text-emerald-800" },
   WARNING: { label: "Sắp hết hạn", className: "bg-amber-100 text-amber-800" },
   UNUSABLE: { label: "Không dùng được", className: "bg-rose-100 text-rose-800" },
-  QUARANTINED: { label: "Đang cách ly", className: "bg-violet-100 text-violet-800" },
+  QUARANTINED: { label: "Đang cách ly", className: "bg-amber-100 text-amber-900 border border-amber-200" },
   SCRAPPED: { label: "Đã hủy", className: "bg-slate-200 text-slate-700" },
 };
 

@@ -271,7 +271,7 @@ export function OpeningStockVoucherModal({
           {/* Header Modal */}
           <div className="flex items-center justify-between border-b border-gray-200 px-6 py-3.5 bg-gray-50 shrink-0">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0f4c3a] text-white">
                 <Icon name="receipt_long" className="text-[22px]" />
               </span>
               <div>
@@ -287,7 +287,7 @@ export function OpeningStockVoucherModal({
               <button
                 type="button"
                 onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#4f46e5] px-4 py-2 text-[13px] font-bold text-white shadow-sm hover:bg-[#4338ca] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f4c3a] px-4 py-2 text-[13px] font-bold text-white shadow-sm hover:bg-[#0a3528] transition-colors"
               >
                 <Icon name="print" className="text-[18px]" />
                 In Phiếu A4
@@ -312,7 +312,7 @@ export function OpeningStockVoucherModal({
           <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3.5 bg-gray-50 shrink-0">
             <div className="text-[12.5px] text-gray-600">
               Tổng tồn nhập: <b className="text-gray-900">{totals.quantity} cái</b> • Giá trị:{" "}
-              <b className="text-[#4f46e5]">{vnd(totals.value)}</b>
+              <b className="text-[#0f4c3a]">{vnd(totals.value)}</b>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -327,7 +327,7 @@ export function OpeningStockVoucherModal({
                   type="button"
                   disabled={isPublishing}
                   onClick={onConfirmPublish}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#4f46e5] px-5 py-2 text-[13px] font-bold text-white shadow-md hover:bg-[#4338ca] transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#0f4c3a] px-5 py-2 text-[13px] font-bold text-white shadow-md hover:bg-[#0a3528] transition-colors disabled:opacity-50"
                 >
                   {isPublishing ? "Đang lưu kho..." : "Xác nhận Nhập kho & Hoàn tất"}
                 </button>
