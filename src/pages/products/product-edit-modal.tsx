@@ -162,12 +162,12 @@ export function ProductEditModal({
         {/* Header Modal */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 bg-gray-50/70">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0f4c3a] text-white">
               <Icon name="edit" className="text-[20px]" />
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[11px] font-bold text-[#4f46e5] uppercase bg-indigo-50 px-2 py-0.5 rounded">
+                <span className="font-mono text-[11px] font-bold text-[#0f4c3a] uppercase bg-emerald-50 px-2 py-0.5 rounded">
                   {code || product.code || "SẢN PHẨM"}
                 </span>
                 <span className="text-[12px] text-gray-500">Chỉnh sửa nhanh sản phẩm</span>
@@ -181,7 +181,7 @@ export function ProductEditModal({
               <button
                 type="button"
                 onClick={() => setActiveTab("general")}
-                className={["px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5", activeTab === "general" ? "bg-white text-[#4f46e5] shadow-xs" : "text-gray-600 hover:text-gray-900"].join(" ")}
+                className={["px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5", activeTab === "general" ? "bg-white text-[#0f4c3a] shadow-xs" : "text-gray-600 hover:text-gray-900"].join(" ")}
               >
                 <Icon name="info" className="text-[16px]" />
                 Thông tin chung
@@ -189,7 +189,7 @@ export function ProductEditModal({
               <button
                 type="button"
                 onClick={() => setActiveTab("variants")}
-                className={["px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5", activeTab === "variants" ? "bg-white text-[#4f46e5] shadow-xs" : "text-gray-600 hover:text-gray-900"].join(" ")}
+                className={["px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5", activeTab === "variants" ? "bg-white text-[#0f4c3a] shadow-xs" : "text-gray-600 hover:text-gray-900"].join(" ")}
               >
                 <Icon name="category" className="text-[16px]" />
                 Biến thể &amp; Giá ({skus.length} SKU)
@@ -231,7 +231,7 @@ export function ProductEditModal({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="VD: Áo Hoodie Nữ Form Rộng Nỉ Bông"
-                    className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 px-3.5 text-[13.5px] font-semibold outline-none focus:border-[#4f46e5] focus:ring-1 focus:ring-[#4f46e5]"
+                    className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 px-3.5 text-[13.5px] font-semibold outline-none focus:border-[#0f4c3a] focus:ring-1 focus:ring-[#0f4c3a]"
                   />
                 </div>
 
@@ -243,7 +243,7 @@ export function ProductEditModal({
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     placeholder="VD: HOODIE-NU-01 hoặc TMP-2026-..."
-                    className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 px-3.5 font-mono text-[13px] font-bold outline-none focus:border-[#4f46e5] focus:ring-1 focus:ring-[#4f46e5]"
+                    className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 px-3.5 font-mono text-[13px] font-bold outline-none focus:border-[#0f4c3a] focus:ring-1 focus:ring-[#0f4c3a]"
                   />
                   <span className="text-[11px] text-gray-400 mt-0.5 block">
                     Có thể tùy chỉnh theo quy tắc nội bộ doanh nghiệp.
@@ -257,7 +257,7 @@ export function ProductEditModal({
                   <select
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
-                    className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 px-3.5 text-[13px] outline-none focus:border-[#4f46e5]"
+                    className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 px-3.5 text-[13px] outline-none focus:border-[#0f4c3a]"
                   >
                     <option value="">-- Chưa phân loại --</option>
                     {categories.map((c) => (
@@ -275,7 +275,7 @@ export function ProductEditModal({
                   <select
                     value={unitOfMeasure}
                     onChange={(e) => setUnitOfMeasure(e.target.value)}
-                    className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 px-3.5 text-[13px] outline-none focus:border-[#4f46e5]"
+                    className="mt-1.5 h-10 w-full rounded-lg border border-gray-300 px-3.5 text-[13px] outline-none focus:border-[#0f4c3a]"
                   >
                     {units.map((u) => (
                       <option key={u} value={u}>
@@ -295,7 +295,7 @@ export function ProductEditModal({
                         type="checkbox"
                         checked={hasLotTracking}
                         onChange={(e) => setHasLotTracking(e.target.checked)}
-                        className="rounded accent-[#4f46e5] w-4 h-4"
+                        className="rounded accent-[#0f4c3a] w-4 h-4"
                       />
                       <span>Bật quản lý Số lô &amp; Hạn sử dụng (Mỹ phẩm / FEFO)</span>
                     </label>
@@ -304,7 +304,7 @@ export function ProductEditModal({
                         type="checkbox"
                         checked={isActive}
                         onChange={(e) => setIsActive(e.target.checked)}
-                        className="rounded accent-[#4f46e5] w-4 h-4"
+                        className="rounded accent-[#0f4c3a] w-4 h-4"
                       />
                       <span>Đang kích hoạt kinh doanh (Active)</span>
                     </label>
@@ -318,7 +318,7 @@ export function ProductEditModal({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Mô tả chất liệu, đặc tính, hướng dẫn bảo quản..."
-                    className="mt-1.5 w-full rounded-lg border border-gray-300 p-3 text-[13px] outline-none focus:border-[#4f46e5]"
+                    className="mt-1.5 w-full rounded-lg border border-gray-300 p-3 text-[13px] outline-none focus:border-[#0f4c3a]"
                   />
                 </div>
               </div>
@@ -347,7 +347,7 @@ export function ProductEditModal({
                       type="button"
                       disabled={uploadingImage}
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#4f46e5] px-3.5 py-2 text-[12.5px] font-bold text-white shadow-xs hover:bg-[#4338ca] transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f4c3a] px-3.5 py-2 text-[12.5px] font-bold text-white shadow-xs hover:bg-[#0a3528] transition-colors disabled:opacity-50"
                     >
                       {uploadingImage ? (
                         <>
@@ -372,7 +372,7 @@ export function ProductEditModal({
                     >
                       <img src={img} alt={`Ảnh #${idx + 1}`} className="w-full h-full object-cover" />
                       {idx === 0 && (
-                        <span className="absolute top-1 left-1 bg-[#4f46e5] text-white text-[8.5px] font-bold px-1 rounded shadow-xs">
+                        <span className="absolute top-1 left-1 bg-[#0f4c3a] text-white text-[8.5px] font-bold px-1 rounded shadow-xs">
                           Chính
                         </span>
                       )}
@@ -381,7 +381,7 @@ export function ProductEditModal({
                           <button
                             type="button"
                             onClick={() => makePrimaryImage(idx)}
-                            className="p-1 rounded bg-white text-gray-800 hover:text-[#4f46e5]"
+                            className="p-1 rounded bg-white text-gray-800 hover:text-[#0f4c3a]"
                             title="Đặt làm ảnh chính"
                           >
                             <Icon name="star" className="text-[14px]" />
@@ -444,7 +444,7 @@ export function ProductEditModal({
                             <button
                               type="button"
                               onClick={() => setAssigningSkuIndex(index)}
-                              className="relative h-10 w-10 rounded-lg border border-gray-200 overflow-hidden group block hover:border-[#4f46e5]"
+                              className="relative h-10 w-10 rounded-lg border border-gray-200 overflow-hidden group block hover:border-[#0f4c3a]"
                               title="Bấm để chọn/gán ảnh đúng góc chụp cho SKU này"
                             >
                               {displayImg ? (
@@ -463,7 +463,7 @@ export function ProductEditModal({
                             <input
                               value={s.sku}
                               onChange={(e) => updateSku(index, { sku: e.target.value })}
-                              className="h-8 w-36 rounded border border-gray-300 px-2 font-mono text-[11.5px] font-bold text-gray-900 outline-none focus:border-[#4f46e5]"
+                              className="h-8 w-36 rounded border border-gray-300 px-2 font-mono text-[11.5px] font-bold text-gray-900 outline-none focus:border-[#0f4c3a]"
                             />
                           </td>
                           <td className="px-3 py-2">
@@ -471,7 +471,7 @@ export function ProductEditModal({
                               value={s.barcode}
                               onChange={(e) => updateSku(index, { barcode: e.target.value })}
                               placeholder="Barcode EAN/Code128"
-                              className="h-8 w-36 rounded border border-gray-300 px-2 font-mono text-[11.5px] text-[#4f46e5] font-semibold outline-none focus:border-[#4f46e5]"
+                              className="h-8 w-36 rounded border border-gray-300 px-2 font-mono text-[11.5px] text-[#0f4c3a] font-semibold outline-none focus:border-[#0f4c3a]"
                             />
                           </td>
                           <td className="px-3 py-2 text-right">
@@ -480,7 +480,7 @@ export function ProductEditModal({
                               min={0}
                               value={s.costPrice}
                               onChange={(e) => updateSku(index, { costPrice: Number(e.target.value) })}
-                              className="h-8 w-28 rounded border border-gray-300 px-2 text-right font-medium text-gray-800 outline-none focus:border-[#4f46e5]"
+                              className="h-8 w-28 rounded border border-gray-300 px-2 text-right font-medium text-gray-800 outline-none focus:border-[#0f4c3a]"
                             />
                           </td>
                           <td className="px-3 py-2 text-right">
@@ -489,7 +489,7 @@ export function ProductEditModal({
                               min={0}
                               value={s.basePrice}
                               onChange={(e) => updateSku(index, { basePrice: Number(e.target.value) })}
-                              className="h-8 w-28 rounded border border-gray-300 px-2 text-right font-bold text-[#4f46e5] outline-none focus:border-[#4f46e5]"
+                              className="h-8 w-28 rounded border border-gray-300 px-2 text-right font-bold text-[#0f4c3a] outline-none focus:border-[#0f4c3a]"
                             />
                           </td>
                           <td className="px-3 py-2 text-center">
@@ -498,7 +498,7 @@ export function ProductEditModal({
                               min={0}
                               value={s.safetyStockQty}
                               onChange={(e) => updateSku(index, { safetyStockQty: Number(e.target.value) })}
-                              className="h-8 w-16 rounded border border-gray-300 px-2 text-center text-[12px] font-bold outline-none focus:border-[#4f46e5]"
+                              className="h-8 w-16 rounded border border-gray-300 px-2 text-center text-[12px] font-bold outline-none focus:border-[#0f4c3a]"
                             />
                           </td>
                           <td className="px-3 py-2 text-right">
@@ -523,7 +523,7 @@ export function ProductEditModal({
             <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-100">
               <div className="flex items-center justify-between border-b pb-3">
                 <h3 className="text-[15px] font-bold text-gray-900">
-                  Gán ảnh cho SKU: <span className="font-mono text-[#4f46e5]">{skus[assigningSkuIndex]?.sku}</span>
+                  Gán ảnh cho SKU: <span className="font-mono text-[#0f4c3a]">{skus[assigningSkuIndex]?.sku}</span>
                 </h3>
                 <button
                   onClick={() => setAssigningSkuIndex(null)}
@@ -546,11 +546,11 @@ export function ProductEditModal({
                           updateSku(assigningSkuIndex, { image: img });
                           setAssigningSkuIndex(null);
                         }}
-                        className={["relative h-18 w-full rounded-xl border-2 overflow-hidden hover:scale-105 transition-all", isSelected ? "border-[#4f46e5] shadow-md ring-2 ring-indigo-200" : "border-gray-200"].join(" ")}
+                        className={["relative h-18 w-full rounded-xl border-2 overflow-hidden hover:scale-105 transition-all", isSelected ? "border-[#0f4c3a] shadow-md ring-2 ring-emerald-200" : "border-gray-200"].join(" ")}
                       >
                         <img src={img} alt={`Góc #${i + 1}`} className="w-full h-full object-cover" />
                         {isSelected && (
-                          <span className="absolute top-1 right-1 bg-[#4f46e5] text-white rounded-full p-0.5">
+                          <span className="absolute top-1 right-1 bg-[#0f4c3a] text-white rounded-full p-0.5">
                             <Icon name="check" className="text-[12px]" />
                           </span>
                         )}
@@ -602,7 +602,7 @@ export function ProductEditModal({
               type="button"
               disabled={saving}
               onClick={() => void handleSave()}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#4f46e5] px-5 py-2 text-[13.5px] font-bold text-white shadow-sm hover:bg-[#4338ca] disabled:opacity-50 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#0f4c3a] px-5 py-2 text-[13.5px] font-bold text-white shadow-sm hover:bg-[#0a3528] disabled:opacity-50 transition-all cursor-pointer"
             >
               {saving ? (
                 <>

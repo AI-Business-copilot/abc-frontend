@@ -87,7 +87,7 @@ function reviewStatusLabel(status: string) {
 function statusClass(status: string) {
   if (status === "APPROVED") return "bg-emerald-50 text-emerald-700";
   if (status === "NEEDS_EXPLANATION") return "bg-amber-50 text-amber-800";
-  return "bg-sky-50 text-sky-700";
+  return "bg-emerald-50 text-emerald-800 border border-emerald-200";
 }
 
 function MovementForm({
@@ -115,7 +115,7 @@ function MovementForm({
       <input name="transactionType" type="hidden" value={type} />
       <div className="space-y-2">
         <Label htmlFor="cash-category">Danh mục</Label>
-        <select className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 shadow-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100" id="cash-category" name="category">
+        <select className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 shadow-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100" id="cash-category" name="category">
           {categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
         </select>
       </div>
@@ -532,7 +532,7 @@ export function CashShiftsPage() {
             <Card>
               <CardContent className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
                 <div>
-                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900"><ShieldCheck size={17} className="text-violet-600" /> Nhân viên chịu trách nhiệm</div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900"><ShieldCheck size={17} className="text-[#0f4c3a]" /> Nhân viên chịu trách nhiệm</div>
                   <p className="mt-1 text-sm text-slate-600">{currentShift.user.fullName}</p>
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500"><Clock3 size={13} /> Mở lúc {timestamp(currentShift.openedAt)}</p>
                 </div>
@@ -551,7 +551,7 @@ export function CashShiftsPage() {
               <Card>
                 <CardContent className="flex items-center justify-between gap-4 p-5">
                   {currentShift.cashDataComplete
-                    ? <><div><p className="text-sm font-semibold text-slate-700">Số tiền két theo hệ thống</p><p className="mt-1 text-xs text-slate-500">Chỉ hiển thị với người có quyền đối soát.</p></div><strong className="text-xl text-violet-800">{money(currentShift.systemExpectedCash)}</strong></>
+                    ? <><div><p className="text-sm font-semibold text-slate-700">Số tiền két theo hệ thống</p><p className="mt-1 text-xs text-slate-500">Chỉ hiển thị với người có quyền đối soát.</p></div><strong className="text-xl text-[#0f4c3a]">{money(currentShift.systemExpectedCash)}</strong></>
                     : <Alert className="w-full" variant="destructive">Chưa thể xác nhận số lý thuyết: có {currentShift.untrackedCashEventCount ?? "một số"} mục dữ liệu nguồn chưa đầy đủ.</Alert>}
                 </CardContent>
               </Card>
@@ -559,12 +559,12 @@ export function CashShiftsPage() {
 
             <div className="grid items-start gap-5 xl:grid-cols-2">
               <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><ReceiptText size={18} className="text-violet-600" /> Ghi nhận dòng tiền</CardTitle><p className="text-sm text-slate-500">Ghi các khoản thu, chi và hoàn tiền mặt phát sinh.</p></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><ReceiptText size={18} className="text-[#0f4c3a]" /> Ghi nhận dòng tiền</CardTitle><p className="text-sm text-slate-500">Ghi các khoản thu, chi và hoàn tiền mặt phát sinh.</p></CardHeader>
                 <CardContent>{canManage ? <MovementForm onRecord={submitTransaction} saving={saving} shift={currentShift} /> : <Alert variant="destructive">Bạn không có quyền ghi nhận giao dịch.</Alert>}</CardContent>
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole size={18} className="text-violet-600" /> Kiểm đếm & kết thúc ca</CardTitle><p className="text-sm text-slate-500">Nhân viên kiểm đếm mù; ca sẽ kết thúc ngay sau khi gửi yêu cầu để có thể chuyển ca.</p></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole size={18} className="text-[#0f4c3a]" /> Kiểm đếm & kết thúc ca</CardTitle><p className="text-sm text-slate-500">Nhân viên kiểm đếm mù; ca sẽ kết thúc ngay sau khi gửi yêu cầu để có thể chuyển ca.</p></CardHeader>
                 <CardContent>
                   {!canManage ? <Alert variant="destructive">Bạn không có quyền đóng ca.</Alert>
                     : !isResponsible ? <Alert>Ca này do <strong>{currentShift.user.fullName}</strong> chịu trách nhiệm. Chỉ tài khoản này mới có thể gửi yêu cầu đóng ca.</Alert>
@@ -583,7 +583,7 @@ export function CashShiftsPage() {
                           {closePreview?.amount === actualCash && !closePreview.isMatched && (
                             <div className="space-y-2">
                               <Label htmlFor="cash-close-explanation">Lý do chênh lệch <span className="text-rose-600">*</span></Label>
-                              <textarea className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100" id="cash-close-explanation" maxLength={1000} onChange={(event) => setCloseExplanation(event.target.value)} placeholder="Nhập lý do hoặc tình huống dẫn đến chênh lệch" required value={closeExplanation} />
+                              <textarea className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100" id="cash-close-explanation" maxLength={1000} onChange={(event) => setCloseExplanation(event.target.value)} placeholder="Nhập lý do hoặc tình huống dẫn đến chênh lệch" required value={closeExplanation} />
                             </div>
                           )}
                           <Button className="w-full" disabled={saving || !closePreview || closePreview.amount !== actualCash || (!closePreview.isMatched && !closeExplanation.trim())} type="submit"><LockKeyhole size={16} /> Gửi yêu cầu & kết thúc ca</Button>
@@ -595,7 +595,7 @@ export function CashShiftsPage() {
 
             {canWithdraw && (
               <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><Wallet size={18} className="text-violet-600" /> Rút tiền khỏi két</CardTitle><p className="text-sm text-slate-500">Chuyển tiền dư sang két an toàn hoặc ngân hàng; đây là dòng tiền ra, không phải chi phí kinh doanh.</p></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Wallet size={18} className="text-[#0f4c3a]" /> Rút tiền khỏi két</CardTitle><p className="text-sm text-slate-500">Chuyển tiền dư sang két an toàn hoặc ngân hàng; đây là dòng tiền ra, không phải chi phí kinh doanh.</p></CardHeader>
                 <CardContent>
                   <form className="grid gap-4 md:grid-cols-2" onSubmit={submitWithdrawal}>
                     <div className="space-y-2"><Label htmlFor="withdrawal-amount">Số tiền rút (VNĐ)</Label><Input id="withdrawal-amount" inputMode="decimal" maxLength={16} onChange={(event) => setWithdrawal((old) => ({ ...old, amount: formatCashInput(event.target.value) }))} required type="text" value={withdrawal.amount} /></div>
@@ -608,7 +608,7 @@ export function CashShiftsPage() {
             )}
 
             <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><History size={18} className="text-violet-600" /> Giao dịch trong ca</CardTitle><p className="text-sm text-slate-500">{transactionData?.pagination.total ?? 0} giao dịch phù hợp</p></CardHeader>
+              <CardHeader><CardTitle className="flex items-center gap-2"><History size={18} className="text-[#0f4c3a]" /> Giao dịch trong ca</CardTitle><p className="text-sm text-slate-500">{transactionData?.pagination.total ?? 0} giao dịch phù hợp</p></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-3">
                   <Input aria-label="Tìm giao dịch" onChange={(event) => setTransactionSearchInput(event.target.value)} placeholder="Tìm ghi chú, người nhận..." value={transactionSearchInput} />
@@ -637,7 +637,7 @@ export function CashShiftsPage() {
           </>
         ) : (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Wallet size={19} className="text-violet-600" /> Bắt đầu ca trực</CardTitle><p className="text-sm text-slate-500">Tự kiểm đếm két trước khi nhập số tiền đầu ca. Nếu ca trước đang chờ duyệt, bạn vẫn có thể chuyển ca.</p></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Wallet size={19} className="text-[#0f4c3a]" /> Bắt đầu ca trực</CardTitle><p className="text-sm text-slate-500">Tự kiểm đếm két trước khi nhập số tiền đầu ca. Nếu ca trước đang chờ duyệt, bạn vẫn có thể chuyển ca.</p></CardHeader>
             <CardContent>
               {canManage ? (
                 <form className="max-w-xl space-y-4" onSubmit={submitOpenShift}>
@@ -650,7 +650,7 @@ export function CashShiftsPage() {
                     </Alert>
                   )}
                   {openingPreview?.amount === openingCash && openingPreview.hasPreviousShift && !openingPreview.isMatched && (
-                    <div className="space-y-2"><Label htmlFor="handoff-explanation">Lý do chênh lệch bàn giao <span className="text-rose-600">*</span></Label><textarea className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100" id="handoff-explanation" maxLength={1000} onChange={(event) => setOpeningExplanation(event.target.value)} placeholder="Giải trình chênh lệch giữa số tiền nhận và số tiền đã bàn giao" required value={openingExplanation} /></div>
+                    <div className="space-y-2"><Label htmlFor="handoff-explanation">Lý do chênh lệch bàn giao <span className="text-rose-600">*</span></Label><textarea className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100" id="handoff-explanation" maxLength={1000} onChange={(event) => setOpeningExplanation(event.target.value)} placeholder="Giải trình chênh lệch giữa số tiền nhận và số tiền đã bàn giao" required value={openingExplanation} /></div>
                   )}
                   <Button disabled={saving || !openingPreview || openingPreview.amount !== openingCash || (openingPreview.hasPreviousShift && !openingPreview.isMatched && !openingExplanation.trim())} type="submit"><Plus size={16} /> Mở ca & ghi nhận tiền đầu ca</Button>
                 </form>
@@ -664,7 +664,7 @@ export function CashShiftsPage() {
             <CardHeader><CardTitle>Giải trình bổ sung · ca {timestamp(shift.openedAt)}</CardTitle><p className="text-sm text-amber-800">{review.reviewerNote || "Chủ cửa hàng yêu cầu giải trình lại."}</p></CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-2"><Label htmlFor={`resubmit-amount-${review.id}`}>Tiền thực tế đã kiểm đếm (có thể cập nhật)</Label><Input id={`resubmit-amount-${review.id}`} inputMode="decimal" maxLength={16} onChange={(event) => setResubmission((old) => ({ ...old, [review.id]: { explanation: old[review.id]?.explanation ?? "", actualCash: formatCashInput(event.target.value) } }))} type="text" value={resubmission[review.id]?.actualCash ?? formatStoredCashInput(review.actualCash)} /></div>
-              <div className="space-y-2"><Label htmlFor={`resubmit-reason-${review.id}`}>Giải trình bổ sung</Label><textarea className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100" id={`resubmit-reason-${review.id}`} maxLength={1000} onChange={(event) => setResubmission((old) => ({ ...old, [review.id]: { actualCash: old[review.id]?.actualCash ?? review.actualCash, explanation: event.target.value } }))} placeholder="Bổ sung thông tin theo yêu cầu của chủ cửa hàng" value={resubmission[review.id]?.explanation ?? ""} /></div>
+              <div className="space-y-2"><Label htmlFor={`resubmit-reason-${review.id}`}>Giải trình bổ sung</Label><textarea className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100" id={`resubmit-reason-${review.id}`} maxLength={1000} onChange={(event) => setResubmission((old) => ({ ...old, [review.id]: { actualCash: old[review.id]?.actualCash ?? review.actualCash, explanation: event.target.value } }))} placeholder="Bổ sung thông tin theo yêu cầu của chủ cửa hàng" value={resubmission[review.id]?.explanation ?? ""} /></div>
               <Button disabled={saving} onClick={() => void resubmitCloseReview(shift.id, review.id)} type="button">Gửi giải trình bổ sung</Button>
             </CardContent>
           </Card>
@@ -674,7 +674,7 @@ export function CashShiftsPage() {
           <Card key={handoff.id}>
             <CardHeader><CardTitle>Giải trình bổ sung bàn giao · ca {timestamp(shift.openedAt)}</CardTitle><p className="text-sm text-amber-800">{handoff.reviewerNote || "Chủ cửa hàng yêu cầu giải trình lại."}</p></CardHeader>
             <CardContent className="space-y-3">
-              <textarea className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100" maxLength={1000} onChange={(event) => setResubmission((old) => ({ ...old, [handoff.id]: { explanation: event.target.value, actualCash: "" } }))} placeholder="Giải trình bổ sung" value={resubmission[handoff.id]?.explanation ?? ""} />
+              <textarea className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100" maxLength={1000} onChange={(event) => setResubmission((old) => ({ ...old, [handoff.id]: { explanation: event.target.value, actualCash: "" } }))} placeholder="Giải trình bổ sung" value={resubmission[handoff.id]?.explanation ?? ""} />
               <Button disabled={saving} onClick={() => void resubmitHandoff(handoff.id, handoff.id)} type="button">Gửi giải trình bàn giao</Button>
             </CardContent>
           </Card>
@@ -682,7 +682,7 @@ export function CashShiftsPage() {
 
         {canReview && reviewQueue && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck size={18} className="text-violet-600" /> Yêu cầu chờ chủ cửa hàng xem xét</CardTitle><p className="text-sm text-slate-500">Các yêu cầu chờ duyệt không ngăn nhân viên mở ca tiếp theo.</p></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck size={18} className="text-[#0f4c3a]" /> Yêu cầu chờ chủ cửa hàng xem xét</CardTitle><p className="text-sm text-slate-500">Các yêu cầu chờ duyệt không ngăn nhân viên mở ca tiếp theo.</p></CardHeader>
             <CardContent className="space-y-4">
               {!reviewQueue.closeReviews.length && !reviewQueue.handoffs.length ? <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">Không có yêu cầu nào chờ duyệt.</div> : (
                 <>
@@ -692,7 +692,7 @@ export function CashShiftsPage() {
                       <div className="grid gap-3 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-3"><div>Hệ thống dự kiến<strong className="mt-1 block">{money(review.expectedCash)}</strong></div><div>Nhân viên đếm<strong className="mt-1 block">{money(review.actualCash)}</strong></div><div>Chênh lệch<strong className="mt-1 block">{money(review.differenceCash)}</strong></div></div>
                       {review.shift?.reconciliationStatus === "INCOMPLETE_DATA" && <Alert variant="destructive">Dữ liệu giao dịch của ca chưa đầy đủ; số liệu dưới đây chỉ phản ánh các dòng tiền đã ghi nhận, cần xác minh thêm trước khi kết luận.</Alert>}
                       <p className="text-sm text-slate-600"><strong>Giải trình:</strong> {review.explanation || "Không có chênh lệch."}</p>
-                      <textarea className="min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100" maxLength={1000} onChange={(event) => setReviewNotes((old) => ({ ...old, [review.id]: event.target.value }))} placeholder="Ghi chú duyệt hoặc nêu rõ lý do cần giải trình lại" value={reviewNotes[review.id] ?? ""} />
+                      <textarea className="min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100" maxLength={1000} onChange={(event) => setReviewNotes((old) => ({ ...old, [review.id]: event.target.value }))} placeholder="Ghi chú duyệt hoặc nêu rõ lý do cần giải trình lại" value={reviewNotes[review.id] ?? ""} />
                       <div className="flex flex-wrap gap-2"><Button disabled={saving} onClick={() => void decideCloseReview(review.id, "APPROVE")} type="button">Chấp nhận yêu cầu</Button><Button disabled={saving || !reviewNotes[review.id]?.trim()} onClick={() => void decideCloseReview(review.id, "REQUEST_EXPLANATION")} type="button" variant="outline">Yêu cầu giải trình lại</Button></div>
                     </div>
                   ))}
@@ -701,7 +701,7 @@ export function CashShiftsPage() {
                       <div><p className="font-semibold text-slate-900">Chênh lệch bàn giao · {review.submittedByUser.fullName}</p><p className="text-xs text-slate-500">Gửi lúc {timestamp(review.submittedAt)} · lần {review.revision}</p></div>
                       <div className="grid gap-3 rounded-lg bg-white p-3 text-sm sm:grid-cols-3"><div>Ca trước bàn giao<strong className="mt-1 block">{money(review.handoff.handedOverCash)}</strong></div><div>Ca mới nhận<strong className="mt-1 block">{money(review.handoff.receivedCash)}</strong></div><div>Chênh lệch<strong className="mt-1 block">{money(review.handoff.differenceCash)}</strong></div></div>
                       <p className="text-sm text-slate-600"><strong>Giải trình:</strong> {review.explanation}</p>
-                      <textarea className="min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100" maxLength={1000} onChange={(event) => setReviewNotes((old) => ({ ...old, [review.id]: event.target.value }))} placeholder="Ghi chú duyệt hoặc nêu rõ lý do cần giải trình lại" value={reviewNotes[review.id] ?? ""} />
+                      <textarea className="min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100" maxLength={1000} onChange={(event) => setReviewNotes((old) => ({ ...old, [review.id]: event.target.value }))} placeholder="Ghi chú duyệt hoặc nêu rõ lý do cần giải trình lại" value={reviewNotes[review.id] ?? ""} />
                       <div className="flex flex-wrap gap-2"><Button disabled={saving} onClick={() => void decideHandoffReview(review.id, "APPROVE")} type="button">Chấp nhận bàn giao</Button><Button disabled={saving || !reviewNotes[review.id]?.trim()} onClick={() => void decideHandoffReview(review.id, "REQUEST_EXPLANATION")} type="button" variant="outline">Yêu cầu giải trình lại</Button></div>
                     </div>
                   ))}
@@ -712,7 +712,7 @@ export function CashShiftsPage() {
         )}
 
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><History size={18} className="text-violet-600" /> Lịch sử ca gần đây</CardTitle><p className="text-sm text-slate-500">Trạng thái kiểm kê có thể chờ duyệt sau khi két đã được bàn giao cho ca mới.</p></CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"><History size={18} className="text-[#0f4c3a]" /> Lịch sử ca gần đây</CardTitle><p className="text-sm text-slate-500">Trạng thái kiểm kê có thể chờ duyệt sau khi két đã được bàn giao cho ca mới.</p></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3">
               <Input aria-label="Tìm nhân viên chịu trách nhiệm" onChange={(event) => setHistorySearchInput(event.target.value)} placeholder="Tìm nhân viên chịu trách nhiệm..." value={historySearchInput} />

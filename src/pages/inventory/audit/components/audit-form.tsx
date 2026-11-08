@@ -55,7 +55,7 @@ export function AuditForm({
             value={auditType}
             onChange={(e) => setAuditType(e.target.value as AuditType)}
             disabled={loading}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#0f4c3a] focus:outline-none focus:ring-1 focus:ring-[#0f4c3a] disabled:bg-gray-100"
           >
             <option value="RE_AUDIT">Kiểm kê lại (chỉ dùng lô có sẵn)</option>
             <option value="NEW_LOTS">Lô mới (mỗi dòng là một lô mới)</option>
@@ -73,7 +73,7 @@ export function AuditForm({
             onChange={(e) => setNote(e.target.value)}
             disabled={loading}
             rows={3}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 resize-none"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#0f4c3a] focus:outline-none focus:ring-1 focus:ring-[#0f4c3a] disabled:bg-gray-100 resize-none"
           />
         </div>
 

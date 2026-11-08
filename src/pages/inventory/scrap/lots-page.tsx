@@ -76,7 +76,7 @@ export function LotsPage() {
     { label: "SKU bình thường", value: summary.healthy, tone: "text-emerald-700" },
     { label: "SKU sắp hết hạn", value: summary.warning, tone: "text-amber-700" },
     { label: "SKU không dùng được", value: summary.unusable, tone: "text-rose-700" },
-    { label: "SKU đang cách ly", value: summary.quarantined, tone: "text-violet-700" },
+    { label: "SKU đang cách ly", value: summary.quarantined, tone: "text-amber-700" },
     { label: "SKU đã hủy", value: summary.scrapped, tone: "text-slate-600" },
   ];
 
@@ -181,13 +181,13 @@ export function LotsPage() {
                               <td className="px-4 py-3">
                                 {lotStock(lot)}
                                 {lot.effectiveStatus === "QUARANTINED" && lot.quarantineQty ? (
-                                  <div className="text-xs text-violet-700">Cách ly: {lot.quarantineQty}</div>
+                                  <div className="text-xs text-amber-700">Cách ly: {lot.quarantineQty}</div>
                                 ) : null}
                               </td>
                               <td className="px-4 py-3"><LotStatusBadge status={lot.effectiveStatus} /></td>
                               <td className="px-4 py-3">
                                 {pendingOrderId ? (
-                                  <Link className="font-semibold text-violet-700 hover:underline" to={`/inventory/scrap/${pendingOrderId}`}>
+                                  <Link className="font-semibold text-[#0f4c3a] hover:underline" to={`/inventory/scrap/${pendingOrderId}`}>
                                     Xem phiếu đang chờ duyệt
                                   </Link>
                                 ) : canAct && !blocked ? (

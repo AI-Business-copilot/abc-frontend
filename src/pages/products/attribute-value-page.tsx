@@ -217,24 +217,24 @@ export function AttributeValuePage() {
       <main className="mx-auto max-w-[1440px] px-6 py-7">
         {/* Banner tiến trình nếu có */}
         {activeTemplateId && (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-[#4f46e5]/40 bg-gradient-to-r from-[#eef2ff] via-white to-[#eef2ff] p-4 shadow-sm">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-[#0f4c3a]/40 bg-gradient-to-r from-[#ecfdf5] via-white to-[#ecfdf5] p-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0f4c3a] text-white">
                 <Icon name="bookmark" className="text-[22px]" />
               </span>
               <div>
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-[#4338ca]">
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-[#0a3528]">
                   Đang có tiến trình tạo sản phẩm dở dang (Bước 2)
                 </p>
                 <p className="text-[15px] font-bold text-[#101828]">
-                  Mẫu sản phẩm cha: <span className="text-[#4338ca]">{activeTemplateName}</span>
+                  Mẫu sản phẩm cha: <span className="text-[#0a3528]">{activeTemplateName}</span>
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => navigate(`/products/attributes-selection?templateId=${activeTemplateId}`)}
-              className="flex items-center gap-1.5 rounded-xl bg-[#4f46e5] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#4338ca]"
+              className="flex items-center gap-1.5 rounded-xl bg-[#0f4c3a] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#0a3528]"
             >
               <span>Quay lại Bước 2 tiếp tục</span>
               <Icon name="arrow_forward" className="text-[17px]" />
@@ -253,14 +253,14 @@ export function AttributeValuePage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <nav className="flex flex-wrap items-center gap-3 text-[13px] text-[#667085]">
-                <Link to="/products" className="hover:text-[#4338ca]">▣ Sản phẩm</Link>
+                <Link to="/products" className="hover:text-[#0a3528]">▣ Sản phẩm</Link>
                 <span>›</span>
-                <Link to="/products/attributes" className="hover:text-[#4338ca]">Thuộc tính</Link>
+                <Link to="/products/attributes" className="hover:text-[#0a3528]">Thuộc tính</Link>
                 <span>›</span>
                 <b className="text-[#101828]">{attribute?.name || "Đang tải..."}</b>
               </nav>
               <h1 className="mt-6 text-[31px] font-extrabold tracking-tight">
-                Chi Tiết Giá Trị Thuộc Tính: <span className="text-[#4338ca]">{attribute?.name || ""}</span>
+                Chi Tiết Giá Trị Thuộc Tính: <span className="text-[#0a3528]">{attribute?.name || ""}</span>
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-[#d1fadf] px-3 py-1 text-[12px] font-semibold text-[#067647]">● Đang hoạt động</span>
@@ -271,7 +271,7 @@ export function AttributeValuePage() {
                   <select
                     value={currentIndustry}
                     onChange={(e) => handleIndustryChange(e.target.value as AttributeIndustry)}
-                    className="rounded-md border border-[#d0d5dd] bg-white px-2 py-1 text-[12.5px] font-semibold text-[#101828] outline-none focus:border-[#4f46e5]"
+                    className="rounded-md border border-[#d0d5dd] bg-white px-2 py-1 text-[12.5px] font-semibold text-[#101828] outline-none focus:border-[#0f4c3a]"
                   >
                     {INDUSTRY_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -281,7 +281,7 @@ export function AttributeValuePage() {
                   </select>
                 </div>
 
-                <span className="rounded-lg bg-[#eef3ff] px-3 py-2 font-mono text-[12px] text-[#667085]">
+                <span className="rounded-lg bg-[#ecfdf5] px-3 py-2 font-mono text-[12px] text-[#667085]">
                   ID: {attribute?.id || "—"}
                 </span>
               </div>
@@ -293,7 +293,7 @@ export function AttributeValuePage() {
                   setBulkRawText("");
                   setShowBulkModal(true);
                 }}
-                className="flex items-center gap-2 rounded-xl border border-[#c7cbff] bg-[#f8f7ff] px-5 py-3 text-[14px] font-bold text-[#4338ca] hover:bg-[#eef0ff] disabled:opacity-60"
+                className="flex items-center gap-2 rounded-xl border border-[#a7f3d0] bg-[#f8f7ff] px-5 py-3 text-[14px] font-bold text-[#0a3528] hover:bg-[#ecfdf5] disabled:opacity-60"
               >
                 <Icon name="upload_file" className="text-[19px]" />
                 Nhập danh sách hàng loạt (Bulk)
@@ -310,7 +310,7 @@ export function AttributeValuePage() {
 
         <section className="mt-7 rounded-2xl bg-white px-7 py-6 shadow-sm">
           <h2 className="text-[18px] font-bold text-[#101828]">
-            <Icon name="add_box" className="mr-2 align-middle text-[22px] text-[#4338ca]" />
+            <Icon name="add_box" className="mr-2 align-middle text-[22px] text-[#0a3528]" />
             Thêm Nhanh Giá Trị Mới Cho '{attribute?.name || ""}'
           </h2>
           <div className="mt-5 grid grid-cols-[1fr_260px] items-end gap-4">
@@ -324,14 +324,14 @@ export function AttributeValuePage() {
                   onChange={(event) => setNewValue(event.target.value)}
                   onKeyDown={(event) => event.key === "Enter" && void addValue()}
                   placeholder="Ví dụ: Đỏ ruby, 250ml, Size XL, Cotton 100%..."
-                  className="h-12 w-full rounded-xl border border-[#d0d5dd] bg-[#f8f9fc] pl-12 pr-4 text-[14px] outline-none focus:border-[#4f46e5] focus:bg-white"
+                  className="h-12 w-full rounded-xl border border-[#d0d5dd] bg-[#f8f9fc] pl-12 pr-4 text-[14px] outline-none focus:border-[#0f4c3a] focus:bg-white"
                 />
               </div>
             </label>
             <button
               disabled={busy || !attribute}
               onClick={() => void addValue()}
-              className="h-12 rounded-xl bg-[#4f46e5] text-[14px] font-bold text-white shadow-sm hover:bg-[#4338ca] disabled:opacity-60"
+              className="h-12 rounded-xl bg-[#0f4c3a] text-[14px] font-bold text-white shadow-sm hover:bg-[#0a3528] disabled:opacity-60"
             >
               <Icon name="bookmark_add" className="mr-1.5 align-middle text-[19px]" />
               + Thêm vào thư viện
@@ -344,7 +344,7 @@ export function AttributeValuePage() {
             </div>
             <div className="rounded-xl bg-[#f8f9fc] border border-gray-100 px-4 py-3">
               <p className="text-[11px] uppercase tracking-wide text-[#667085]">Ngành hàng đang áp dụng</p>
-              <b className="text-[14px] text-[#4338ca]">{currentIndustryObj.label}</b>
+              <b className="text-[14px] text-[#0a3528]">{currentIndustryObj.label}</b>
             </div>
             <div className="rounded-xl bg-[#f8f9fc] border border-gray-100 px-4 py-3">
               <p className="text-[11px] uppercase tracking-wide text-[#667085]">Trạng thái</p>
@@ -363,7 +363,7 @@ export function AttributeValuePage() {
                   value={keyword}
                   onChange={(event) => setKeyword(event.target.value)}
                   placeholder="Tìm kiếm giá trị..."
-                  className="h-10 w-56 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] pl-9 pr-3 text-[12px] outline-none focus:border-[#4f46e5]"
+                  className="h-10 w-56 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] pl-9 pr-3 text-[12px] outline-none focus:border-[#0f4c3a]"
                 />
               </div>
               <button
@@ -377,7 +377,7 @@ export function AttributeValuePage() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-left text-[13px]">
-              <thead className="bg-[#eef3ff] text-[11px] uppercase text-[#667085]">
+              <thead className="bg-[#ecfdf5] text-[11px] uppercase text-[#667085]">
                 <tr>
                   <th className="w-24 px-7 py-4"># Thứ tự</th>
                   <th className="px-5 py-4">Giá trị thuộc tính (Value)</th>
@@ -408,7 +408,7 @@ export function AttributeValuePage() {
                       {index + 1}
                     </td>
                     <td className="px-5 py-4">
-                      <span className="mr-3 inline-block rounded-lg bg-[#eef0ff] px-3.5 py-1.5 text-[15px] font-bold text-[#344054]">
+                      <span className="mr-3 inline-block rounded-lg bg-[#ecfdf5] px-3.5 py-1.5 text-[15px] font-bold text-[#344054]">
                         {item.value}
                       </span>
                       <code className="text-[12px] text-[#667085]">ID: {displayCode(item.id)}</code>
@@ -422,7 +422,7 @@ export function AttributeValuePage() {
                       <button
                         disabled={busy}
                         onClick={() => openEditModal(item)}
-                        className="mr-3 rounded-lg p-2 text-[#475467] hover:bg-[#eef2ff] hover:text-[#4338ca] disabled:opacity-50"
+                        className="mr-3 rounded-lg p-2 text-[#475467] hover:bg-[#ecfdf5] hover:text-[#0a3528] disabled:opacity-50"
                         title="Chỉnh sửa giá trị"
                       >
                         <Icon name="edit" className="text-[19px]" />
@@ -456,7 +456,7 @@ export function AttributeValuePage() {
             <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                 <h3 className="text-[17px] font-bold text-gray-900 flex items-center gap-2">
-                  <Icon name="edit_note" className="text-[22px] text-[#4f46e5]" />
+                  <Icon name="edit_note" className="text-[22px] text-[#0f4c3a]" />
                   Chỉnh sửa giá trị thuộc tính
                 </h3>
                 <button
@@ -481,7 +481,7 @@ export function AttributeValuePage() {
                     if (e.key === "Enter") void submitEdit();
                     if (e.key === "Escape") setEditingItem(null);
                   }}
-                  className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-3.5 text-[14px] outline-none focus:border-[#4f46e5] focus:ring-2 focus:ring-[#4f46e5]/20"
+                  className="mt-2 h-11 w-full rounded-xl border border-gray-300 bg-white px-3.5 text-[14px] outline-none focus:border-[#0f4c3a] focus:ring-2 focus:ring-[#0f4c3a]/20"
                 />
                 <p className="mt-1.5 text-[12px] text-gray-500">
                   Giá trị cũ: <span className="font-semibold text-gray-800">{editingItem.value}</span>
@@ -501,7 +501,7 @@ export function AttributeValuePage() {
                   type="button"
                   disabled={busy || !editInputValue.trim()}
                   onClick={() => void submitEdit()}
-                  className="rounded-xl bg-[#4f46e5] px-5 py-2.5 text-[13px] font-bold text-white hover:bg-[#4338ca] disabled:opacity-60"
+                  className="rounded-xl bg-[#0f4c3a] px-5 py-2.5 text-[13px] font-bold text-white hover:bg-[#0a3528] disabled:opacity-60"
                 >
                   {busy ? "Đang lưu..." : "Cập nhật giá trị"}
                 </button>
@@ -516,7 +516,7 @@ export function AttributeValuePage() {
             <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                 <h3 className="text-[18px] font-bold text-gray-900 flex items-center gap-2">
-                  <Icon name="upload_file" className="text-[22px] text-[#4f46e5]" />
+                  <Icon name="upload_file" className="text-[22px] text-[#0f4c3a]" />
                   Nhập danh sách giá trị hàng loạt (Bulk Add)
                 </h3>
                 <button
@@ -538,11 +538,11 @@ export function AttributeValuePage() {
                   value={bulkRawText}
                   onChange={(e) => setBulkRawText(e.target.value)}
                   placeholder={`Ví dụ:\nSize S\nSize M\nSize L\nSize XL\nhoặc: 50ml, 100ml, 200ml, 500ml`}
-                  className="mt-2 w-full rounded-xl border border-gray-300 p-3.5 text-[13px] font-mono outline-none focus:border-[#4f46e5] focus:ring-2 focus:ring-[#4f46e5]/20"
+                  className="mt-2 w-full rounded-xl border border-gray-300 p-3.5 text-[13px] font-mono outline-none focus:border-[#0f4c3a] focus:ring-2 focus:ring-[#0f4c3a]/20"
                 />
                 <div className="mt-2 flex items-center justify-between text-[12px] text-gray-500">
                   <span>Hỗ trợ phân tách bằng dấu xuống dòng hoặc dấu phẩy (<code>,</code>).</span>
-                  <span className="font-semibold text-[#4f46e5]">
+                  <span className="font-semibold text-[#0f4c3a]">
                     Đã nhận diện: {bulkParsedItems.length} giá trị
                   </span>
                 </div>
@@ -574,7 +574,7 @@ export function AttributeValuePage() {
                   type="button"
                   disabled={busy || bulkParsedItems.length === 0}
                   onClick={() => void submitBulkAdd()}
-                  className="rounded-xl bg-[#4f46e5] px-6 py-2.5 text-[13px] font-bold text-white hover:bg-[#4338ca] disabled:opacity-60"
+                  className="rounded-xl bg-[#0f4c3a] px-6 py-2.5 text-[13px] font-bold text-white hover:bg-[#0a3528] disabled:opacity-60"
                 >
                   {busy ? "Đang xử lý..." : `Thêm ${bulkParsedItems.length} giá trị`}
                 </button>
@@ -592,7 +592,7 @@ export function AttributeValuePage() {
               </div>
               <h3 className="text-[18px] font-bold text-gray-900">Xóa giá trị thuộc tính</h3>
               <p className="mt-2 text-[14px] text-gray-600">
-                Bạn có chắc chắn muốn xóa giá trị <b className="text-gray-900 font-semibold">“{deletingItem.value}”</b> khỏi thuộc tính <span className="font-semibold text-[#4f46e5]">{attribute?.name}</span>?
+                Bạn có chắc chắn muốn xóa giá trị <b className="text-gray-900 font-semibold">“{deletingItem.value}”</b> khỏi thuộc tính <span className="font-semibold text-[#0f4c3a]">{attribute?.name}</span>?
               </p>
               <div className="mt-6 flex justify-end gap-3">
                 <button

@@ -88,11 +88,11 @@ export function ScrapListPage() {
                 ) : (
                   visible.map((order) => (
                     <tr
-                      className="cursor-pointer border-t border-slate-100 hover:bg-violet-50/50"
+                      className="cursor-pointer border-t border-slate-100 hover:bg-emerald-50/50"
                       key={order.id}
                       onClick={() => navigate(`/inventory/scrap/${order.id}`)}
                     >
-                      <td className="px-4 py-3 font-mono font-semibold text-violet-700">{order.scrapCode}</td>
+                      <td className="px-4 py-3 font-mono font-semibold text-[#0f4c3a]">{order.scrapCode}</td>
                       <td className="px-4 py-3">
                         <div className="font-semibold">{order.variant.template.name}</div>
                         <div className="font-mono text-xs text-slate-500">{order.variant.sku}</div>

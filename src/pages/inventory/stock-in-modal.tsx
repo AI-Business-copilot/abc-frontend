@@ -44,27 +44,29 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
         setSheetCode(detail.code || "");
         if (detail.note) setNote(detail.note);
         setSelectedLines(
-          detail.items.map((it) => ({
+          detail.items.map((it: any) => ({
             variant: {
               id: it.variantId,
               sku: it.sku,
-              barcode: null,
+              barcode: it.barcode ?? null,
               productName: it.productName,
-              imageUrl: null,
-              unit: it.unitOfMeasure || "Cái",
-              hasLotTracking: Boolean(it.lotNumber),
+              imageUrl: it.imageUrl ?? null,
+              unit: it.unit || it.unitOfMeasure || "Cái",
+              hasLotTracking: Boolean(it.hasLotTracking),
               categoryId: null,
               categoryName: null,
               costPrice: it.unitCost,
               basePrice: it.unitCost,
-              onHand: 0,
+              onHand: it.onHand ?? 0,
               attributeText: it.attributeText || "",
             },
             quantity: it.quantity,
             unitCost: it.unitCost,
             lotNumber: it.lotNumber || "",
             manufacturingDate: it.manufacturingDate ? String(it.manufacturingDate).slice(0, 10) : "",
-            expirationDate: it.expirationDate ? String(it.expirationDate).slice(0, 10) : "",
+            expirationDate: it.expirationDate && String(it.expirationDate).slice(0, 4) !== "2099"
+              ? String(it.expirationDate).slice(0, 10)
+              : "",
           })),
         );
       } catch (err: any) {
@@ -250,7 +252,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
           {/* Header Modal */}
           <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 bg-gray-50">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0f4c3a] text-white">
                 <Icon name="inventory" className="text-[22px]" />
               </span>
               <div>
@@ -276,7 +278,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
             <aside className="border-r border-gray-200 bg-[#f9fafb] p-4 flex flex-col overflow-hidden">
               <label className="text-[12.5px] font-bold text-gray-800 uppercase tracking-wide flex items-center justify-between">
                 <span>1. Chọn sản phẩm từ hệ thống</span>
-                <span className="text-[11px] font-normal text-indigo-600">Đã chọn ({selectedLines.length})</span>
+                <span className="text-[11px] font-normal text-[#0f4c3a]">Đã chọn ({selectedLines.length})</span>
               </label>
 
               <div className="mt-2.5 relative">
@@ -288,7 +290,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   placeholder="Gõ tên sản phẩm, mã SKU, barcode..."
-                  className="h-10 w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-[12.5px] text-gray-800 outline-none focus:border-[#4f46e5] focus:ring-1 focus:ring-[#4f46e5]"
+                  className="h-10 w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-[12.5px] text-gray-800 outline-none focus:border-[#0f4c3a] focus:ring-1 focus:ring-[#0f4c3a]"
                 />
               </div>
 
@@ -313,14 +315,14 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                         className={[
                           "p-2.5 rounded-xl border text-[12px] cursor-pointer transition-all flex items-start justify-between gap-2.5",
                           isSelected
-                            ? "border-indigo-300 bg-indigo-50/50"
-                            : "border-gray-200 bg-white hover:border-[#4f46e5] hover:shadow-xs",
+                            ? "border-indigo-300 bg-emerald-50/50"
+                            : "border-gray-200 bg-white hover:border-[#0f4c3a] hover:shadow-xs",
                         ].join(" ")}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-gray-900 truncate">{v.productName}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="font-mono font-semibold text-[#4f46e5] text-[11px] truncate">
+                            <span className="font-mono font-semibold text-[#0f4c3a] text-[11px] truncate">
                               {v.sku}
                             </span>
                             {v.attributeText && (
@@ -339,7 +341,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                           type="button"
                           className={[
                             "w-7 h-7 rounded-lg grid place-items-center text-white shrink-0 mt-1",
-                            isSelected ? "bg-emerald-600" : "bg-[#4f46e5] hover:bg-[#4338ca]",
+                            isSelected ? "bg-emerald-600" : "bg-[#0f4c3a] hover:bg-[#0a3528]",
                           ].join(" ")}
                         >
                           <Icon name={isSelected ? "check" : "add"} className="text-[16px]" />
@@ -354,16 +356,16 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
             {/* CỘT PHẢI: CẤU HÌNH SỐ LƯỢNG, LÔ VÀ ĐỢT HÀNG */}
             <main className="flex flex-col overflow-hidden bg-white">
               {/* Thanh gán nhanh Lô cho toàn bộ đợt đặt hàng */}
-              <div className="p-4 border-b border-gray-200 bg-indigo-50/30">
+              <div className="p-4 border-b border-gray-200 bg-emerald-50/30">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[12.5px] font-bold text-gray-800 flex items-center gap-1.5">
-                    <Icon name="layers" className="text-[17px] text-[#4f46e5]" />
+                    <Icon name="layers" className="text-[17px] text-[#0f4c3a]" />
                     Áp dụng thông tin Lô nhanh cho Đợt đặt hàng (Cùng đợt có nhiều biến thể):
                   </span>
                   <button
                     type="button"
                     onClick={applyBatchLotToAll}
-                    className="px-3 py-1 rounded-lg bg-[#4f46e5] text-white text-[11.5px] font-bold hover:bg-[#4338ca] shadow-xs"
+                    className="px-3 py-1 rounded-lg bg-[#0f4c3a] text-white text-[11.5px] font-bold hover:bg-[#0a3528] shadow-xs"
                   >
                     Gán cho tất cả dòng bên dưới
                   </button>
@@ -375,7 +377,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                       value={batchLotNumber}
                       onChange={(e) => setBatchLotNumber(e.target.value.toUpperCase())}
                       placeholder="VD: LOT-2026-01"
-                      className="h-8 w-full rounded border border-gray-300 bg-white px-2.5 font-mono text-[11.5px] uppercase outline-none focus:border-[#4f46e5]"
+                      className="h-8 w-full rounded border border-gray-300 bg-white px-2.5 font-mono text-[11.5px] uppercase outline-none focus:border-[#0f4c3a]"
                     />
                   </div>
                   <div>
@@ -384,7 +386,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                       type="date"
                       value={batchMfgDate}
                       onChange={(e) => setBatchMfgDate(e.target.value)}
-                      className="h-8 w-full rounded border border-gray-300 bg-white px-2 text-[11.5px] outline-none focus:border-[#4f46e5]"
+                      className="h-8 w-full rounded border border-gray-300 bg-white px-2 text-[11.5px] outline-none focus:border-[#0f4c3a]"
                     />
                   </div>
                   <div>
@@ -393,7 +395,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                       type="date"
                       value={batchExpDate}
                       onChange={(e) => setBatchExpDate(e.target.value)}
-                      className="h-8 w-full rounded border border-gray-300 bg-white px-2 text-[11.5px] outline-none focus:border-[#4f46e5]"
+                      className="h-8 w-full rounded border border-gray-300 bg-white px-2 text-[11.5px] outline-none focus:border-[#0f4c3a]"
                     />
                   </div>
                 </div>
@@ -437,7 +439,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                           <tr key={line.variant.id} className="hover:bg-gray-50/50">
                             <td className="p-2.5">
                               <p className="font-bold text-gray-900 truncate max-w-[200px]">{line.variant.productName}</p>
-                              <div className="flex items-center gap-1 text-[11px] font-mono text-[#4f46e5]">
+                              <div className="flex items-center gap-1 text-[11px] font-mono text-[#0f4c3a]">
                                 <span>{line.variant.sku}</span>
                                 {line.variant.attributeText && (
                                   <span className="text-gray-400 font-sans">• {line.variant.attributeText}</span>
@@ -454,7 +456,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                                 min={1}
                                 value={line.quantity}
                                 onChange={(e) => updateLine(line.variant.id, { quantity: Math.max(1, Number(e.target.value) || 0) })}
-                                className="w-20 rounded border border-gray-300 px-2 py-1 text-right font-bold text-gray-900 outline-none focus:border-[#4f46e5]"
+                                className="w-20 rounded border border-gray-300 px-2 py-1 text-right font-bold text-gray-900 outline-none focus:border-[#0f4c3a]"
                               />
                             </td>
 
@@ -465,7 +467,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                                 step={1000}
                                 value={line.unitCost}
                                 onChange={(e) => updateLine(line.variant.id, { unitCost: Math.max(0, Number(e.target.value) || 0) })}
-                                className="w-24 rounded border border-gray-300 px-2 py-1 text-right text-gray-800 outline-none focus:border-[#4f46e5]"
+                                className="w-24 rounded border border-gray-300 px-2 py-1 text-right text-gray-800 outline-none focus:border-[#0f4c3a]"
                               />
                             </td>
 
@@ -475,7 +477,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                                 value={line.lotNumber}
                                 onChange={(e) => updateLine(line.variant.id, { lotNumber: e.target.value.toUpperCase() })}
                                 placeholder="VD: LÔ-01"
-                                className="w-24 rounded border border-gray-300 px-2 py-1 font-mono text-[11px] uppercase outline-none focus:border-[#4f46e5]"
+                                className="w-24 rounded border border-gray-300 px-2 py-1 font-mono text-[11px] uppercase outline-none focus:border-[#0f4c3a]"
                               />
                             </td>
 
@@ -528,7 +530,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                 {/* Dòng 1: Diễn giải / Căn cứ in phiếu A4 rõ ràng, rộng rãi */}
                 <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
                   <span className="flex items-center gap-1.5 text-[12px] font-bold text-gray-700 shrink-0">
-                    <Icon name="description" className="text-[17px] text-[#4f46e5]" />
+                    <Icon name="description" className="text-[17px] text-[#0f4c3a]" />
                     Diễn giải in phiếu A4:
                   </span>
                   <input
@@ -547,7 +549,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                   <div className="text-[13px]">
                     <span className="text-gray-500">Tổng tồn: <b className="text-gray-900">{totals.qty.toLocaleString("vi-VN")} cái</b></span>
                     <span className="mx-2.5 text-gray-300">•</span>
-                    <span className="text-gray-500">Tổng giá trị: <b className="text-[#4f46e5] font-black">{vnd(totals.val)}</b></span>
+                    <span className="text-gray-500">Tổng giá trị: <b className="text-[#0f4c3a] font-black">{vnd(totals.val)}</b></span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -555,7 +557,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                       type="button"
                       disabled={selectedLines.length === 0}
                       onClick={() => setShowVoucherPreview(true)}
-                      className="h-10 px-3.5 rounded-xl border border-indigo-200 bg-white text-[12.5px] font-bold text-[#4f46e5] hover:bg-indigo-50 shadow-xs flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                      className="h-10 px-3.5 rounded-xl border border-emerald-200 bg-white text-[12.5px] font-bold text-[#0f4c3a] hover:bg-emerald-50 shadow-xs flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
                     >
                       <Icon name="receipt_long" className="text-[18px]" />
                       Xem trước phiếu A4
@@ -574,7 +576,7 @@ export function StockInModal({ onClose, onSuccess, initialSheetId }: StockInModa
                       type="button"
                       disabled={saving || selectedLines.length === 0}
                       onClick={() => void handleSubmit(true)}
-                      className="h-10 px-5 rounded-xl bg-[#4f46e5] text-[13px] font-bold text-white shadow-md hover:bg-[#4338ca] disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
+                      className="h-10 px-5 rounded-xl bg-[#0f4c3a] text-[13px] font-bold text-white shadow-md hover:bg-[#0a3528] disabled:opacity-40 flex items-center gap-1.5 cursor-pointer"
                     >
                       <Icon name="check_circle" className="text-[18px]" />
                       {saving ? "Đang xử lý..." : "Lưu & Áp dụng ngay"}

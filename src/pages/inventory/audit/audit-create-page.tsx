@@ -59,7 +59,7 @@ export function AuditCreatePage() {
         submitLabel={loading ? 'Đang tạo...' : 'Tạo đợt kiểm kê'}
       />
 
-      <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
+      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
         <p className="font-semibold mb-2">Trước khi tạo đợt kiểm kê:</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
           <li>Tạo đợt kiểm kê trước, sau đó thêm dòng ở trang chi tiết</li>

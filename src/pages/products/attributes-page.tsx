@@ -214,17 +214,17 @@ export function AttributesPage() {
       <main className="mx-auto max-w-[1360px] px-6 py-7">
         {/* Banner tiến trình dở dang từ Bước 2 nếu có */}
         {activeTemplateId && (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-[#4f46e5]/40 bg-gradient-to-r from-[#eef2ff] via-white to-[#eef2ff] p-4 shadow-sm">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-[#0f4c3a]/40 bg-gradient-to-r from-[#ecfdf5] via-white to-[#ecfdf5] p-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0f4c3a] text-white">
                 <Icon name="bookmark" className="text-[22px]" />
               </span>
               <div>
-                <p className="text-[12px] font-semibold text-[#4338ca] uppercase tracking-wide">
+                <p className="text-[12px] font-semibold text-[#0a3528] uppercase tracking-wide">
                   Đang có tiến trình tạo sản phẩm dở dang (Bước 2 - Thiết lập thuộc tính)
                 </p>
                 <p className="text-[15px] font-bold text-[#101828]">
-                  Mẫu sản phẩm cha: <span className="text-[#4338ca]">{activeTemplateName}</span>
+                  Mẫu sản phẩm cha: <span className="text-[#0a3528]">{activeTemplateName}</span>
                 </p>
               </div>
             </div>
@@ -232,7 +232,7 @@ export function AttributesPage() {
               <button
                 type="button"
                 onClick={() => navigate(`/products/attributes-selection?templateId=${activeTemplateId}`)}
-                className="flex items-center gap-1.5 rounded-xl bg-[#4f46e5] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#4338ca]"
+                className="flex items-center gap-1.5 rounded-xl bg-[#0f4c3a] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#0a3528]"
               >
                 <span>Quay lại Bước 2 tiếp tục</span>
                 <Icon name="arrow_forward" className="text-[17px]" />
@@ -256,7 +256,7 @@ export function AttributesPage() {
               <span>/</span>
               <span>Sản phẩm</span>
               <span>/</span>
-              <b className="text-[#4338ca]">Thuộc tính</b>
+              <b className="text-[#0a3528]">Thuộc tính</b>
             </nav>
             <h1 className="text-[30px] font-extrabold tracking-tight">Thư Viện Thuộc Tính Dùng Chung</h1>
             <p className="mt-1 text-[14px] text-[#667085]">
@@ -270,7 +270,7 @@ export function AttributesPage() {
             </button>
             <button
               onClick={() => setShowCreate((value) => !value)}
-              className="h-12 rounded-lg bg-[#4f46e5] px-5 text-[14px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] hover:bg-[#4338ca]"
+              className="h-12 rounded-lg bg-[#0f4c3a] px-5 text-[14px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] hover:bg-[#0a3528]"
             >
               ＋ Tạo loại thuộc tính mới
             </button>
@@ -286,7 +286,7 @@ export function AttributesPage() {
 
         {/* Khung tạo loại thuộc tính mới kèm cấu hình ngành */}
         {showCreate && (
-          <section className="mt-5 rounded-xl border border-[#c7cbff] bg-white p-5 shadow-sm">
+          <section className="mt-5 rounded-xl border border-[#a7f3d0] bg-white p-5 shadow-sm">
             <h2 className="text-[16px] font-bold text-[#101828]">Tạo loại thuộc tính mới &amp; Cấu hình ngành hàng</h2>
             <div className="mt-3 grid grid-cols-[1fr_260px_auto_auto] items-center gap-3">
               <input
@@ -296,12 +296,12 @@ export function AttributesPage() {
                 onChange={(event) => setNewName(event.target.value)}
                 onKeyDown={(event) => event.key === "Enter" && void createAttribute()}
                 placeholder="Ví dụ: Kích cỡ, Màu sắc, Dung tích, Chất liệu..."
-                className="h-11 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-4 text-[13px] outline-none focus:border-[#4f46e5] focus:bg-white"
+                className="h-11 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-4 text-[13px] outline-none focus:border-[#0f4c3a] focus:bg-white"
               />
               <select
                 value={newIndustry}
                 onChange={(e) => setNewIndustry(e.target.value as AttributeIndustry)}
-                className="h-11 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-3 text-[13px] font-medium outline-none focus:border-[#4f46e5] focus:bg-white"
+                className="h-11 rounded-lg border border-[#d0d5dd] bg-[#f8f9fc] px-3 text-[13px] font-medium outline-none focus:border-[#0f4c3a] focus:bg-white"
               >
                 {INDUSTRY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -312,7 +312,7 @@ export function AttributesPage() {
               <button
                 disabled={busy}
                 onClick={() => void createAttribute()}
-                className="h-11 rounded-lg bg-[#4f46e5] px-6 text-[13px] font-bold text-white shadow hover:bg-[#4338ca] disabled:opacity-60"
+                className="h-11 rounded-lg bg-[#0f4c3a] px-6 text-[13px] font-bold text-white shadow hover:bg-[#0a3528] disabled:opacity-60"
               >
                 {busy ? "Đang tạo..." : "Tạo thuộc tính"}
               </button>
@@ -329,19 +329,19 @@ export function AttributesPage() {
           </section>
         )}
 
-        <section className="mt-7 flex items-center justify-between rounded-xl bg-[#eef2ff] px-5 py-4">
+        <section className="mt-7 flex items-center justify-between rounded-xl bg-[#ecfdf5] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#4f46e5] text-white">
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#0f4c3a] text-white">
               <Icon name="auto_awesome" className="text-[21px]" />
             </span>
             <div>
               <h2 className="text-[16px] font-bold">Copilot Auto-Matrix Helper</h2>
               <p className="text-[12px] text-[#667085]">
-                Hệ thống đang chuẩn hóa mã SKU theo định dạng <code className="text-[#4338ca] font-mono">[TENANT]-[SLUG]-[VALUE]</code>. Tối ưu sinh mã cho {attributes.length} nhóm thuộc tính.
+                Hệ thống đang chuẩn hóa mã SKU theo định dạng <code className="text-[#0a3528] font-mono">[TENANT]-[SLUG]-[VALUE]</code>. Tối ưu sinh mã cho {attributes.length} nhóm thuộc tính.
               </p>
             </div>
           </div>
-          <Link to="/products" className="rounded-lg bg-white px-4 py-2 text-[12px] font-semibold text-[#4338ca] shadow-sm hover:bg-[#f8f7ff]">
+          <Link to="/products" className="rounded-lg bg-white px-4 py-2 text-[12px] font-semibold text-[#0a3528] shadow-sm hover:bg-[#f8f7ff]">
             Cấu hình tiền tố SKU →
           </Link>
         </section>
@@ -354,7 +354,7 @@ export function AttributesPage() {
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder="Tìm tên thuộc tính, mã nhận diện (slug)..."
-              className="h-11 w-full rounded-lg border-0 bg-[#eef3ff] pl-10 pr-3 text-[13px] outline-none focus:ring-2 focus:ring-[#c7cbff]"
+              className="h-11 w-full rounded-lg border-0 bg-[#ecfdf5] pl-10 pr-3 text-[13px] outline-none focus:ring-2 focus:ring-[#a7f3d0]"
             />
           </div>
           <div className="ml-auto flex flex-wrap gap-2">
@@ -364,7 +364,7 @@ export function AttributesPage() {
                 onClick={() => setFilter(tab.key)}
                 className={[
                   "rounded-lg px-4 py-2.5 text-[12px] font-semibold transition-colors",
-                  filter === tab.key ? "bg-[#4f46e5] text-white shadow-sm" : "bg-[#e7edfa] text-[#667085] hover:bg-[#dde4f5]",
+                  filter === tab.key ? "bg-[#0f4c3a] text-white shadow-sm" : "bg-[#e7edfa] text-[#667085] hover:bg-[#dde4f5]",
                 ].join(" ")}
               >
                 {tab.label} ({tab.count})
@@ -384,15 +384,15 @@ export function AttributesPage() {
               const currentIndustry = industryMap[attribute.id] || getAttributeIndustry(attribute.id, attribute.name);
               const values = attribute.attributeValues;
               return (
-                <article key={attribute.id} className="rounded-xl bg-white p-5 shadow-sm border border-[#eef0f6] hover:border-[#c7cbff] transition-all">
+                <article key={attribute.id} className="rounded-xl bg-white p-5 shadow-sm border border-[#eef0f6] hover:border-[#a7f3d0] transition-all">
                   <div className="flex items-start gap-3">
-                    <span className="grid h-12 w-12 place-items-center rounded-lg bg-[#eaf0ff] text-[#4338ca]">
+                    <span className="grid h-12 w-12 place-items-center rounded-lg bg-[#eaf0ff] text-[#0a3528]">
                       <Icon name={iconOf(attribute.name)} className="text-[23px]" />
                     </span>
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="text-[17px] font-bold">{attribute.name}</h2>
-                        <code className="rounded bg-[#eef0ff] px-2 py-1 text-[12px] text-[#4338ca]">{slugify(attribute.name)}</code>
+                        <code className="rounded bg-[#ecfdf5] px-2 py-1 text-[12px] text-[#0a3528]">{slugify(attribute.name)}</code>
                         <span className="rounded-full bg-[#d1fadf] px-2 py-0.5 text-[10px] font-semibold text-[#067647]">● ACTIVE</span>
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-[#667085]">
@@ -404,7 +404,7 @@ export function AttributesPage() {
                         <select
                           value={currentIndustry}
                           onChange={(e) => handleIndustryChange(attribute.id, e.target.value as AttributeIndustry)}
-                          className="rounded-md border border-[#d0d5dd] bg-[#f8f9fc] px-2 py-0.5 text-[11.5px] font-semibold text-[#344054] outline-none focus:border-[#4f46e5]"
+                          className="rounded-md border border-[#d0d5dd] bg-[#f8f9fc] px-2 py-0.5 text-[11.5px] font-semibold text-[#344054] outline-none focus:border-[#0f4c3a]"
                         >
                           {INDUSTRY_OPTIONS.map((opt) => (
                             <option key={opt.value} value={opt.value}>
@@ -423,7 +423,7 @@ export function AttributesPage() {
                       <Link
                         to={`/products/attributes/${attribute.id}`}
                         title="Quản lý giá trị thuộc tính"
-                        className="flex items-center gap-1 rounded-lg bg-[#eef3ff] px-3 py-1.5 text-[12px] font-semibold text-[#4338ca] hover:bg-[#e0e7ff]"
+                        className="flex items-center gap-1 rounded-lg bg-[#ecfdf5] px-3 py-1.5 text-[12px] font-semibold text-[#0a3528] hover:bg-[#e0e7ff]"
                       >
                         <Icon name="edit" className="text-[16px]" />
                         <span>Sửa giá trị</span>
@@ -438,7 +438,7 @@ export function AttributesPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-4 rounded-lg bg-[#eef3ff] px-4 py-3">
+                  <div className="mt-4 rounded-lg bg-[#ecfdf5] px-4 py-3">
                     <span className="mr-3 text-[11px] font-semibold uppercase text-[#667085]">{values.length} giá trị:</span>
                     {values.slice(0, 5).map((value) => (
                       <span key={value.id} className="mr-2 inline-block rounded-md bg-white px-3 py-1.5 font-mono text-[12px] font-semibold text-[#344054] shadow-sm">
@@ -453,9 +453,9 @@ export function AttributesPage() {
             })}
           </div>
 
-          <aside className="h-fit rounded-xl bg-[#eef2ff] p-5">
+          <aside className="h-fit rounded-xl bg-[#ecfdf5] p-5">
             <h2 className="text-[16px] font-bold">
-              <Icon name="lightbulb" className="mr-2 align-middle text-[21px] text-[#4338ca]" />
+              <Icon name="lightbulb" className="mr-2 align-middle text-[21px] text-[#0a3528]" />
               Cấu hình Ngành hàng cho Thuộc tính
             </h2>
             <p className="mt-3 text-[13px] leading-[1.6] text-[#667085]">

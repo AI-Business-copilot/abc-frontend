@@ -62,7 +62,7 @@ export function DiscrepancyForm({
         disabled={disabled}
         placeholder="Ví dụ: phát hiện 1 sản phẩm bị móp góc, thiếu 2 tem..."
         maxLength={MAX_REASON_LENGTH}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 resize-none"
+        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#0f4c3a] focus:outline-none focus:ring-1 focus:ring-[#0f4c3a] disabled:bg-gray-100 disabled:text-gray-500 resize-none"
         rows={3}
       />
 

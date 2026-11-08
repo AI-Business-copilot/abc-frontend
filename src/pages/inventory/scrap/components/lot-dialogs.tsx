@@ -76,7 +76,7 @@ export function QuarantineDialog({
         Ghi chú (không bắt buộc)
       </label>
       <textarea
-        className="min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+        className="min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100"
         id="quarantine-note"
         maxLength={500}
         onChange={(event) => setNote(event.target.value)}

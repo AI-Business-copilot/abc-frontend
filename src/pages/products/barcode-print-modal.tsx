@@ -82,7 +82,7 @@ export function BarcodePrintModal({
           {/* Header Modal */}
           <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 bg-gray-50">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0f4c3a] text-white">
                 <Icon name="print" className="text-[22px]" />
               </span>
               <div>
@@ -111,13 +111,13 @@ export function BarcodePrintModal({
                   1. Chọn Máy in &amp; Khổ tem decal
                 </label>
                 <div className="mt-2 space-y-2">
-                  <label className={["flex items-center gap-2 rounded-lg border p-2.5 text-[12.5px] font-medium cursor-pointer transition-colors", labelSize === "50x30" ? "border-[#4f46e5] bg-indigo-50/50 text-[#4f46e5]" : "border-gray-200 bg-white hover:border-gray-300"].join(" ")}>
+                  <label className={["flex items-center gap-2 rounded-lg border p-2.5 text-[12.5px] font-medium cursor-pointer transition-colors", labelSize === "50x30" ? "border-[#0f4c3a] bg-emerald-50/50 text-[#0f4c3a]" : "border-gray-200 bg-white hover:border-gray-300"].join(" ")}>
                     <input
                       type="radio"
                       name="labelsize"
                       checked={labelSize === "50x30"}
                       onChange={() => setLabelSize("50x30")}
-                      className="accent-[#4f46e5]"
+                      className="accent-[#0f4c3a]"
                     />
                     <div>
                       <b className="block">Decal cuộn: 50mm × 30mm</b>
@@ -125,13 +125,13 @@ export function BarcodePrintModal({
                     </div>
                   </label>
 
-                  <label className={["flex items-center gap-2 rounded-lg border p-2.5 text-[12.5px] font-medium cursor-pointer transition-colors", labelSize === "35x22" ? "border-[#4f46e5] bg-indigo-50/50 text-[#4f46e5]" : "border-gray-200 bg-white hover:border-gray-300"].join(" ")}>
+                  <label className={["flex items-center gap-2 rounded-lg border p-2.5 text-[12.5px] font-medium cursor-pointer transition-colors", labelSize === "35x22" ? "border-[#0f4c3a] bg-emerald-50/50 text-[#0f4c3a]" : "border-gray-200 bg-white hover:border-gray-300"].join(" ")}>
                     <input
                       type="radio"
                       name="labelsize"
                       checked={labelSize === "35x22"}
                       onChange={() => setLabelSize("35x22")}
-                      className="accent-[#4f46e5]"
+                      className="accent-[#0f4c3a]"
                     />
                     <div>
                       <b className="block">Decal cuộn: 35mm × 22mm</b>
@@ -139,13 +139,13 @@ export function BarcodePrintModal({
                     </div>
                   </label>
 
-                  <label className={["flex items-center gap-2 rounded-lg border p-2.5 text-[12.5px] font-medium cursor-pointer transition-colors", labelSize === "a4" ? "border-[#4f46e5] bg-indigo-50/50 text-[#4f46e5]" : "border-gray-200 bg-white hover:border-gray-300"].join(" ")}>
+                  <label className={["flex items-center gap-2 rounded-lg border p-2.5 text-[12.5px] font-medium cursor-pointer transition-colors", labelSize === "a4" ? "border-[#0f4c3a] bg-emerald-50/50 text-[#0f4c3a]" : "border-gray-200 bg-white hover:border-gray-300"].join(" ")}>
                     <input
                       type="radio"
                       name="labelsize"
                       checked={labelSize === "a4"}
                       onChange={() => setLabelSize("a4")}
-                      className="accent-[#4f46e5]"
+                      className="accent-[#0f4c3a]"
                     />
                     <div>
                       <b className="block">Tờ Decal A4 (Tomy 145 / Grid)</b>
@@ -163,7 +163,7 @@ export function BarcodePrintModal({
                           value="landscape"
                           checked={a4Orientation === "landscape"}
                           onChange={() => setA4Orientation("landscape")}
-                          className="accent-[#4f46e5]"
+                          className="accent-[#0f4c3a]"
                         />
                         <span>Khổ ngang (Landscape - 5 cột)</span>
                       </label>
@@ -174,7 +174,7 @@ export function BarcodePrintModal({
                           value="portrait"
                           checked={a4Orientation === "portrait"}
                           onChange={() => setA4Orientation("portrait")}
-                          className="accent-[#4f46e5]"
+                          className="accent-[#0f4c3a]"
                         />
                         <span>Khổ dọc (4 cột)</span>
                       </label>
@@ -193,7 +193,7 @@ export function BarcodePrintModal({
                       type="checkbox"
                       checked={showShopName}
                       onChange={(e) => setShowShopName(e.target.checked)}
-                      className="rounded accent-[#4f46e5]"
+                      className="rounded accent-[#0f4c3a]"
                     />
                     <span>Hiện tên doanh nghiệp ({shopName})</span>
                   </label>
@@ -202,7 +202,7 @@ export function BarcodePrintModal({
                       type="checkbox"
                       checked={showSku}
                       onChange={(e) => setShowSku(e.target.checked)}
-                      className="rounded accent-[#4f46e5]"
+                      className="rounded accent-[#0f4c3a]"
                     />
                     <span>Hiện mã SKU nội bộ</span>
                   </label>
@@ -211,7 +211,7 @@ export function BarcodePrintModal({
                       type="checkbox"
                       checked={showPrice}
                       onChange={(e) => setShowPrice(e.target.checked)}
-                      className="rounded accent-[#4f46e5]"
+                      className="rounded accent-[#0f4c3a]"
                     />
                     <span>Hiện giá bán lẻ niêm yết (VNĐ)</span>
                   </label>
@@ -261,7 +261,7 @@ export function BarcodePrintModal({
                         max={500}
                         value={quantities[v.id] ?? 1}
                         onChange={(e) => updateQuantity(v.id, Number(e.target.value))}
-                        className="w-14 rounded border border-gray-300 px-1.5 py-1 text-center font-bold text-[#4f46e5] outline-none"
+                        className="w-14 rounded border border-gray-300 px-1.5 py-1 text-center font-bold text-[#0f4c3a] outline-none"
                       />
                     </div>
                   ))}
@@ -273,7 +273,7 @@ export function BarcodePrintModal({
                   type="button"
                   disabled={printableItems.length === 0}
                   onClick={handlePrint}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4f46e5] py-3.5 text-[14px] font-bold text-white shadow-lg shadow-indigo-200 hover:bg-[#4338ca] disabled:opacity-50 transition-all cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0f4c3a] py-3.5 text-[14px] font-bold text-white shadow-lg shadow-emerald-200 hover:bg-[#0a3528] disabled:opacity-50 transition-all cursor-pointer"
                 >
                   <Icon name="print" className="text-[20px]" />
                   In {printableItems.length} con tem ngay
@@ -290,7 +290,7 @@ export function BarcodePrintModal({
                 <span className="font-medium">
                   Xem trước: Tổng cộng <b>{printableItems.length}</b> con tem
                 </span>
-                <span className="rounded bg-indigo-50 px-2.5 py-1 text-[12px] font-bold text-[#4f46e5]">
+                <span className="rounded bg-emerald-50 px-2.5 py-1 text-[12px] font-bold text-[#0f4c3a]">
                   {labelSize === "50x30" ? "Cuộn 50 × 30 mm" : labelSize === "35x22" ? "Cuộn 35 × 22 mm" : "Tờ A4 Tomy Grid"}
                 </span>
               </div>

@@ -95,17 +95,19 @@ export function InventoryPage() {
   const rows = data?.items || [];
 
   const voucherItems: VoucherItem[] =
-    activeSheet?.items.map((it) => ({
+    activeSheet?.items.map((it: any) => ({
       id: it.id,
       sku: it.sku,
       name: it.productName || "Sản phẩm",
       attributeText: it.attributeText || "Mặc định",
-      unit: it.unitOfMeasure || "Cái",
+      unit: it.unit || it.unitOfMeasure || "Cái",
       cost: Number(it.unitCost) || 0,
       quantity: Number(it.quantity) || 0,
       lotNumber: it.lotNumber || undefined,
-      manufacturingDate: it.manufacturingDate ? it.manufacturingDate.slice(0, 10) : undefined,
-      expirationDate: it.expirationDate ? it.expirationDate.slice(0, 10) : undefined,
+      manufacturingDate: it.manufacturingDate ? String(it.manufacturingDate).slice(0, 10) : undefined,
+      expirationDate: it.expirationDate && String(it.expirationDate).slice(0, 4) !== "2099"
+        ? String(it.expirationDate).slice(0, 10)
+        : undefined,
     })) || [];
 
   return (
@@ -117,7 +119,7 @@ export function InventoryPage() {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold tracking-wider text-[#4f46e5] uppercase bg-[#eef0ff] px-2 py-0.5 rounded">
+              <span className="text-[11px] font-bold tracking-wider text-[#0f4c3a] uppercase bg-[#ecfdf5] px-2 py-0.5 rounded">
                 Chứng từ kiểm kê & nạp tồn
               </span>
               <span className="text-[12px] text-[#667085]">Lưu trữ &amp; In ấn chuẩn A4</span>
@@ -131,7 +133,7 @@ export function InventoryPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowStockInModal(true)}
-              className="rounded-lg bg-[#4f46e5] px-5 py-2.5 text-[13.5px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.25)] hover:bg-[#4338ca] transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="rounded-lg bg-[#0f4c3a] px-5 py-2.5 text-[13.5px] font-bold text-white shadow-[0_4px_12px_rgba(79,70,229,0.25)] hover:bg-[#0a3528] transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Icon name="add_circle" className="text-[18px]" />
               Nạp tồn kho mới
@@ -144,7 +146,7 @@ export function InventoryPage() {
           <div className="rounded-xl bg-white p-5 border border-gray-100 shadow-xs">
             <div className="flex justify-between text-[#667085]">
               <span className="text-[13px] font-medium">Tổng số phiếu</span>
-              <span className="rounded-lg bg-[#e6efff] p-2 text-[#4338ca]">
+              <span className="rounded-lg bg-[#e6efff] p-2 text-[#0a3528]">
                 <Icon name="receipt_long" className="text-[20px]" />
               </span>
             </div>
@@ -168,11 +170,11 @@ export function InventoryPage() {
           <div className="rounded-xl bg-white p-5 border border-gray-100 shadow-xs">
             <div className="flex justify-between text-[#667085]">
               <span className="text-[13px] font-medium">Tổng giá trị vốn nạp</span>
-              <span className="rounded-lg bg-[#eef4ff] p-2 text-[#4f46e5]">
+              <span className="rounded-lg bg-[#ecfdf5] p-2 text-[#0f4c3a]">
                 <Icon name="account_balance_wallet" className="text-[20px]" />
               </span>
             </div>
-            <p className="mt-3 text-[24px] font-extrabold text-[#4f46e5]">
+            <p className="mt-3 text-[24px] font-extrabold text-[#0f4c3a]">
               {vnd(stats.totalOpeningValue)}
             </p>
           </div>
@@ -198,14 +200,14 @@ export function InventoryPage() {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="Tìm kiếm mã phiếu (OSTK-...), ghi chú, người lập..."
-              className="h-10 w-full rounded-lg border border-gray-200 bg-[#f9fafb] pl-10 pr-4 text-[13px] outline-none focus:border-[#4f46e5] focus:bg-white transition-colors"
+              className="h-10 w-full rounded-lg border border-gray-200 bg-[#f9fafb] pl-10 pr-4 text-[13px] outline-none focus:border-[#0f4c3a] focus:bg-white transition-colors"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 rounded-lg border border-gray-200 bg-[#f9fafb] px-3.5 text-[13px] text-gray-700 outline-none focus:border-[#4f46e5]"
+            className="h-10 rounded-lg border border-gray-200 bg-[#f9fafb] px-3.5 text-[13px] text-gray-700 outline-none focus:border-[#0f4c3a]"
           >
             <option value="">Tất cả trạng thái</option>
             <option value="APPLIED">Đã áp dụng vào kho (APPLIED)</option>
@@ -225,7 +227,7 @@ export function InventoryPage() {
         <section className="mt-4 overflow-hidden rounded-xl bg-white border border-gray-100 shadow-xs">
           {loading ? (
             <div className="py-16 text-center text-[#667085] text-[13.5px]">
-              <Icon name="progress_activity" className="animate-spin text-[24px] text-[#4f46e5] mb-2 inline-block" />
+              <Icon name="progress_activity" className="animate-spin text-[24px] text-[#0f4c3a] mb-2 inline-block" />
               <div>Đang tải danh sách phiếu kiểm kê...</div>
             </div>
           ) : error ? (
@@ -267,7 +269,7 @@ export function InventoryPage() {
                               void viewSheet(row.id);
                             }
                           }}
-                          className="font-mono font-bold text-[#4f46e5] hover:underline flex items-center gap-1.5"
+                          className="font-mono font-bold text-[#0f4c3a] hover:underline flex items-center gap-1.5"
                           title={row.status === "DRAFT" ? "Bấm để tiếp tục sửa và duyệt bản nháp này" : "Bấm để xem và in phiếu"}
                         >
                           <Icon name="receipt" className="text-[16px]" />
@@ -290,7 +292,7 @@ export function InventoryPage() {
                       <td className="px-4 py-3.5 text-right font-bold text-gray-900">
                         {row.totalQty.toLocaleString("vi-VN")}
                       </td>
-                      <td className="px-4 py-3.5 text-right font-bold text-[#4f46e5]">
+                      <td className="px-4 py-3.5 text-right font-bold text-[#0f4c3a]">
                         {vnd(row.totalValue)}
                       </td>
                       <td className="px-4 py-3.5 text-center">
@@ -325,7 +327,7 @@ export function InventoryPage() {
                                   setEditingDraftId(row.id);
                                   setShowStockInModal(true);
                                 }}
-                                className="rounded-lg bg-[#4f46e5] px-3 py-1.5 text-[12px] font-bold text-white shadow-xs hover:bg-[#4338ca] transition-colors flex items-center gap-1 cursor-pointer"
+                                className="rounded-lg bg-[#0f4c3a] px-3 py-1.5 text-[12px] font-bold text-white shadow-xs hover:bg-[#0a3528] transition-colors flex items-center gap-1 cursor-pointer"
                                 title="Mở để tiếp tục chỉnh sửa và duyệt áp dụng phiếu"
                               >
                                 <Icon name="edit_document" className="text-[15px]" />
@@ -344,7 +346,7 @@ export function InventoryPage() {
                             <button
                               type="button"
                               onClick={() => void viewSheet(row.id)}
-                              className="rounded-lg border border-indigo-200 bg-indigo-50/60 px-3 py-1.5 text-[12px] font-bold text-[#4f46e5] hover:bg-indigo-100 transition-colors flex items-center gap-1"
+                              className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-1.5 text-[12px] font-bold text-[#0f4c3a] hover:bg-indigo-100 transition-colors flex items-center gap-1"
                             >
                               <Icon name="visibility" className="text-[15px]" />
                               Xem &amp; In phiếu
@@ -365,7 +367,7 @@ export function InventoryPage() {
       {sheetLoading && (
         <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-xs grid place-items-center">
           <div className="rounded-xl bg-white p-6 shadow-xl flex items-center gap-3">
-            <Icon name="progress_activity" className="animate-spin text-[24px] text-[#4f46e5]" />
+            <Icon name="progress_activity" className="animate-spin text-[24px] text-[#0f4c3a]" />
             <span className="text-[13.5px] font-semibold text-gray-800">Đang nạp chi tiết phiếu kiểm kê...</span>
           </div>
         </div>
@@ -415,7 +417,7 @@ export function InventoryPage() {
                 type="button"
                 disabled={applyBusy}
                 onClick={() => void confirmApplySheet()}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#4f46e5] px-4 py-2 text-[13px] font-bold text-white shadow-sm hover:bg-[#4338ca] disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#0f4c3a] px-4 py-2 text-[13px] font-bold text-white shadow-sm hover:bg-[#0a3528] disabled:opacity-50"
               >
                 {applyBusy ? (
                   <>

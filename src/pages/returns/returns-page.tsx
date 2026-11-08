@@ -45,7 +45,7 @@ export function ReturnsPage() {
     <div className="purchase-workspace">
       <header className="catalog-header">
         <div className="catalog-title">
-          <RotateCcw size={22} className="text-indigo-600" />
+          <RotateCcw size={22} className="text-[#0f4c3a]" />
           <h1>Đổi trả hàng (F05 &amp; F06)</h1>
         </div>
       </header>

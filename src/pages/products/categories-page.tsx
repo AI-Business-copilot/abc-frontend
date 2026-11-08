@@ -126,7 +126,7 @@ function CategoryTable({
                   checked={allChecked}
                   onChange={onToggleAll}
                   aria-label="Chọn tất cả danh mục"
-                  className="accent-[#4f46e5] w-3.5 h-3.5"
+                  className="accent-[#0f4c3a] w-3.5 h-3.5"
                 />
               </th>
               <th className="text-left px-2 py-3 font-semibold">Mã &amp; tên danh mục (cấu trúc phân cấp)</th>
@@ -160,7 +160,7 @@ function CategoryTable({
                       checked={selected.has(node.id)}
                       onChange={() => onToggleRow(node.id)}
                       aria-label={`Chọn ${node.name}`}
-                      className="accent-[#4f46e5] w-3.5 h-3.5 mt-1"
+                      className="accent-[#0f4c3a] w-3.5 h-3.5 mt-1"
                     />
                   </td>
 
@@ -188,7 +188,7 @@ function CategoryTable({
                         <div className="flex items-center gap-1.5">
                           <span className={isChild ? "font-medium text-[#344054]" : "font-semibold"}>{node.name}</span>
                           {!isChild && node.children && node.children.length > 0 && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-50 border border-indigo-100 text-[#4f46e5] font-bold">
+                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-50 border border-emerald-100 text-[#0f4c3a] font-bold">
                               {node.children.length} con
                             </span>
                           )}
@@ -631,14 +631,14 @@ export default function CategoriesPage() {
                   value={form.name}
                   onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
                   placeholder="Ví dụ: Áo Khoác Bomber Outerwear"
-                  className="mt-1.5 h-11 w-full rounded-lg bg-[#eef4fb] px-3.5 text-[13px] outline-none focus:ring-2 focus:ring-[#c7cbff] placeholder:text-[#98a2b3]"
+                  className="mt-1.5 h-11 w-full rounded-lg bg-[#eef4fb] px-3.5 text-[13px] outline-none focus:ring-2 focus:ring-[#a7f3d0] placeholder:text-[#98a2b3]"
                 />
               </div>
 
               <div className="rounded-xl border border-[#e4e7ec] bg-[#f9fafb] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-1.5 text-[12.5px] font-semibold">
-                    <Icon name="account_tree" className="text-[17px] text-[#4f46e5]" />
+                    <Icon name="account_tree" className="text-[17px] text-[#0f4c3a]" />
                     Phân cấp danh mục (Hierarchy Level) <span className="text-[#f04438]">*</span>
                   </span>
                   <span className="text-[10.5px] text-[#98a2b3]">2 Cấp chuẩn ERP</span>
@@ -686,7 +686,7 @@ export default function CategoriesPage() {
                       id="category-parent"
                       value={form.parentId}
                       onChange={(event) => setForm((prev) => ({ ...prev, parentId: event.target.value }))}
-                      className="mt-1.5 h-10 w-full sm:w-[320px] rounded-lg border border-[#d0d5dd] bg-white px-3 text-[12.5px] outline-none focus:ring-2 focus:ring-[#c7cbff]"
+                      className="mt-1.5 h-10 w-full sm:w-[320px] rounded-lg border border-[#d0d5dd] bg-white px-3 text-[12.5px] outline-none focus:ring-2 focus:ring-[#a7f3d0]"
                     >
                       <option value="">Chọn danh mục cha</option>
                       {parents.map((parent) => (
@@ -709,7 +709,7 @@ export default function CategoriesPage() {
                   value={form.description}
                   onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
                   placeholder="Nhập định hướng nhóm mặt hàng, vị trí lưu kho khu vực, hoặc đặc tính kỹ thuật..."
-                  className="mt-1.5 w-full rounded-lg bg-[#eef4fb] px-3.5 py-3 text-[13px] outline-none resize-y focus:ring-2 focus:ring-[#c7cbff] placeholder:text-[#98a2b3]"
+                  className="mt-1.5 w-full rounded-lg bg-[#eef4fb] px-3.5 py-3 text-[13px] outline-none resize-y focus:ring-2 focus:ring-[#a7f3d0] placeholder:text-[#98a2b3]"
                 />
               </div>
 
@@ -760,7 +760,7 @@ export default function CategoriesPage() {
             <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
               Bạn có chắc chắn muốn xóa danh mục <b className="text-gray-900 font-semibold">“{deletingCategory.name}”</b> ({deletingCategory.code})?
             </p>
-            <div className="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 p-3 text-[12px] text-indigo-900 leading-relaxed">
+            <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-[12px] text-indigo-900 leading-relaxed">
               💡 <b>Tự động hỗ trợ gán lại đồng loạt:</b> Nếu danh mục này đang gán cho các sản phẩm, hệ thống sẽ tự động gỡ bỏ danh mục (chuyển về trạng thái <i>Chưa phân loại</i>) để bạn dễ dàng gán lại danh mục mới cho toàn bộ sản phẩm ở trang Sản phẩm.
             </div>
             <div className="mt-6 flex justify-end gap-3">
