@@ -8,9 +8,10 @@ interface ModalProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  size?: "default" | "wide";
 }
 
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({ open, title, onClose, children, size = "default" }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -24,7 +25,7 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
   return (
     <dialog
       aria-labelledby={titleId}
-      className="m-auto w-[calc(100%-2rem)] max-w-xl rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/40"
+      className={`m-auto w-[calc(100%-2rem)] ${size === "wide" ? "max-w-4xl" : "max-w-xl"} rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/40`}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
