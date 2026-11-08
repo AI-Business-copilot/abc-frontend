@@ -4,6 +4,27 @@ import type { AuthProfile } from "@/types/auth.types";
 
 const callbackUrl = `${window.location.origin}/auth/callback`;
 
+export function getAuthErrorMessage(
+  error: unknown,
+  fallback = "Không thể đăng nhập.",
+) {
+  if (!(error instanceof Error)) return fallback;
+
+  const authError = error as Error & { code?: string };
+  switch (authError.code) {
+    case "email_not_confirmed":
+      return "Email chưa được xác nhận. Hãy mở email xác nhận tài khoản rồi thử đăng nhập lại.";
+    case "invalid_credentials":
+      return "Email hoặc mật khẩu không đúng.";
+    case "user_not_found":
+      return "Không tìm thấy tài khoản với email này.";
+    case "user_banned":
+      return "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.";
+    default:
+      return error.message || fallback;
+  }
+}
+
 export async function signInWithGoogle() {
   requireSupabaseConfig();
   const { error } = await supabase.auth.signInWithOAuth({
