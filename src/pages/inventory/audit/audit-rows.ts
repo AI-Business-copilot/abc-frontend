@@ -59,7 +59,7 @@ export function useStaffMembers() {
       try {
         const data = await auditApi.getMembers();
         if (cancelled) return;
-        setMembers(data.members.filter((m) => m.role === 'STAFF' && m.status === 'ACTIVE'));
+        setMembers(data.members.filter((m) => m.roleName === 'Nhân viên cửa hàng' && m.status === 'ACTIVE'));
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Không tải được danh sách nhân viên');
