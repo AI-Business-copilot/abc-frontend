@@ -28,6 +28,8 @@ export function OwnerReviewPanel({
   const [rejecting, setRejecting] = useState(false);
   const [reasonCode, setReasonCode] = useState<RejectionReasonCode | "">("");
   const [note, setNote] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelNote, setCancelNote] = useState("");
 
   const noPhotos = order.images.length === 0;
   const loss = Number(order.unitCost) * order.scrapQty;
@@ -71,6 +73,21 @@ export function OwnerReviewPanel({
     }
   };
 
+  const cancel = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await scrapApi.cancelScrapOrder(order.id, cancelNote);
+      setCancelling(false);
+      onFinished("Đã hủy phiếu. Lô hàng vẫn đang được cách ly.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể hủy phiếu hủy.");
+      await onReload();
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
       <h3 className="font-semibold text-slate-900">Duyệt phiếu hủy</h3>
@@ -95,6 +112,17 @@ export function OwnerReviewPanel({
           variant="destructive"
         >
           Từ chối
+        </Button>
+        <Button
+          disabled={busy}
+          onClick={() => {
+            setError(null);
+            setCancelling(true);
+          }}
+          type="button"
+          variant="outline"
+        >
+          Hủy phiếu
         </Button>
       </div>
 
@@ -130,6 +158,32 @@ export function OwnerReviewPanel({
             <Button disabled={busy} onClick={() => setRejecting(false)} type="button" variant="outline">Quay lại</Button>
             <Button disabled={busy} onClick={() => void reject()} type="button" variant="destructive">
               {busy && <Spinner className="h-4 w-4" />}Xác nhận từ chối
+            </Button>
+          </div>
+        </Modal>
+      )}
+
+      {cancelling && (
+        <Modal busy={busy} onClose={() => setCancelling(false)} title="Hủy phiếu hủy">
+          {error && <Alert className="mb-3" variant="destructive">{error}</Alert>}
+          <p className="text-sm text-slate-600">
+            Phiếu sẽ bị đóng mà không duyệt và không từ chối. Tồn kho không thay đổi và lô hàng vẫn
+            được cách ly, để nhân viên tạo phiếu mới nếu cần.
+          </p>
+          <label className="mb-1 mt-3 block text-sm font-medium text-slate-700" htmlFor="cancel-note">
+            Ghi chú (không bắt buộc, tối đa 500 ký tự)
+          </label>
+          <textarea
+            className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100"
+            id="cancel-note"
+            maxLength={500}
+            onChange={(event) => setCancelNote(event.target.value)}
+            value={cancelNote}
+          />
+          <div className="mt-5 flex justify-end gap-2">
+            <Button disabled={busy} onClick={() => setCancelling(false)} type="button" variant="outline">Quay lại</Button>
+            <Button disabled={busy} onClick={() => void cancel()} type="button" variant="destructive">
+              {busy && <Spinner className="h-4 w-4" />}Xác nhận hủy phiếu
             </Button>
           </div>
         </Modal>

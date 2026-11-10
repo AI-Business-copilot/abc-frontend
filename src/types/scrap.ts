@@ -97,6 +97,8 @@ export interface ScrapOrder {
   rejectedAt: string | null;
   rejectionReasonCode: RejectionReasonCode | null;
   rejectionNote: string | null;
+  cancelledAt: string | null;
+  cancelledNote: string | null;
   variant: { id: string; sku: string; costPrice: string; template: { name: string } };
   lotItem: {
     id: string;
@@ -108,6 +110,7 @@ export interface ScrapOrder {
   createdByUser: ScrapUser | null;
   approvedByUser: ScrapUser | null;
   rejectedByUser: ScrapUser | null;
+  cancelledByUser: ScrapUser | null;
 }
 
 export interface ScrapOrderListItem extends ScrapOrder {
@@ -140,6 +143,7 @@ export interface ScrapStatistics {
   pendingCount: number;
   completedCount: number;
   rejectedCount: number;
+  cancelledCount: number;
   totalLossValue: number;
   bySource: { DAMAGED_STOCK: number; SELLABLE_STOCK: number };
 }
