@@ -47,7 +47,7 @@ export function rowsToAssignments(rows: AuditRowDraft[]): AuditItemAssignment[] 
   }));
 }
 
-/** Active STAFF members of the current business. */
+/** Active members of the current business that an audit row can be assigned to. */
 export function useStaffMembers() {
   const [members, setMembers] = useState<BusinessMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +59,8 @@ export function useStaffMembers() {
       try {
         const data = await auditApi.getMembers();
         if (cancelled) return;
-        setMembers(data.members.filter((m) => m.roleName === 'Nhân viên cửa hàng' && m.status === 'ACTIVE'));
+        // The backend accepts any active non-owner member as an assignee, whatever the role.
+        setMembers(data.members.filter((m) => m.status === 'ACTIVE' && m.role !== 'OWNER'));
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Không tải được danh sách nhân viên');

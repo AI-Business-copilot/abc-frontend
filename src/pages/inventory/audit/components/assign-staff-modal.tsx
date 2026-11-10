@@ -24,7 +24,7 @@ interface AssignStaffModalProps {
   onAssignSuccess?: () => void;
 }
 
-/** Owner dialog: add employee + SKU (+ lot on a re-audit) rows, and reassign existing items. */
+/** Owner dialog: add employee + SKU (+ lot on a re-audit) rows to an audit. */
 export function AssignStaffModal({
   auditId,
   auditType,
@@ -36,9 +36,6 @@ export function AssignStaffModal({
   const [rows, setRows] = useState<AuditRowDraft[]>(() => [emptyRow()]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [reassigningId, setReassigningId] = useState<string | null>(null);
-
-  const reassignable = existingItems.filter((item) => item.itemStatus === 'IN_PROGRESS');
 
   const handleAdd = async () => {
     const rowsError = validateRows(rows, auditType);
@@ -66,20 +63,6 @@ export function AssignStaffModal({
       setError(err instanceof Error ? err.message : 'Không thêm được dòng kiểm kê');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleReassign = async (itemId: string, userId: string) => {
-    if (!userId) return;
-    try {
-      setReassigningId(itemId);
-      setError(null);
-      await auditApi.reassignItem(auditId, itemId, userId);
-      onAssignSuccess?.();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không đổi được người phụ trách');
-    } finally {
-      setReassigningId(null);
     }
   };
 
@@ -120,43 +103,6 @@ export function AssignStaffModal({
                   disabled={submitting}
                 />
               </div>
-
-              {reassignable.length > 0 && (
-                <div className="space-y-2 border-t pt-4">
-                  <h3 className="font-semibold text-gray-900">Đổi người phụ trách các dòng hiện có</h3>
-                  <div className="space-y-2 max-h-56 overflow-y-auto">
-                    {reassignable.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between gap-3 rounded border border-gray-200 p-2"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-gray-900">{item.productName}</p>
-                          <p className="truncate font-mono text-xs text-gray-500">
-                            {item.sku}
-                            {item.lotNumber ? ` • Lô ${item.lotNumber}` : ''}
-                          </p>
-                        </div>
-                        <select
-                          value={item.assignedTo?.id ?? ''}
-                          disabled={reassigningId === item.id}
-                          onChange={(e) => handleReassign(item.id, e.target.value)}
-                          className="w-48 rounded-md border border-gray-300 px-2 py-1 text-sm"
-                        >
-                          <option value="" disabled>
-                            Chọn nhân viên
-                          </option>
-                          {members.map((member) => (
-                            <option key={member.user.id} value={member.user.id}>
-                              {member.user.fullName}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="flex gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={onClose} disabled={submitting} className="flex-1">
