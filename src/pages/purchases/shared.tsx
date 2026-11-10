@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { Pagination } from "@/components/ui/pagination";
 import type { Page } from "@/api/purchases";
 export { total, validateMoney, validateQty } from "./purchase-input";
 
@@ -14,7 +15,9 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 export function Heading({ title, description, children }: { title: string; description?: string; children?: ReactNode }) { return <div className="purchase-heading"><div><h2>{title}</h2>{description && <p>{description}</p>}</div><div className="purchase-actions">{children}</div></div>; }
 export function Empty({ children = "Chưa có dữ liệu phù hợp." }: { children?: ReactNode }) { return <div className="purchase-empty">{children}</div>; }
 export function Back({ to = "/purchases", children = "Danh sách đơn đặt mua" }: { to?: string; children?: ReactNode }) { return <Link className="purchase-back" to={to}>← {children}</Link>; }
-export function Pager({ data, page, setPage }: { data: Page<unknown>; page: number; setPage: (page: number) => void }) { return <div className="purchase-pager"><span>{data.pagination.total} kết quả · Trang {page}/{Math.max(1, data.pagination.totalPages)}</span><div className="purchase-actions"><button disabled={page <= 1} onClick={() => setPage(page - 1)}>Trước</button><button disabled={page >= data.pagination.totalPages} onClick={() => setPage(page + 1)}>Sau</button></div></div>; }
+export function Pager({ data, page, setPage }: { data: Page<unknown>; page: number; setPage: (page: number) => void }) {
+  return <Pagination page={page} total={data.pagination.total} totalPages={data.pagination.totalPages} onPageChange={setPage} />;
+}
 
 // The caller supplies the dependencies of the read; late responses never replace a newer view.
 export function useLoad<T>(read: () => Promise<T>, deps: unknown[]) {
@@ -44,4 +47,3 @@ export function useAction(onError?: (message: string) => void) {
   };
   return { busy, error, run, setError };
 }
-

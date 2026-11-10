@@ -39,7 +39,7 @@ export function ScrapListPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-      <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+      <CatalogHeader active="scrap" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1580px] space-y-5 px-5 py-5">
         <PermissionGate permission="inventory.lot.read">
           <div>
@@ -88,11 +88,11 @@ export function ScrapListPage() {
                 ) : (
                   visible.map((order) => (
                     <tr
-                      className="cursor-pointer border-t border-slate-100 hover:bg-violet-50/50"
+                      className="cursor-pointer border-t border-slate-100 hover:bg-emerald-50/50"
                       key={order.id}
                       onClick={() => navigate(`/inventory/scrap/${order.id}`)}
                     >
-                      <td className="px-4 py-3 font-mono font-semibold text-violet-700">{order.scrapCode}</td>
+                      <td className="px-4 py-3 font-mono font-semibold text-[#0f4c3a]">{order.scrapCode}</td>
                       <td className="px-4 py-3">
                         <div className="font-semibold">{order.variant.template.name}</div>
                         <div className="font-mono text-xs text-slate-500">{order.variant.sku}</div>

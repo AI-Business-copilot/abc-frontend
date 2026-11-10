@@ -25,7 +25,7 @@ export function AuditCreatePage() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-      <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+      <CatalogHeader active="stock-audit" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1580px] space-y-6 px-5 py-5">
       <div className="flex items-center gap-4">
         <Button
@@ -59,7 +59,7 @@ export function AuditCreatePage() {
         submitLabel={loading ? 'Đang tạo...' : 'Tạo đợt kiểm kê'}
       />
 
-      <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
+      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
         <p className="font-semibold mb-2">Trước khi tạo đợt kiểm kê:</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
           <li>Tạo đợt kiểm kê trước, sau đó thêm dòng ở trang chi tiết</li>

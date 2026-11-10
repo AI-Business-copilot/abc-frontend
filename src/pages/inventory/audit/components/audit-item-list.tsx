@@ -16,7 +16,7 @@ interface AuditItemListProps {
 }
 
 const statusColorConfig: Record<AuditItemStatus, string> = {
-  IN_PROGRESS: 'bg-blue-50 text-blue-700',
+  IN_PROGRESS: 'bg-emerald-50 text-emerald-800',
   PENDING_APPROVAL: 'bg-amber-50 text-amber-700',
   APPROVED: 'bg-green-50 text-green-700',
 };
@@ -86,7 +86,7 @@ export function AuditItemList({
                 }
                 : undefined
             }
-            className={`rounded-lg border border-gray-200 bg-white p-4 hover:shadow-md transition-shadow ${onViewDetails ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500' : ''
+            className={`rounded-lg border border-gray-200 bg-white p-4 hover:shadow-md transition-shadow ${onViewDetails ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0f4c3a]' : ''
               }`}
           >
             <div className="flex items-start justify-between gap-4">

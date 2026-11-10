@@ -129,7 +129,7 @@ export function AuditItemDetailPage() {
 
   const pageFrame = (content: React.ReactNode) => (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-      <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+      <CatalogHeader active="stock-audit" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1580px] px-5 py-5">
         {content}
       </main>
@@ -298,7 +298,7 @@ export function AuditItemDetailPage() {
                   disabled={acting}
                   rows={3}
                   placeholder="Ví dụ: vui lòng đếm lại kệ B2, số lượng có vẻ quá thấp."
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 resize-none"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#0f4c3a] focus:outline-none focus:ring-1 focus:ring-[#0f4c3a] disabled:bg-gray-100 resize-none"
                 />
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">

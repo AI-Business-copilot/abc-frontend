@@ -79,7 +79,7 @@ export interface BusinessMember {
     email: string;
     fullName: string;
   };
-  role: string;
+  role: any;
   roleName: string;
   status: string;
   createdAt: string;

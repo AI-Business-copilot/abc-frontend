@@ -1,6 +1,4 @@
-import { supabase } from "@/lib/supabase";
-
-const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { apiJson } from "@/lib/api-client";
 
 export type AttributeValueOption = {
   id: string;
@@ -29,6 +27,7 @@ export type AttributeRecord = {
 };
 
 export type TemplatePayload = {
+  code?: string | null;
   name?: string;
   categoryId?: string | null;
   unitOfMeasure?: string;
@@ -89,29 +88,7 @@ export type OpeningStockPayload = {
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-  }
-
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
-    throw new Error(payload.message || payload.error || `Yêu cầu thất bại (${response.status}).`);
-  }
-
-  return (await response.json()) as T;
+  return apiJson<T>(path, init);
 }
 
 export const productWizardApi = {
@@ -157,7 +134,7 @@ export const productWizardApi = {
     }),
   bulkUpdateVariants: (
     templateId: string,
-    variants: { id: string; costPrice: number; basePrice: number; safetyStockQty: number }[],
+    variants: { id: string; costPrice: number; basePrice: number; safetyStockQty: number; sku?: string; barcode?: string; isActive?: boolean }[],
   ) =>
     request<{ updated: number }>(`/products/templates/${templateId}/variants/bulk`, {
       method: "PATCH",
@@ -165,6 +142,11 @@ export const productWizardApi = {
     }),
   createOpeningStock: (payload: OpeningStockPayload) =>
     request<{ id: string; code: string | null }>("/inventory/opening-sheets", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  createCategory: (payload: { name: string; parentId?: string | null; description?: string }) =>
+    request<{ id: string; name: string }>("/categories", {
       method: "POST",
       body: JSON.stringify(payload),
     }),

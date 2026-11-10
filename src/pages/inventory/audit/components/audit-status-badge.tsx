@@ -11,8 +11,8 @@ const statusConfig: Record<
   { label: string; bgColor: string; textColor: string }
 > = {  IN_PROGRESS: {
     label: 'Đang thực hiện',
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-800',
+    bgColor: 'bg-emerald-100',
+    textColor: 'text-emerald-800',
   },
   PENDING_APPROVAL: {
     label: 'Chờ duyệt',

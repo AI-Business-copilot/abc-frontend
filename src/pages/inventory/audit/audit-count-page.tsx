@@ -126,7 +126,7 @@ export function AuditCountPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-      <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+      <CatalogHeader active="stock-audit" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1580px] space-y-6 px-5 py-5">
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={() => backToAudit()}>
@@ -220,7 +220,7 @@ export function AuditCountPage() {
         </Card>
       )}
 
-      <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
+      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
         <p className="font-semibold mb-2">Hướng dẫn kiểm kê:</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
           <li>Đếm số lượng thực tế trên kệ</li>

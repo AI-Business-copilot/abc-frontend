@@ -165,7 +165,7 @@ export function AssignStaffModal({
                 <Button
                   onClick={handleAdd}
                   disabled={submitting}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="flex-1 bg-[#0f4c3a] hover:bg-[#0a3528] text-white"
                 >
                   {submitting ? 'Đang thêm...' : 'Thêm dòng'}
                 </Button>

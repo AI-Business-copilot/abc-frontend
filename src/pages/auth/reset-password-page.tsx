@@ -1,11 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { ArrowRight, LockKeyhole } from "lucide-react";
+import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Alert } from "@/components/ui/alert";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { Button } from "@/components/ui/button";
-import { FormField } from "@/components/common/form-field";
 import { Input } from "@/components/ui/input";
 import { isStrongPassword } from "@/lib/password-policy";
 import { useAuth } from "@/hooks/use-auth";
@@ -42,16 +41,76 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <AuthShell eyebrow="BẢO MẬT TÀI KHOẢN" title="Tạo mật khẩu mới" description="Chọn mật khẩu khó đoán và không dùng lại mật khẩu ở dịch vụ khác.">
-      <div className="auth-stack">
-        {!session && <Alert variant="destructive">Liên kết khôi phục không hợp lệ hoặc đã hết hạn. Hãy yêu cầu liên kết mới.</Alert>}
+    <AuthShell
+      eyebrow="BẢO MẬT TÀI KHOẢN"
+      title="Thiết lập mật khẩu mới ABC"
+      description="Chọn mật khẩu an toàn và không dùng chung với các dịch vụ khác."
+    >
+      <div className="flex flex-col gap-3.5 w-full">
+        {!session && (
+          <Alert variant="destructive">
+            Liên kết khôi phục không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu lại.
+          </Alert>
+        )}
         {error && <Alert variant="destructive">{error}</Alert>}
-        {session && <form className="auth-form" onSubmit={(event) => void submit(event)}>
-          <FormField id="new-password" label="Mật khẩu mới" hint="Ít nhất 12 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt."><div className="input-with-icon"><LockKeyhole size={17} /><Input autoComplete="new-password" id="new-password" minLength={12} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} /></div></FormField>
-          <FormField id="confirm-password" label="Nhập lại mật khẩu"><div className="input-with-icon"><LockKeyhole size={17} /><Input autoComplete="new-password" id="confirm-password" minLength={12} onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} /></div></FormField>
-          <Button className="auth-submit" disabled={busy} type="submit">{busy ? "Đang lưu…" : "Cập nhật mật khẩu"} <ArrowRight size={16} /></Button>
-        </form>}
-        <p className="auth-switch"><Link to="/login">Quay lại đăng nhập</Link></p>
+
+        {session && (
+          <form className="flex flex-col gap-3.5" onSubmit={(event) => void submit(event)}>
+            <div className="space-y-1 text-left">
+              <label htmlFor="new-password" className="block text-xs font-semibold text-slate-700">
+                Mật khẩu mới
+              </label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={12}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Tối thiểu 12 ký tự"
+                  required
+                  className="h-10.5 rounded-lg border-slate-200 bg-slate-50/60 pr-10 text-xs sm:text-sm focus:bg-white focus:border-[#0f4c3a] focus:ring-[#0f4c3a]"
+                />
+                <LockKeyhole className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={17} />
+              </div>
+            </div>
+
+            <div className="space-y-1 text-left">
+              <label htmlFor="confirm-password" className="block text-xs font-semibold text-slate-700">
+                Nhập lại mật khẩu mới
+              </label>
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={12}
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Nhập lại chính xác mật khẩu"
+                  required
+                  className="h-10.5 rounded-lg border-slate-200 bg-slate-50/60 pr-10 text-xs sm:text-sm focus:bg-white focus:border-[#0f4c3a] focus:ring-[#0f4c3a]"
+                />
+                <LockKeyhole className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={17} />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={busy}
+              className="w-full rounded-full bg-[#c1121f] hover:bg-[#a10e1a] !text-white font-bold py-2.5 sm:py-3 text-sm sm:text-base shadow-md shadow-red-950/20 active:scale-[0.99] transition-all cursor-pointer mt-1"
+            >
+              {busy ? "Đang lưu mật khẩu…" : "Cập nhật mật khẩu"}
+            </Button>
+          </form>
+        )}
+
+        <p className="text-center text-xs text-slate-500 mt-1">
+          <Link to="/login" className="inline-flex items-center gap-1.5 text-[#0f4c3a] hover:text-[#c1121f] font-semibold transition-colors">
+            <ArrowLeft size={14} /> Quay lại đăng nhập
+          </Link>
+        </p>
       </div>
     </AuthShell>
   );

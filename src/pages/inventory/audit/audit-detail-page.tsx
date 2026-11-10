@@ -44,7 +44,7 @@ export function AuditDetailPage() {
   if (auditLoading) {
     return (
       <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-        <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+        <CatalogHeader active="stock-audit" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
         <main className="mx-auto max-w-[1580px] px-5 py-5">
           <div className="flex items-center justify-center py-12">
             <Spinner />
@@ -57,7 +57,7 @@ export function AuditDetailPage() {
   if (!audit || auditError) {
     return (
       <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-        <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+        <CatalogHeader active="stock-audit" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
         <main className="mx-auto max-w-[1580px] space-y-4 px-5 py-5">
           <Button variant="outline" onClick={() => navigate('/inventory/audit')}>
             ← Quay lại danh sách
@@ -82,7 +82,7 @@ export function AuditDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-      <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+      <CatalogHeader active="stock-audit" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1580px] space-y-6 px-5 py-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -126,7 +126,7 @@ export function AuditDetailPage() {
       )}
 
       {audit.status === 'IN_PROGRESS' && can('inventory.audit.approve_item') && (
-        <Alert className="bg-blue-50 border-blue-200 text-blue-800 text-sm">
+        <Alert className="bg-emerald-50 border-emerald-200 text-emerald-800 text-sm">
           Duyệt từng dòng bên dưới. Đợt kiểm kê sẽ được áp dụng vào tồn kho ngay khi dòng cuối cùng được
           duyệt, sau đó chuyển sang trạng thái Hoàn thành.
         </Alert>

@@ -91,15 +91,15 @@ export function ScrapDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
-      <CatalogHeader active="products" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
+      <CatalogHeader active="scrap" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1180px] space-y-5 px-5 py-5">
         <PermissionGate permission="inventory.lot.read">
-          <Link className="text-sm font-semibold text-violet-700 hover:underline" to="/inventory/scrap">
+          <Link className="text-sm font-semibold text-[#0f4c3a] hover:underline" to="/inventory/scrap">
             ← Danh sách phiếu hủy
           </Link>
 
           {loading && !order ? (
-            <div className="flex justify-center py-16"><Spinner className="h-8 w-8 text-violet-600" /></div>
+            <div className="flex justify-center py-16"><Spinner className="h-8 w-8 text-[#0f4c3a]" /></div>
           ) : error || !order ? (
             <Alert variant="destructive">{error || "Không tìm thấy phiếu hủy."}</Alert>
           ) : (

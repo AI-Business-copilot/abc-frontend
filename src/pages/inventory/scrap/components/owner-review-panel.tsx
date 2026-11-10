@@ -72,7 +72,7 @@ export function OwnerReviewPanel({
   };
 
   return (
-    <div className="space-y-3 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+    <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
       <h3 className="font-semibold text-slate-900">Duyệt phiếu hủy</h3>
       <p className="text-sm text-slate-600">
         Xem kỹ các ảnh bằng chứng bên dưới trước khi quyết định. Số lượng hủy: <b>{order.scrapQty}</b> · Tổn thất dự kiến: <b>{formatMoney(loss)}</b>.
@@ -103,7 +103,7 @@ export function OwnerReviewPanel({
           {error && <Alert className="mb-3" variant="destructive">{error}</Alert>}
           <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="reject-reason">Lý do</label>
           <select
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-violet-400"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100"
             id="reject-reason"
             onChange={(event) => setReasonCode(event.target.value as RejectionReasonCode | "")}
             value={reasonCode}
@@ -117,7 +117,7 @@ export function OwnerReviewPanel({
             Ghi chú (không bắt buộc, tối đa 500 ký tự)
           </label>
           <textarea
-            className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+            className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100"
             id="reject-note"
             maxLength={500}
             onChange={(event) => setNote(event.target.value)}
