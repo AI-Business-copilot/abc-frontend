@@ -4,7 +4,16 @@ import { Input } from '../../../../components/ui/input';
 import { Label } from '../../../../components/ui/label';
 import { Spinner } from '../../../../components/ui/spinner';
 import { auditApi, type BusinessMember } from '../../../../api/audit';
-import type { AuditType, VariantLot, VariantOption } from '../../../../types/audit';
+import { productWizardApi } from '../../../../api/product-wizard';
+import { productsListApi } from '../../../../api/products-list';
+import { getPrimaryImage } from '../../../../lib/image-utils';
+import { Icon } from '../../../products/ui-icon';
+import type {
+  AuditProductOption,
+  AuditType,
+  VariantLot,
+  VariantOption,
+} from '../../../../types/audit';
 import { scrapStatusText } from '../../../../types/scrap';
 import { emptyRow, type AuditRowDraft } from '../audit-rows';
 
@@ -13,17 +22,37 @@ const selectClass =
 
 const formatDate = (value: string | Date) => new Date(value).toLocaleDateString('vi-VN');
 
-interface VariantSearchProps {
-  value: VariantOption | null;
-  onChange: (variant: VariantOption | null) => void;
+/** Small square thumbnail of a product, with a placeholder when it has no image. */
+function ProductThumb({ imageUrl, name }: { imageUrl: string | null; name: string }) {
+  const src = getPrimaryImage(imageUrl);
+  if (!src) {
+    return (
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-gray-100 text-gray-400">
+        <Icon name="inventory_2" className="text-[22px]" />
+      </span>
+    );
+  }
+  return (
+    <img
+      alt={name}
+      className="h-10 w-10 shrink-0 rounded-md border border-gray-200 object-cover"
+      loading="lazy"
+      src={src}
+    />
+  );
+}
+
+interface RowProductSelectProps {
+  value: AuditProductOption | null;
+  onChange: (product: AuditProductOption | null) => void;
   disabled?: boolean;
 }
 
-/** Search-as-you-type SKU picker backed by GET /inventory/variants?search=. */
-function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
+/** Step 1 of the row picker: the owner picks a product, with its thumbnail for recognition. */
+function RowProductSelect({ value, onChange, disabled }: RowProductSelectProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<VariantOption[]>([]);
-  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<AuditProductOption[]>([]);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -31,13 +60,22 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
-        setSearching(true);
-        const data = await auditApi.searchVariants(query, 10);
-        if (!cancelled) setResults(data.items);
+        setLoading(true);
+        const { data } = await productsListApi.list({ q: query, status: 'active', pageSize: 60 });
+        if (cancelled) return;
+        setResults(
+          data.items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            imageUrl: item.imageUrl,
+            skuCount: item.skus.length,
+            hasLotTracking: item.hasLotTracking,
+          })),
+        );
       } catch {
         if (!cancelled) setResults([]);
       } finally {
-        if (!cancelled) setSearching(false);
+        if (!cancelled) setLoading(false);
       }
     }, 250);
     return () => {
@@ -49,12 +87,12 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
   if (value) {
     return (
       <div className="mt-1 flex items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm">
-        <div className="min-w-0">
-          <p className="truncate font-medium text-gray-900">{value.productName}</p>
-          <p className="truncate font-mono text-xs text-gray-500">
-            {value.sku}
-            {value.attributeText ? ` • ${value.attributeText}` : ''}
-          </p>
+        <div className="flex min-w-0 items-center gap-2">
+          <ProductThumb imageUrl={value.imageUrl} name={value.name} />
+          <div className="min-w-0">
+            <p className="truncate font-medium text-gray-900">{value.name}</p>
+            <p className="truncate text-xs text-gray-500">{value.skuCount} SKU</p>
+          </div>
         </div>
         <Button
           type="button"
@@ -76,7 +114,7 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
     <div className="relative">
       <Input
         type="text"
-        placeholder="Tìm theo SKU hoặc tên sản phẩm"
+        placeholder="Tìm theo tên hoặc mã sản phẩm"
         value={query}
         disabled={disabled}
         onFocus={() => setOpen(true)}
@@ -87,28 +125,28 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
         className="mt-1"
       />
       {open && (
-        <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
-          {searching ? (
+        <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+          {loading ? (
             <div className="flex justify-center py-3">
               <Spinner className="h-4 w-4" />
             </div>
           ) : results.length === 0 ? (
-            <p className="px-3 py-3 text-sm text-gray-500">Không tìm thấy SKU</p>
+            <p className="px-3 py-3 text-sm text-gray-500">Không tìm thấy sản phẩm</p>
           ) : (
-            results.map((variant) => (
+            results.map((product) => (
               <button
-                key={variant.id}
+                key={product.id}
                 type="button"
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-emerald-50"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-emerald-50"
                 onClick={() => {
-                  onChange(variant);
+                  onChange(product);
                   setOpen(false);
                 }}
               >
-                <span className="block truncate font-medium text-gray-900">{variant.productName}</span>
-                <span className="block truncate font-mono text-xs text-gray-500">
-                  {variant.sku}
-                  {variant.attributeText ? ` • ${variant.attributeText}` : ''}
+                <ProductThumb imageUrl={product.imageUrl} name={product.name} />
+                <span className="min-w-0">
+                  <span className="block truncate font-medium text-gray-900">{product.name}</span>
+                  <span className="block truncate text-xs text-gray-500">{product.skuCount} SKU</span>
                 </span>
               </button>
             ))
@@ -116,6 +154,96 @@ function VariantSearch({ value, onChange, disabled }: VariantSearchProps) {
         </div>
       )}
     </div>
+  );
+}
+
+interface RowSkuSelectProps {
+  productId: string;
+  value: VariantOption | null;
+  onChange: (variant: VariantOption | null) => void;
+  disabled?: boolean;
+}
+
+/** Step 2 of the row picker: the SKUs of the chosen product. */
+function RowSkuSelect({ productId, value, onChange, disabled }: RowSkuSelectProps) {
+  const [skus, setSkus] = useState<VariantOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setFailed(false);
+        const detail = await productWizardApi.getTemplate(productId);
+        if (cancelled) return;
+        setSkus(
+          detail.productVariants
+            .filter((variant) => variant.isActive !== false)
+            .map((variant) => ({
+              id: variant.id,
+              sku: variant.sku,
+              productName: detail.name,
+              // Same " · " join the backend uses for the attribute text.
+              attributeText: variant.variantAttributeValues
+                .map((entry) => entry.attributeValue.value)
+                .join(' · '),
+              onHand: (variant.inventoryBalances ?? []).reduce(
+                (sum, balance) => sum + Number(balance.quantityOnHand ?? 0),
+                0,
+              ),
+              imageUrl: detail.imageUrl,
+              productId: detail.id,
+            })),
+        );
+      } catch {
+        if (!cancelled) {
+          setSkus([]);
+          setFailed(true);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [productId]);
+
+  if (loading) {
+    return (
+      <div className="mt-1 flex justify-center py-2">
+        <Spinner className="h-4 w-4" />
+      </div>
+    );
+  }
+
+  if (failed) {
+    return <p className="mt-1 text-xs text-red-600">Không tải được danh sách SKU của sản phẩm này.</p>;
+  }
+
+  if (skus.length === 0) {
+    return <p className="mt-1 text-xs text-gray-600">Sản phẩm này chưa có SKU nào.</p>;
+  }
+
+  return (
+    <select
+      value={value?.id ?? ''}
+      disabled={disabled}
+      onChange={(e) => onChange(skus.find((sku) => sku.id === e.target.value) ?? null)}
+      className={selectClass}
+    >
+      <option value="" disabled>
+        Chọn SKU
+      </option>
+      {skus.map((sku) => (
+        <option key={sku.id} value={sku.id}>
+          {sku.sku}
+          {sku.attributeText ? ` • ${sku.attributeText}` : ''} • tồn {sku.onHand}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -255,28 +383,54 @@ export function AuditRowEditor({ rows, onChange, members, auditType, disabled }:
           </div>
 
           <div>
-            <Label className="text-xs font-medium">SKU</Label>
-            <VariantSearch
-              value={row.variant}
+            <Label className="text-xs font-medium">
+              Sản phẩm <span className="text-red-600">*</span>
+            </Label>
+            <RowProductSelect
+              value={row.product}
               disabled={disabled}
-              onChange={(variant) => updateRow(row.key, { variant, lotItemId: '' })}
+              // A new product means the old SKU and lot no longer belong to this row.
+              onChange={(product) => updateRow(row.key, { product, variant: null, lotItemId: '' })}
             />
           </div>
+
+          {row.product && (
+            <div>
+              <Label className="text-xs font-medium">
+                SKU <span className="text-red-600">*</span>
+              </Label>
+              <RowSkuSelect
+                productId={row.product.id}
+                value={row.variant}
+                disabled={disabled}
+                // A new SKU means the old lot no longer belongs to this row.
+                onChange={(variant) => updateRow(row.key, { variant, lotItemId: '' })}
+              />
+            </div>
+          )}
 
           {row.variant && auditType === 'RE_AUDIT' && (
             <div>
               <Label className="text-xs font-medium">
                 Lô có sẵn <span className="text-red-600">*</span>
               </Label>
-              <RowLotSelect
-                variantId={row.variant.id}
-                lotItemId={row.lotItemId}
-                disabled={disabled}
-                onChange={(lotItemId) => updateRow(row.key, { lotItemId })}
-              />
-              <p className="mt-1 text-xs text-gray-600">
-                Nhân viên không thể đổi lô này khi đếm. Họ vẫn có thể sửa ngày của lô và nhập số đếm.
-              </p>
+              {row.product && !row.product.hasLotTracking ? (
+                <p className="mt-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-xs text-amber-800">
+                  Sản phẩm này không quản lý lô nên không thể kiểm kê lại. Hãy dùng kiểm kê lô mới.
+                </p>
+              ) : (
+                <>
+                  <RowLotSelect
+                    variantId={row.variant.id}
+                    lotItemId={row.lotItemId}
+                    disabled={disabled}
+                    onChange={(lotItemId) => updateRow(row.key, { lotItemId })}
+                  />
+                  <p className="mt-1 text-xs text-gray-600">
+                    Nhân viên không thể đổi lô này khi đếm. Họ vẫn có thể sửa ngày của lô và nhập số đếm.
+                  </p>
+                </>
+              )}
             </div>
           )}
 

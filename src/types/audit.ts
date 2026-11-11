@@ -99,6 +99,17 @@ export interface VariantLot {
   isScrapped?: boolean;
 }
 
+/** A product (template) the owner picks first in the row editor. */
+export interface AuditProductOption {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  /** How many active SKUs the product has. */
+  skuCount: number;
+  /** False when the product does not track lots, so a re-audit cannot pick a lot for it. */
+  hasLotTracking: boolean;
+}
+
 /** A variant, as returned by GET /inventory/variants?search= */
 export interface VariantOption {
   id: string;
@@ -106,6 +117,10 @@ export interface VariantOption {
   productName: string;
   attributeText: string;
   onHand: number;
+  /** Product image, so the owner can recognise the product while picking a SKU. */
+  imageUrl?: string | null;
+  /** The product this SKU belongs to. */
+  productId?: string;
 }
 
 export interface UserRef {

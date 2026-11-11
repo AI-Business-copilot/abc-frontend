@@ -91,6 +91,9 @@ export function AssignStaffModal({
                 ? 'Mỗi dòng là một SKU giao cho một nhân viên, kèm một lô có sẵn do bạn chọn ngay bây giờ. Nhân viên giữ nguyên lô đó khi đếm và chỉ có thể sửa ngày của lô và nhập số lượng.'
                 : 'Mỗi dòng là một SKU giao cho một nhân viên. Mọi dòng đều là lô mới: nhân viên nhập số lô và hạn sử dụng khi đếm.'}
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Chọn theo thứ tự: sản phẩm → SKU → lô có sẵn.
+            </p>
           </div>
 
           {(error || membersError) && (
