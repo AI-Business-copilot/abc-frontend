@@ -161,22 +161,33 @@ function RowLotSelect({ variantId, lotItemId, onChange, disabled }: RowLotSelect
         <option value="" disabled>
           Chọn lô
         </option>
-        {lots.map((lot) => (
-          <option key={lot.id} value={lot.id} disabled={lot.hasPendingScrap}>
-            {lot.lotNumber} • HSD {formatDate(lot.expirationDate)} • tồn {lot.onHand}
-            {lot.hasPendingScrap
-              ? ` — đang có phiếu hủy ${lot.pendingScrapCode ?? ''} chờ duyệt`
-              : ''}
-          </option>
-        ))}
+        {lots.map((lot) => {
+          const blocked = lot.hasOpenScrapOrder || lot.isScrapped;
+          return (
+            <option key={lot.id} value={lot.id} disabled={blocked}>
+              {lot.lotNumber} • HSD {formatDate(lot.expirationDate)} • tồn {lot.onHand}
+              {lot.isScrapped
+                ? ' — đã bị hủy hàng'
+                : lot.hasOpenScrapOrder
+                  ? ` — đang có phiếu hủy ${lot.scrapOrder?.scrapCode ?? ''} (${lot.scrapOrder?.status ?? ''})`
+                  : ''}
+            </option>
+          );
+        })}
       </select>
-      {selected?.hasPendingScrap && (
+      {selected?.isScrapped && (
         <p className="mt-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-xs text-amber-800">
-          Lô {selected.lotNumber} đang có phiếu hủy {selected.pendingScrapCode ?? ''} chờ duyệt. Hãy duyệt
-          hoặc hủy phiếu hủy trước khi thêm lô này vào đợt kiểm kê.
+          Lô {selected.lotNumber} đã bị hủy hàng nên không thể kiểm kê.
         </p>
       )}
-      {selected && !selected.hasPendingScrap && (
+      {selected?.hasOpenScrapOrder && (
+        <p className="mt-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-xs text-amber-800">
+          Lô {selected.lotNumber} đang có phiếu hủy {selected.scrapOrder?.scrapCode ?? ''} (
+          {selected.scrapOrder?.status ?? ''}). Lô đang có phiếu hủy chưa xong xuất thì không thể đưa vào
+          đợt kiểm kê.
+        </p>
+      )}
+      {selected && !selected.isScrapped && !selected.hasOpenScrapOrder && (
         <p className="mt-1 text-xs text-gray-600">
           Số lô <span className="font-mono">{selected.lotNumber}</span> và hạn sử dụng{' '}
           {formatDate(selected.expirationDate)} được điền tự động.

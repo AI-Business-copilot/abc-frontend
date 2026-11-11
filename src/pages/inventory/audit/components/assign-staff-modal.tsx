@@ -101,7 +101,7 @@ export function AssignStaffModal({
 
           {conflict && (
             <Alert className="bg-amber-50 border-amber-200 text-amber-800 text-sm">
-              <p className="font-semibold">Không thêm được: lô đang bị xung đột với phiếu hủy.</p>
+              <p className="font-semibold">Không thêm được: lô không thể kiểm kê.</p>
               <p className="mt-1">{conflict}</p>
             </Alert>
           )}

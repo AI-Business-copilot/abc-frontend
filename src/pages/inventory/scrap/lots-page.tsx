@@ -46,7 +46,7 @@ export function LotsPage() {
   // Batches default to expanded only when they hold a single variant; this records explicit toggles.
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const {
-    lots, total, summary, pendingOrderByLot, status, page, totalPages,
+    lots, total, summary, status, page, totalPages,
     loading, error, changeStatus, goToPage, refetch,
   } = useExpiringLots();
 
@@ -163,7 +163,7 @@ export function LotsPage() {
                           <td className="px-4 py-3 text-slate-400">—</td>
                         </tr>
                         {open && batch.items.map((lot) => {
-                          const pendingOrderId = pendingOrderByLot[lot.id];
+                          const scrapOrder = lot.scrapOrder;
                           const blocked = lot.effectiveStatus === "SCRAPPED";
                           return (
                             <tr className="border-t border-slate-100" key={lot.id}>
@@ -186,10 +186,22 @@ export function LotsPage() {
                               </td>
                               <td className="px-4 py-3"><LotStatusBadge status={lot.effectiveStatus} /></td>
                               <td className="px-4 py-3">
-                                {pendingOrderId ? (
-                                  <Link className="font-semibold text-[#0f4c3a] hover:underline" to={`/inventory/scrap/${pendingOrderId}`}>
-                                    Xem phiếu đang chờ duyệt
-                                  </Link>
+                                {scrapOrder ? (
+                                  // A lot can only have one scrap order, so the existing one is the
+                                  // only thing the staff can act on.
+                                  <div className="space-y-1">
+                                    <Link
+                                      className="font-semibold text-[#0f4c3a] hover:underline"
+                                      to={`/inventory/scrap/${scrapOrder.id}`}
+                                    >
+                                      Xem phiếu {scrapOrder.scrapCode}
+                                    </Link>
+                                    <div className="text-xs text-slate-500">
+                                      {scrapOrder.status === "PENDING"
+                                        ? "Đang chờ duyệt"
+                                        : `Trạng thái: ${scrapOrder.status}`}
+                                    </div>
+                                  </div>
                                 ) : canAct && !blocked ? (
                                   <div className="flex gap-2">
                                     {lot.effectiveStatus === "QUARANTINED" ? (

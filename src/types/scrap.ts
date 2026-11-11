@@ -42,6 +42,11 @@ export interface ExpiringLot {
   onHand: number;
   /** Units already marked damaged. */
   damaged: number;
+  /**
+   * The scrap order already raised for this lot item, in any status. A lot can only have one
+   * scrap order, so a new one cannot be created while this is set.
+   */
+  scrapOrder: { id: string; scrapCode: string; status: ScrapStatus } | null;
 }
 
 /** One batch (product_lots row) with only the variant items that matched the filter. */

@@ -152,7 +152,7 @@ export function OwnerReviewPanel({
             value={note}
           />
           <p className="mt-2 text-xs text-slate-500">
-            Từ chối là quyết định cuối cùng. Nhân viên sẽ cần tạo phiếu hủy mới cho lô này.
+            Từ chối là quyết độc. Lô hàng vẫn đang được cách ly và không thể tạo phiếu hủy mới cho lô này.
           </p>
           <div className="mt-5 flex justify-end gap-2">
             <Button disabled={busy} onClick={() => setRejecting(false)} type="button" variant="outline">Quay lại</Button>
@@ -168,7 +168,7 @@ export function OwnerReviewPanel({
           {error && <Alert className="mb-3" variant="destructive">{error}</Alert>}
           <p className="text-sm text-slate-600">
             Phiếu sẽ bị đóng mà không duyệt và không từ chối. Tồn kho không thay đổi và lô hàng vẫn
-            được cách ly, để nhân viên tạo phiếu mới nếu cần.
+            được cách ly. Lô này không thể tạo phiếu hủy mới.
           </p>
           <label className="mb-1 mt-3 block text-sm font-medium text-slate-700" htmlFor="cancel-note">
             Ghi chú (không bắt buộc, tối đa 500 ký tự)

@@ -89,9 +89,14 @@ export interface VariantLot {
   manufacturingDate?: string | Date | null;
   expirationDate: string | Date;
   onHand: number;
-  /** The lot has a scrap order waiting for approval, so it cannot enter an audit. */
-  hasPendingScrap?: boolean;
-  pendingScrapCode?: string | null;
+  /**
+   * The lot has a scrap order that is still open (waiting for the Owner, or rejected),
+   * so it cannot enter an audit. An approved or closed order does not block it.
+   */
+  hasOpenScrapOrder?: boolean;
+  scrapOrder?: { id: string; scrapCode: string; status: string } | null;
+  /** The lot was already scrapped, so it has no stock left to count. */
+  isScrapped?: boolean;
 }
 
 /** A variant, as returned by GET /inventory/variants?search= */
