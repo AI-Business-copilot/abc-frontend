@@ -244,7 +244,10 @@ export const auditApi = {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || `Failed to add items (${response.status})`);
+        const failure = new Error(error.message || `Failed to add items (${response.status})`);
+        // Keep the status so the caller can tell a conflict (409) from a generic failure.
+        (failure as Error & { status?: number }).status = response.status;
+        throw failure;
       }
 
       return response.json();

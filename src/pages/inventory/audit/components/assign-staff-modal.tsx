@@ -35,12 +35,14 @@ export function AssignStaffModal({
   const { members, loading, error: membersError } = useStaffMembers();
   const [rows, setRows] = useState<AuditRowDraft[]>(() => [emptyRow()]);
   const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleAdd = async () => {
     const rowsError = validateRows(rows, auditType);
     if (rowsError) {
       setError(rowsError);
+      setConflict(null);
       return;
     }
 
@@ -50,17 +52,29 @@ export function AssignStaffModal({
     const clash = rows.find((row) => row.lotItemId && taken.has(`${row.variant!.id}:${row.lotItemId}`));
     if (clash) {
       setError(`${clash.variant!.sku} với lô này đã có trong đợt kiểm kê.`);
+      setConflict(null);
       return;
     }
 
     try {
       setSubmitting(true);
       setError(null);
+      setConflict(null);
       await auditApi.addItems(auditId, rowsToAssignments(rows));
       onAssignSuccess?.();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thêm được dòng kiểm kê');
+      const message = err instanceof Error ? err.message : 'Không thêm được dòng kiểm kê';
+      const status = (err as Error & { status?: number })?.status;
+      // A 409 means the server refused the rows, most often because a lot still has a pending
+      // scrap order. Surface it as its own alert so the owner knows what to settle first.
+      if (status === 409) {
+        setConflict(message);
+        setError(null);
+      } else {
+        setError(message);
+        setConflict(null);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -82,6 +96,13 @@ export function AssignStaffModal({
           {(error || membersError) && (
             <Alert className="bg-red-50 border-red-200 text-red-700 text-sm">
               {error || membersError}
+            </Alert>
+          )}
+
+          {conflict && (
+            <Alert className="bg-amber-50 border-amber-200 text-amber-800 text-sm">
+              <p className="font-semibold">Không thêm được: lô đang bị xung đột với phiếu hủy.</p>
+              <p className="mt-1">{conflict}</p>
             </Alert>
           )}
 

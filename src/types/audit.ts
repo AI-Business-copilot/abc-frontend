@@ -89,6 +89,9 @@ export interface VariantLot {
   manufacturingDate?: string | Date | null;
   expirationDate: string | Date;
   onHand: number;
+  /** The lot has a scrap order waiting for approval, so it cannot enter an audit. */
+  hasPendingScrap?: boolean;
+  pendingScrapCode?: string | null;
 }
 
 /** A variant, as returned by GET /inventory/variants?search= */

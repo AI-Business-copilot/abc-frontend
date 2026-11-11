@@ -162,12 +162,21 @@ function RowLotSelect({ variantId, lotItemId, onChange, disabled }: RowLotSelect
           Chọn lô
         </option>
         {lots.map((lot) => (
-          <option key={lot.id} value={lot.id}>
+          <option key={lot.id} value={lot.id} disabled={lot.hasPendingScrap}>
             {lot.lotNumber} • HSD {formatDate(lot.expirationDate)} • tồn {lot.onHand}
+            {lot.hasPendingScrap
+              ? ` — đang có phiếu hủy ${lot.pendingScrapCode ?? ''} chờ duyệt`
+              : ''}
           </option>
         ))}
       </select>
-      {selected && (
+      {selected?.hasPendingScrap && (
+        <p className="mt-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-xs text-amber-800">
+          Lô {selected.lotNumber} đang có phiếu hủy {selected.pendingScrapCode ?? ''} chờ duyệt. Hãy duyệt
+          hoặc hủy phiếu hủy trước khi thêm lô này vào đợt kiểm kê.
+        </p>
+      )}
+      {selected && !selected.hasPendingScrap && (
         <p className="mt-1 text-xs text-gray-600">
           Số lô <span className="font-mono">{selected.lotNumber}</span> và hạn sử dụng{' '}
           {formatDate(selected.expirationDate)} được điền tự động.
