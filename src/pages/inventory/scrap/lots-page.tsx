@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { PermissionGate } from "@/components/common/permission-gate";
 import { usePermissions } from "@/hooks/use-permissions";
 import { CatalogHeader } from "@/pages/products/catalog-header";
-import type { ExpiringLot, LotBatch, LotStatus } from "@/types/scrap";
+import { scrapStatusText, type ExpiringLot, type LotBatch, type LotStatus } from "@/types/scrap";
 import { CreateScrapDialog, QuarantineDialog, lotStock } from "./components/lot-dialogs";
 import { LotStatusBadge, formatDate, formatDaysLeft } from "./components/scrap-ui";
 import { useExpiringLots } from "./hooks/use-expiring-lots";
@@ -199,7 +199,7 @@ export function LotsPage() {
                                     <div className="text-xs text-slate-500">
                                       {scrapOrder.status === "PENDING"
                                         ? "Đang chờ duyệt"
-                                        : `Trạng thái: ${scrapOrder.status}`}
+                                        : `Trạng thái: ${scrapStatusText(scrapOrder.status)}`}
                                     </div>
                                   </div>
                                 ) : canAct && !blocked ? (

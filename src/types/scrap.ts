@@ -5,6 +5,20 @@ export type LotStatus = "HEALTHY" | "WARNING" | "UNUSABLE" | "QUARANTINED" | "SC
 export type ScrapStatus = "PENDING" | "COMPLETED" | "REJECTED" | "CANCELLED";
 export type ScrapSource = "DAMAGED_STOCK" | "SELLABLE_STOCK";
 
+/** Vietnamese labels for the scrap order statuses, so the raw code never reaches the user. */
+export const scrapStatusLabel: Record<ScrapStatus, string> = {
+  PENDING: "Chờ duyệt",
+  COMPLETED: "Đã duyệt",
+  REJECTED: "Bị từ chối",
+  CANCELLED: "Đã hủy bỏ",
+};
+
+/** Safe label for a status coming from the API, which may be unknown to this build. */
+export function scrapStatusText(status: string | null | undefined): string {
+  if (!status) return "—";
+  return scrapStatusLabel[status as ScrapStatus] ?? status;
+}
+
 export const REJECTION_REASON_CODES = [
   "WRONG_QUANTITY",
   "PHOTO_UNCLEAR",

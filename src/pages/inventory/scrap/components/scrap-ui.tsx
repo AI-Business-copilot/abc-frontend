@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { LotStatus, ScrapStatus } from "@/types/scrap";
+import { scrapStatusLabel, type LotStatus, type ScrapStatus } from "@/types/scrap";
 
 const lotStatusStyle: Record<LotStatus, { label: string; className: string }> = {
   HEALTHY: { label: "Bình thường", className: "bg-emerald-100 text-emerald-800" },
@@ -12,10 +12,10 @@ const lotStatusStyle: Record<LotStatus, { label: string; className: string }> = 
 };
 
 const scrapStatusStyle: Record<ScrapStatus, { label: string; className: string }> = {
-  PENDING: { label: "Chờ duyệt", className: "bg-amber-100 text-amber-800" },
-  COMPLETED: { label: "Đã duyệt", className: "bg-emerald-100 text-emerald-800" },
-  REJECTED: { label: "Bị từ chối", className: "bg-rose-100 text-rose-800" },
-  CANCELLED: { label: "Đã hủy bỏ", className: "bg-slate-200 text-slate-700" },
+  PENDING: { label: scrapStatusLabel.PENDING, className: "bg-amber-100 text-amber-800" },
+  COMPLETED: { label: scrapStatusLabel.COMPLETED, className: "bg-emerald-100 text-emerald-800" },
+  REJECTED: { label: scrapStatusLabel.REJECTED, className: "bg-rose-100 text-rose-800" },
+  CANCELLED: { label: scrapStatusLabel.CANCELLED, className: "bg-slate-200 text-slate-700" },
 };
 
 const badgeClass = "inline-block rounded-full px-3 py-1 text-xs font-semibold";

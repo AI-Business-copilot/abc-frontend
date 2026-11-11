@@ -9,6 +9,7 @@ import {
   ALLOWED_SCRAP_IMAGE_TYPES,
   MAX_SCRAP_IMAGES,
   MAX_SCRAP_IMAGE_BYTES,
+  scrapStatusText,
   type ExpiringLot,
 } from "@/types/scrap";
 import { Modal } from "./scrap-ui";
@@ -142,7 +143,7 @@ export function CreateScrapDialog({
   const submit = async () => {
     if (existingOrder) {
       setError(
-        `Lô này đã có phiếu hủy ${existingOrder.scrapCode} (${existingOrder.status}). ` +
+        `Lô này đã có phiếu hủy ${existingOrder.scrapCode} (${scrapStatusText(existingOrder.status)}). ` +
           "Mỗi lô chỉ được có một phiếu hủy.",
       );
       return;
@@ -183,8 +184,8 @@ export function CreateScrapDialog({
       </p>
       {existingOrder && (
         <Alert className="mb-3" variant="destructive">
-          Lô này đã có phiếu hủy {existingOrder.scrapCode} ({existingOrder.status}). Mỗi lô chỉ được có
-          một phiếu hủy, nên không thể tạo phiếu mới.
+          Lô này đã có phiếu hủy {existingOrder.scrapCode} ({scrapStatusText(existingOrder.status)}). Mỗi
+          lô chỉ được có một phiếu hủy, nên không thể tạo phiếu mới.
         </Alert>
       )}
       {error && <Alert className="mb-3" variant="destructive">{error}</Alert>}

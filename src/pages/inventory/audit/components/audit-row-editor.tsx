@@ -5,6 +5,7 @@ import { Label } from '../../../../components/ui/label';
 import { Spinner } from '../../../../components/ui/spinner';
 import { auditApi, type BusinessMember } from '../../../../api/audit';
 import type { AuditType, VariantLot, VariantOption } from '../../../../types/audit';
+import { scrapStatusText } from '../../../../types/scrap';
 import { emptyRow, type AuditRowDraft } from '../audit-rows';
 
 const selectClass =
@@ -169,7 +170,7 @@ function RowLotSelect({ variantId, lotItemId, onChange, disabled }: RowLotSelect
               {lot.isScrapped
                 ? ' — đã bị hủy hàng'
                 : lot.hasOpenScrapOrder
-                  ? ` — đang có phiếu hủy ${lot.scrapOrder?.scrapCode ?? ''} (${lot.scrapOrder?.status ?? ''})`
+                  ? ` — đang có phiếu hủy ${lot.scrapOrder?.scrapCode ?? ''} (${scrapStatusText(lot.scrapOrder?.status)})`
                   : ''}
             </option>
           );
@@ -183,8 +184,8 @@ function RowLotSelect({ variantId, lotItemId, onChange, disabled }: RowLotSelect
       {selected?.hasOpenScrapOrder && (
         <p className="mt-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-xs text-amber-800">
           Lô {selected.lotNumber} đang có phiếu hủy {selected.scrapOrder?.scrapCode ?? ''} (
-          {selected.scrapOrder?.status ?? ''}). Lô đang có phiếu hủy chưa xong xuất thì không thể đưa vào
-          đợt kiểm kê.
+          {scrapStatusText(selected.scrapOrder?.status)}). Lô đang có phiếu hủy chưa xong xuất thì không
+          thể đưa vào đợt kiểm kê.
         </p>
       )}
       {selected && !selected.isScrapped && !selected.hasOpenScrapOrder && (
