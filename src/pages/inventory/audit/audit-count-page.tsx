@@ -54,7 +54,13 @@ export function AuditCountPage() {
         const loaded = await auditApi.getAuditItem(auditId, itemId);
         if (cancelled) return;
         setItem(loaded);
-        setCountedQty(loaded.countedQty);
+        // Dòng kiểm kê lại dùng lô có sẵn: điền sẵn tồn của lô đó vào ô đếm, nhân viên chỉ cần
+        // đếm rồi điều chỉnh. Dòng lô mới để 0 vì khi áp dụng sẽ tạo lô mới với số đếm làm tồn.
+        // Chỉ điền khi dòng chưa lưu lần nào (mọi lần lưu đều bắt buộc có lý do).
+        const isFreshRow = !loaded.discrepancyReason && loaded.countedQty === 0;
+        setCountedQty(
+          loaded.lotMode === 'EXISTING' && isFreshRow ? loaded.snapshotQty : loaded.countedQty,
+        );
         setSystemQty(loaded.snapshotQty);
         setLotSelection(undefined);
         setDiscrepancyReason(loaded.discrepancyReason || null);
