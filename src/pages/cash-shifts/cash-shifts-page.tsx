@@ -509,7 +509,7 @@ export function CashShiftsPage() {
       <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <span className="eyebrow"><Wallet size={14} /> QUẦY THU NGÂN</span>
+            <span className="eyebrow"><Wallet size={14} /> Quầy thu ngân</span>
             <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-slate-900">Quản lý ca & tiền mặt</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">Ghi nhận tiền đầu ca, theo dõi các khoản thu chi, kiểm đếm két và xác nhận bàn giao.</p>
           </div>
