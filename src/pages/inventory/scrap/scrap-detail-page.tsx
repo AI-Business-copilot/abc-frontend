@@ -130,6 +130,13 @@ export function ScrapDetailPage() {
                   {order.rejectionNote ? ` — ${order.rejectionNote}` : ""}
                 </Alert>
               )}
+              {order.status === "CANCELLED" && (
+                <Alert>
+                  Đã hủy bởi {order.cancelledByUser?.fullName ?? "—"} lúc {formatDateTime(order.cancelledAt)}.
+                  Tồn kho không thay đổi và lô hàng vẫn đang được cách ly.
+                  {order.cancelledNote ? ` — ${order.cancelledNote}` : ""}
+                </Alert>
+              )}
 
               <Card>
                 <CardHeader><CardTitle>Thông tin phiếu</CardTitle></CardHeader>

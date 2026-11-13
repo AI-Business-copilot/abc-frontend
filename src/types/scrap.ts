@@ -5,6 +5,20 @@ export type LotStatus = "HEALTHY" | "WARNING" | "UNUSABLE" | "QUARANTINED" | "SC
 export type ScrapStatus = "PENDING" | "COMPLETED" | "REJECTED" | "CANCELLED";
 export type ScrapSource = "DAMAGED_STOCK" | "SELLABLE_STOCK";
 
+/** Vietnamese labels for the scrap order statuses, so the raw code never reaches the user. */
+export const scrapStatusLabel: Record<ScrapStatus, string> = {
+  PENDING: "Chờ duyệt",
+  COMPLETED: "Đã duyệt",
+  REJECTED: "Bị từ chối",
+  CANCELLED: "Đã hủy bỏ",
+};
+
+/** Safe label for a status coming from the API, which may be unknown to this build. */
+export function scrapStatusText(status: string | null | undefined): string {
+  if (!status) return "—";
+  return scrapStatusLabel[status as ScrapStatus] ?? status;
+}
+
 export const REJECTION_REASON_CODES = [
   "WRONG_QUANTITY",
   "PHOTO_UNCLEAR",
@@ -42,6 +56,11 @@ export interface ExpiringLot {
   onHand: number;
   /** Units already marked damaged. */
   damaged: number;
+  /**
+   * The scrap order already raised for this lot item, in any status. A lot can only have one
+   * scrap order, so a new one cannot be created while this is set.
+   */
+  scrapOrder: { id: string; scrapCode: string; status: ScrapStatus } | null;
 }
 
 /** One batch (product_lots row) with only the variant items that matched the filter. */
@@ -97,6 +116,8 @@ export interface ScrapOrder {
   rejectedAt: string | null;
   rejectionReasonCode: RejectionReasonCode | null;
   rejectionNote: string | null;
+  cancelledAt: string | null;
+  cancelledNote: string | null;
   variant: { id: string; sku: string; costPrice: string; template: { name: string } };
   lotItem: {
     id: string;
@@ -108,6 +129,7 @@ export interface ScrapOrder {
   createdByUser: ScrapUser | null;
   approvedByUser: ScrapUser | null;
   rejectedByUser: ScrapUser | null;
+  cancelledByUser: ScrapUser | null;
 }
 
 export interface ScrapOrderListItem extends ScrapOrder {
@@ -140,6 +162,7 @@ export interface ScrapStatistics {
   pendingCount: number;
   completedCount: number;
   rejectedCount: number;
+  cancelledCount: number;
   totalLossValue: number;
   bySource: { DAMAGED_STOCK: number; SELLABLE_STOCK: number };
 }

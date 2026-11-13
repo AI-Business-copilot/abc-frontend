@@ -8,6 +8,7 @@ import { Spinner } from '../../../components/ui/spinner';
 import { PermissionGate } from '../../../components/common/permission-gate';
 import { AuditItemStatusBadge } from './components/audit-item-list';
 import { useAudit } from './hooks/use-audit';
+import { useStaffMembers } from './audit-rows';
 import { CatalogHeader } from '../../products/catalog-header';
 import { auditApi } from '../../../api/audit';
 import type { StockAuditItem } from '../../../types/audit';
@@ -51,6 +52,11 @@ export function AuditItemDetailPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [acting, setActing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const { members, loading: membersLoading, error: membersError } = useStaffMembers();
+  const [targetUserId, setTargetUserId] = useState('');
+  const [reassigning, setReassigning] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const loadItem = useCallback(async () => {
     if (!auditId || !itemId) return;
@@ -109,6 +115,23 @@ export function AuditItemDetailPage() {
     }
   };
 
+  // Hand this row to another employee when the assignee quit or is off work
+  const handleReassign = async () => {
+    if (!auditId || !item || !targetUserId) return;
+    try {
+      setReassigning(true);
+      setActionError(null);
+      const updated = await auditApi.reassignItem(auditId, item.id, targetUserId);
+      setItem(updated);
+      setTargetUserId('');
+      setNotice(`Đã chuyển ${updated.sku} cho ${updated.assignedTo?.name ?? 'nhân viên mới'}`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Không đổi được người phụ trách');
+    } finally {
+      setReassigning(false);
+    }
+  };
+
   // Keep the audit header in sync when the page is reopened
   useEffect(() => {
     refetchAudit();
@@ -162,6 +185,13 @@ export function AuditItemDetailPage() {
   const isNewLot = Boolean(item.isNewLot);
   const canReview = audit?.status === 'IN_PROGRESS' && item.itemStatus === 'PENDING_APPROVAL';
   const wasRejected = item.itemStatus === 'IN_PROGRESS' && Boolean(item.rejectionReason);
+  // A row still being counted can be handed to another employee; the current assignee is not an option.
+  const canReassign = audit?.status === 'IN_PROGRESS' && item.itemStatus === 'IN_PROGRESS';
+  const reassignOptions = members.filter((member) => member.user.id !== item.assignedTo?.id);
+  const assigneeInactive =
+    !membersLoading &&
+    Boolean(item.assignedTo) &&
+    !members.some((member) => member.user.id === item.assignedTo?.id);
 
   return pageFrame(
     <div className="space-y-6">
@@ -169,6 +199,10 @@ export function AuditItemDetailPage() {
 
       {actionError && (
         <Alert className="bg-red-50 border-red-200 text-red-700">{actionError}</Alert>
+      )}
+
+      {notice && (
+        <Alert className="bg-green-50 border-green-200 text-green-700">{notice}</Alert>
       )}
 
       <Card className="p-6 space-y-6">
@@ -338,6 +372,68 @@ export function AuditItemDetailPage() {
                   Từ chối
                 </Button>
               </div>
+            )}
+          </Card>
+        )}
+      </PermissionGate>
+
+      <PermissionGate permission="inventory.audit.create" fallback={null}>
+        {canReassign && (
+          <Card className="p-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Phân công lại</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Chuyển dòng này cho nhân viên khác khi người phụ trách đã nghỉ việc hoặc không có mặt
+                hôm nay.
+              </p>
+            </div>
+
+            {membersError && (
+              <Alert className="bg-red-50 border-red-200 text-red-700 text-sm">{membersError}</Alert>
+            )}
+
+            {assigneeInactive && (
+              <Alert className="bg-amber-50 border-amber-200 text-amber-800 text-sm">
+                {item.assignedTo?.name} không còn là nhân viên đang hoạt động của cửa hàng. Hãy chuyển
+                dòng này cho người khác.
+              </Alert>
+            )}
+
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="w-64">
+                <Label htmlFor="reassign-user" className="font-semibold">
+                  Giao cho
+                </Label>
+                <select
+                  id="reassign-user"
+                  value={targetUserId}
+                  disabled={reassigning || membersLoading}
+                  onChange={(e) => setTargetUserId(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#0f4c3a] focus:outline-none focus:ring-1 focus:ring-[#0f4c3a] disabled:bg-gray-100"
+                >
+                  <option value="" disabled>
+                    Chọn nhân viên
+                  </option>
+                  {reassignOptions.map((member) => (
+                    <option key={member.user.id} value={member.user.id}>
+                      {member.user.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                onClick={handleReassign}
+                disabled={reassigning || !targetUserId}
+                className="bg-[#0f4c3a] hover:bg-[#0a3528] text-white"
+              >
+                {reassigning ? 'Đang chuyển...' : 'Chuyển cho nhân viên này'}
+              </Button>
+            </div>
+
+            {!membersLoading && reassignOptions.length === 0 && (
+              <p className="text-sm text-amber-700">
+                Không còn nhân viên nào khác đang hoạt động để nhận dòng này.
+              </p>
             )}
           </Card>
         )}

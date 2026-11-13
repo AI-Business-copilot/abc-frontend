@@ -4,8 +4,6 @@ import { scrapApi } from "@/api/scrap";
 import type { ExpiringLotsSummary, LotBatch, LotStatus } from "@/types/scrap";
 
 const PAGE_SIZE = 20;
-/** The scrap-order endpoint caps `take` at 100, so pending orders are collected page by page. */
-const ORDER_PAGE_SIZE = 100;
 
 const emptySummary: ExpiringLotsSummary = {
   healthy: 0,
@@ -16,27 +14,11 @@ const emptySummary: ExpiringLotsSummary = {
   total: 0,
 };
 
-/** Every PENDING scrap order, keyed by the lot item it will consume. */
-async function loadPendingOrderMap(): Promise<Record<string, string>> {
-  const map: Record<string, string> = {};
-  for (let skip = 0; ; skip += ORDER_PAGE_SIZE) {
-    const result = await scrapApi.listScrapOrders({
-      status: "PENDING",
-      skip,
-      take: ORDER_PAGE_SIZE,
-    });
-    for (const order of result.orders) {
-      if (order.lotItemId) map[order.lotItemId] = order.id;
-    }
-    if (result.orders.length < ORDER_PAGE_SIZE || skip + ORDER_PAGE_SIZE >= result.total) break;
-  }
-  return map;
-}
-
 /**
  * Batches that need attention (WARNING, UNUSABLE, QUARANTINED by default), soonest expiry first.
  * One entry per lot number, each holding the variant items that matched the filter.
- * Also loads the PENDING scrap orders so a quarantined item can link to its open order.
+ * Each item carries the scrap order it already has, so the page can point at it instead of
+ * offering to create a second one.
  */
 export function useExpiringLots() {
   const [status, setStatus] = useState<LotStatus | undefined>(undefined);
@@ -44,7 +26,6 @@ export function useExpiringLots() {
   const [lots, setLots] = useState<LotBatch[]>([]);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<ExpiringLotsSummary>(emptySummary);
-  const [pendingOrderByLot, setPendingOrderByLot] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,14 +33,14 @@ export function useExpiringLots() {
     setLoading(true);
     setError(null);
     try {
-      const [lotResult, pendingOrderByLot] = await Promise.all([
-        scrapApi.getExpiringBatches({ status, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
-        loadPendingOrderMap(),
-      ]);
+      const lotResult = await scrapApi.getExpiringBatches({
+        status,
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+      });
       setLots(lotResult.lots);
       setTotal(lotResult.total);
       setSummary(lotResult.summary);
-      setPendingOrderByLot(pendingOrderByLot);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tải danh sách lô hàng.");
     } finally {
@@ -80,7 +61,6 @@ export function useExpiringLots() {
     lots,
     total,
     summary,
-    pendingOrderByLot,
     status,
     page,
     pageSize: PAGE_SIZE,

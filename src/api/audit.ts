@@ -11,7 +11,6 @@ import type {
   StockAuditItem,
   UpdateAuditItemRequest,
   VariantLot,
-  VariantOption,
 } from '../types/audit';
 
 export type {
@@ -21,7 +20,6 @@ export type {
   StockAudit,
   StockAuditItem,
   VariantLot,
-  VariantOption,
 };
 
 export type UpdateCountRequest = UpdateAuditItemRequest & { countedQty: number };
@@ -185,31 +183,6 @@ export const auditApi = {
   },
 
   /**
-   * Search active variants (SKU picker for the owner)
-   */
-  async searchVariants(search: string, limit: number = 20): Promise<{ items: VariantOption[] }> {
-    try {
-      const headers = await getAuthHeaders();
-      const params = new URLSearchParams();
-      if (search.trim()) params.append('search', search.trim());
-      params.append('limit', limit.toString());
-
-      const response = await fetch(`${apiBaseUrl}/inventory/variants?${params.toString()}`, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to search variants (${response.status})`);
-      }
-
-      return response.json();
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  /**
    * Get the existing lots of a variant (number and expiry are autofilled from these)
    */
   async getLots(variantId: string): Promise<{ items: VariantLot[] }> {
@@ -244,7 +217,10 @@ export const auditApi = {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || `Failed to add items (${response.status})`);
+        const failure = new Error(error.message || `Failed to add items (${response.status})`);
+        // Keep the status so the caller can tell a conflict (409) from a generic failure.
+        (failure as Error & { status?: number }).status = response.status;
+        throw failure;
       }
 
       return response.json();

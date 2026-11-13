@@ -57,6 +57,10 @@ export type GeneratedVariant = {
   basePrice: string | number;
   costPrice: string | number;
   safetyStockQty: number;
+  /** The backend sends it with the template detail. */
+  isActive?: boolean | null;
+  /** Stock of this SKU. The backend sends it with the template detail. */
+  inventoryBalances?: { quantityOnHand: number | string }[];
   variantAttributeValues: {
     attribute: { id: string; name: string };
     attributeValue: { id: string; value: string };

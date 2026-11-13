@@ -24,7 +24,7 @@ interface AssignStaffModalProps {
   onAssignSuccess?: () => void;
 }
 
-/** Owner dialog: add employee + SKU (+ lot on a re-audit) rows, and reassign existing items. */
+/** Owner dialog: add employee + SKU (+ lot on a re-audit) rows to an audit. */
 export function AssignStaffModal({
   auditId,
   auditType,
@@ -35,15 +35,14 @@ export function AssignStaffModal({
   const { members, loading, error: membersError } = useStaffMembers();
   const [rows, setRows] = useState<AuditRowDraft[]>(() => [emptyRow()]);
   const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [reassigningId, setReassigningId] = useState<string | null>(null);
-
-  const reassignable = existingItems.filter((item) => item.itemStatus === 'IN_PROGRESS');
 
   const handleAdd = async () => {
     const rowsError = validateRows(rows, auditType);
     if (rowsError) {
       setError(rowsError);
+      setConflict(null);
       return;
     }
 
@@ -53,33 +52,31 @@ export function AssignStaffModal({
     const clash = rows.find((row) => row.lotItemId && taken.has(`${row.variant!.id}:${row.lotItemId}`));
     if (clash) {
       setError(`${clash.variant!.sku} với lô này đã có trong đợt kiểm kê.`);
+      setConflict(null);
       return;
     }
 
     try {
       setSubmitting(true);
       setError(null);
+      setConflict(null);
       await auditApi.addItems(auditId, rowsToAssignments(rows));
       onAssignSuccess?.();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thêm được dòng kiểm kê');
+      const message = err instanceof Error ? err.message : 'Không thêm được dòng kiểm kê';
+      const status = (err as Error & { status?: number })?.status;
+      // A 409 means the server refused the rows, most often because a lot still has a pending
+      // scrap order. Surface it as its own alert so the owner knows what to settle first.
+      if (status === 409) {
+        setConflict(message);
+        setError(null);
+      } else {
+        setError(message);
+        setConflict(null);
+      }
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleReassign = async (itemId: string, userId: string) => {
-    if (!userId) return;
-    try {
-      setReassigningId(itemId);
-      setError(null);
-      await auditApi.reassignItem(auditId, itemId, userId);
-      onAssignSuccess?.();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không đổi được người phụ trách');
-    } finally {
-      setReassigningId(null);
     }
   };
 
@@ -94,11 +91,21 @@ export function AssignStaffModal({
                 ? 'Mỗi dòng là một SKU giao cho một nhân viên, kèm một lô có sẵn do bạn chọn ngay bây giờ. Nhân viên giữ nguyên lô đó khi đếm và chỉ có thể sửa ngày của lô và nhập số lượng.'
                 : 'Mỗi dòng là một SKU giao cho một nhân viên. Mọi dòng đều là lô mới: nhân viên nhập số lô và hạn sử dụng khi đếm.'}
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Chọn theo thứ tự: sản phẩm → SKU → lô có sẵn.
+            </p>
           </div>
 
           {(error || membersError) && (
             <Alert className="bg-red-50 border-red-200 text-red-700 text-sm">
               {error || membersError}
+            </Alert>
+          )}
+
+          {conflict && (
+            <Alert className="bg-amber-50 border-amber-200 text-amber-800 text-sm">
+              <p className="font-semibold">Không thêm được: lô không thể kiểm kê.</p>
+              <p className="mt-1">{conflict}</p>
             </Alert>
           )}
 
@@ -120,43 +127,6 @@ export function AssignStaffModal({
                   disabled={submitting}
                 />
               </div>
-
-              {reassignable.length > 0 && (
-                <div className="space-y-2 border-t pt-4">
-                  <h3 className="font-semibold text-gray-900">Đổi người phụ trách các dòng hiện có</h3>
-                  <div className="space-y-2 max-h-56 overflow-y-auto">
-                    {reassignable.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between gap-3 rounded border border-gray-200 p-2"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-gray-900">{item.productName}</p>
-                          <p className="truncate font-mono text-xs text-gray-500">
-                            {item.sku}
-                            {item.lotNumber ? ` • Lô ${item.lotNumber}` : ''}
-                          </p>
-                        </div>
-                        <select
-                          value={item.assignedTo?.id ?? ''}
-                          disabled={reassigningId === item.id}
-                          onChange={(e) => handleReassign(item.id, e.target.value)}
-                          className="w-48 rounded-md border border-gray-300 px-2 py-1 text-sm"
-                        >
-                          <option value="" disabled>
-                            Chọn nhân viên
-                          </option>
-                          {members.map((member) => (
-                            <option key={member.user.id} value={member.user.id}>
-                              {member.user.fullName}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="flex gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={onClose} disabled={submitting} className="flex-1">

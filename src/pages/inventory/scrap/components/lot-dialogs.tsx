@@ -9,6 +9,7 @@ import {
   ALLOWED_SCRAP_IMAGE_TYPES,
   MAX_SCRAP_IMAGES,
   MAX_SCRAP_IMAGE_BYTES,
+  scrapStatusText,
   type ExpiringLot,
 } from "@/types/scrap";
 import { Modal } from "./scrap-ui";
@@ -113,6 +114,9 @@ export function CreateScrapDialog({
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  // A lot can only have one scrap order, so a lot that already has one cannot get another.
+  const existingOrder = lot.scrapOrder;
+
   const addFiles = (list: FileList | null) => {
     const chosen = list ? Array.from(list) : [];
     if (fileInput.current) fileInput.current.value = "";
@@ -137,6 +141,13 @@ export function CreateScrapDialog({
   };
 
   const submit = async () => {
+    if (existingOrder) {
+      setError(
+        `Lô này đã có phiếu hủy ${existingOrder.scrapCode} (${scrapStatusText(existingOrder.status)}). ` +
+          "Mỗi lô chỉ được có một phiếu hủy.",
+      );
+      return;
+    }
     const qty = Number(quantity);
     if (!Number.isInteger(qty) || qty <= 0 || qty > max) {
       setError(`Số lượng phải là số nguyên từ 1 đến ${max}.`);
@@ -171,6 +182,12 @@ export function CreateScrapDialog({
       <p className="mb-4 text-sm text-slate-600">
         {lot.variant.template.name} · {lot.variant.sku} · lô {lot.lotNumber}
       </p>
+      {existingOrder && (
+        <Alert className="mb-3" variant="destructive">
+          Lô này đã có phiếu hủy {existingOrder.scrapCode} ({scrapStatusText(existingOrder.status)}). Mỗi
+          lô chỉ được có một phiếu hủy, nên không thể tạo phiếu mới.
+        </Alert>
+      )}
       {error && <Alert className="mb-3" variant="destructive">{error}</Alert>}
       <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="scrap-qty">
         Số lượng hủy (tối đa {max})

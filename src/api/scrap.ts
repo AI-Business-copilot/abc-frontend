@@ -97,6 +97,14 @@ export const scrapApi = {
     });
   },
 
+  /** Owner only. Closes a pending order without approving it; the lot stays quarantined. */
+  cancelScrapOrder(id: string, note?: string) {
+    return apiRequest<ScrapOrder>(`${base}/scrap-orders/${id}/cancel`, {
+      method: "PATCH",
+      body: JSON.stringify({ note: note?.trim() || undefined }),
+    });
+  },
+
   getScrapStatistics() {
     return apiRequest<ScrapStatistics>(`${base}/scrap-statistics`);
   },

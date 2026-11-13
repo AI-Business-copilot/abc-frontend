@@ -14,6 +14,7 @@ const tabs: { value: ScrapStatus; label: string }[] = [
   { value: "PENDING", label: "Chờ duyệt" },
   { value: "COMPLETED", label: "Đã duyệt" },
   { value: "REJECTED", label: "Bị từ chối" },
+  { value: "CANCELLED", label: "Đã hủy bỏ" },
 ];
 
 export function ScrapListPage() {
@@ -34,6 +35,7 @@ export function ScrapListPage() {
     { label: "Chờ duyệt", value: statistics?.pendingCount ?? 0, tone: "text-amber-700" },
     { label: "Đã duyệt", value: statistics?.completedCount ?? 0, tone: "text-emerald-700" },
     { label: "Bị từ chối", value: statistics?.rejectedCount ?? 0, tone: "text-rose-700" },
+    { label: "Đã hủy bỏ", value: statistics?.cancelledCount ?? 0, tone: "text-slate-700" },
     { label: "Tổng giá trị tổn thất", value: formatMoney(statistics?.totalLossValue ?? 0), tone: "text-slate-900" },
   ];
 
@@ -49,7 +51,7 @@ export function ScrapListPage() {
 
           {error && <Alert variant="destructive">{error}</Alert>}
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {cards.map((card) => (
               <Card className="p-5" key={card.label}>
                 <p className="text-sm text-slate-500">{card.label}</p>
