@@ -877,9 +877,9 @@ export function BarcodeScannerModal({
                       <button
                         type="button"
                         onClick={() => handleBarcodeDetected(item.barcode)}
-                        className="flex items-center gap-1.5 rounded-lg bg-[#ecfdf5] px-2.5 py-1.5 text-[11.5px] font-bold text-[#0f4c3a] hover:bg-[#0f4c3a] hover:text-white transition-colors"
+                        className="flex items-center gap-1.5 rounded-lg bg-[#0f4c3a] px-3 py-1.5 text-[11.5px] font-bold text-white shadow-xs hover:bg-[#0a3528] active:scale-95 transition-all cursor-pointer"
                       >
-                        <Icon name="bolt" className="text-[15px]" />
+                        <Icon name="bolt" className="text-[15px] text-[#fef08a]" />
                         Bắn thử mã này
                       </button>
                     </div>

@@ -280,10 +280,6 @@ export function AttributeValuePage() {
                     ))}
                   </select>
                 </div>
-
-                <span className="rounded-lg bg-[#ecfdf5] px-3 py-2 font-mono text-[12px] text-[#667085]">
-                  ID: {attribute?.id || "—"}
-                </span>
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -334,7 +330,7 @@ export function AttributeValuePage() {
               className="h-12 rounded-xl bg-[#0f4c3a] text-[14px] font-bold text-white shadow-sm hover:bg-[#0a3528] disabled:opacity-60"
             >
               <Icon name="bookmark_add" className="mr-1.5 align-middle text-[19px]" />
-              + Thêm vào thư viện
+              Thêm vào thư viện
             </button>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3">

@@ -15,8 +15,9 @@ import {
   RotateCcw,
   Settings2,
   ShieldCheck,
-  Sparkles,
+  ShoppingCart,
   Tag,
+  Truck,
   UsersRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -44,37 +45,41 @@ interface NavigationGroup {
 }
 
 const navigation: NavigationGroup[] = [
-  { label: "TỔNG QUAN", items: [{ to: "/app", label: "Tổng quan", icon: LayoutDashboard, end: true }] },
   {
-    label: "DOANH NGHIỆP",
+    label: "Tổng quan",
+    items: [{ to: "/app", label: "Bảng điều khiển", icon: LayoutDashboard, end: true }],
+  },
+  {
+    label: "Bán hàng & Thu ngân",
     items: [
-      { to: "/app/business", label: "Hồ sơ doanh nghiệp", icon: BriefcaseBusiness, permission: "business.read" },
-      { to: "/app/team", label: "Thành viên", icon: UsersRound, permission: "invitations.manage" },
-      { to: "/app/business/roles", label: "Vai trò & quyền", icon: KeyRound, permission: "business.roles.manage" },
-      { to: "/app/activity", label: "Hoạt động thành viên", icon: ShieldCheck, permission: "business.audit.read" },
+      { to: "/sales", label: "POS Bán hàng", icon: ShoppingCart },
+      { to: "/app/cash-shifts", label: "Ca trực & Tiền mặt", icon: Wallet, permission: "cash.shift.read" },
+      { to: "/app/orders", label: "Đơn hàng & Thanh toán", icon: CreditCard },
+      { to: "/returns", label: "Đổi trả hàng", icon: RotateCcw },
+      { to: "/promotions", label: "Chương trình khuyến mãi", icon: Tag, permission: "promotions.manage" },
     ],
   },
   {
-    label: "VẬN HÀNH",
+    label: "Kho hàng & Lô Date (FEFO)",
     items: [
-      { to: "/app/products", label: "Sản phẩm & tồn kho", icon: Boxes, permission: "products.read" },
-      { to: "/app/cash-shifts", label: "Ca trực & tiền mặt", icon: Wallet, permission: "cash.shift.read" },
-      { to: "/app/orders", label: "Đơn hàng & thanh toán", icon: CreditCard },
-      { to: "/promotions", label: "Khuyến mãi", icon: Tag, permission: "promotions.manage" },
+      { to: "/products", label: "Sản phẩm & Biến thể", icon: Boxes, permission: "products.read" },
+      { to: "/inventory", label: "Quản lý kho & FEFO", icon: PackageSearch },
+      { to: "/purchases", label: "Mua hàng & Nhập kho NCC", icon: Truck },
       {
         to: "/business-data",
-        label: "Dữ liệu kinh doanh",
+        label: "Báo cáo kinh doanh",
         icon: BarChart3,
         permissionGroups: [["business_data.manage"], ["analytics.read", "finance.read"]],
       },
-      { to: "/returns", label: "Đổi trả hàng", icon: RotateCcw },
     ],
   },
   {
-    label: "TRỢ LÝ KINH DOANH",
+    label: "Doanh nghiệp & Đội ngũ",
     items: [
-      { to: "/app/insights", label: "Tư vấn kinh doanh", icon: Sparkles, disabled: true },
-      { to: "/app/forecast", label: "Dự báo hàng hóa", icon: PackageSearch, disabled: true },
+      { to: "/app/business", label: "Hồ sơ doanh nghiệp", icon: BriefcaseBusiness, permission: "business.read" },
+      { to: "/app/team", label: "Nhân viên cửa hàng", icon: UsersRound, permission: "invitations.manage" },
+      { to: "/app/business/roles", label: "Vai trò & Phân quyền", icon: KeyRound, permission: "business.roles.manage" },
+      { to: "/app/activity", label: "Nhật ký kiểm toán", icon: ShieldCheck, permission: "business.audit.read" },
     ],
   },
 ];
@@ -123,7 +128,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
       <aside className="app-sidebar">
         <div className="sidebar-brand"><Brand /><span className="sidebar-collapse"><Command size={14} /></span></div>
         <div className="branch-select">
-          <span className="side-caption">{isSystemAdmin ? "KHÔNG GIAN QUẢN TRỊ" : "DOANH NGHIỆP"}</span>
+          <span className="side-caption">{isSystemAdmin ? "Không gian quản trị" : "Cửa hàng đang chọn"}</span>
           <div className="branch-chip">
             <span className="branch-icon">{isSystemAdmin ? <ShieldCheck size={15} /> : <BriefcaseBusiness size={15} />}</span>
             <span className="branch-name">{isSystemAdmin ? "Quản trị nền tảng ABC Copilot" : profile?.business?.name || "Chưa có doanh nghiệp"}</span>
@@ -153,7 +158,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
           })}
           {visibleAdminItems.length > 0 && (
             <div className="nav-group">
-              <span className="side-caption">QUẢN TRỊ</span>
+              <span className="side-caption">Quản trị hệ thống</span>
               {visibleAdminItems.map(({ to, label, icon: Icon, end }) => (
                 <NavLink aria-label={label} className={({ isActive }) => `side-link${isActive ? " active" : ""}`} end={end} key={to} title={label} to={to}>
                   <Icon size={16} />{label}

@@ -536,39 +536,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 4. DẢI HOTLINE CHUYÊN GIA TƯ VẤN - TONE XANH THÔNG GIÁNG SINH (#0f4c3a) */}
-      <section className="w-full bg-[#0f4c3a] text-white py-2.5 px-2 sm:px-6 shadow-sm border-t border-emerald-800">
-        <div className="w-full">
-          <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1 text-[12px] divide-x divide-emerald-800/60">
-            {[
-              { role: "Tổng đài CSKH", tel: "028.7300.6868" },
-              { role: "Hỗ trợ Kỹ thuật", tel: "028.7300.6869" },
-              { role: "Tư vấn Kho FEFO", tel: "0938.848.248" },
-              { role: "Chuyên viên POS", tel: "0903.177.419" },
-              { role: "Tư vấn AI Copilot", tel: "0909.135.454" },
-              { role: "Kế toán Đối soát", tel: "0708.358.121" },
-              { role: "Triển khai Chuỗi", tel: "0931.332.359" },
-              { role: "Tư vấn Đào tạo", tel: "0898.65.65.66" },
-              { role: "Hỗ trợ Kiểm kê", tel: "0935.088.573" },
-              { role: "Bảo hành SLA", tel: "0908.656.425" },
-            ].map((contact, idx) => (
-              <a
-                key={idx}
-                href={`tel:${contact.tel.replace(/\./g, "")}`}
-                className="px-2 py-1 hover:bg-[#165b4c] transition-colors flex items-center gap-1.5"
-              >
-                <Phone size={12} className="text-[#d4af37] shrink-0" />
-                <div className="leading-tight">
-                  <div className="font-bold text-[11.5px] text-white">{contact.role}</div>
-                  <div className="text-[11px] text-emerald-200 font-mono tracking-tight">{contact.tel}</div>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. PHẦN 4 Ô DỊCH VỤ STAGGERED SO LE NGUYÊN BẢN (#nina-service-page) */}
+      {/* 4. PHẦN 4 Ô DỊCH VỤ STAGGERED SO LE NGUYÊN BẢN (#nina-service-page) */}
       <section id="nina-service-page" className="w-full bg-white border-b border-emerald-950/10 overflow-hidden min-h-screen flex items-center py-16">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-8 xl:px-12 w-full">
           <div className="flex-services">
@@ -652,7 +620,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 6. BẢNG TÍNH NĂNG CHUYÊN SÂU 1: KHO LÔ DATE & FEFO */}
+      {/* 5. BẢNG TÍNH NĂNG CHUYÊN SÂU 1: KHO LÔ DATE & FEFO */}
       <section id="kho-fefo" className="w-full min-h-screen flex items-center py-16 bg-[#f4f7f5] border-b border-emerald-950/10">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-8 xl:px-12 w-full">
           <div className="nina-domain-box grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -761,7 +729,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 7. BẢNG TÍNH NĂNG CHUYÊN SÂU 2: POS BÁN HÀNG & CA THU NGÂN */}
+      {/* 6. BẢNG TÍNH NĂNG CHUYÊN SÂU 2: POS BÁN HÀNG & CA THU NGÂN */}
       <section id="pos-ban-hang" className="w-full min-h-screen flex items-center py-16 bg-white border-b border-emerald-950/10">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-8 xl:px-12 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -861,7 +829,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 8. BẢNG GIÁ GIẢI PHÁP PHẦN MỀM ABC - NỀN XANH THÔNG ĐẬM SANG TRỌNG, HẾT BỊ CHÌM */}
+      {/* 7. BẢNG GIÁ GIẢI PHÁP PHẦN MỀM ABC - NỀN XANH THÔNG ĐẬM SANG TRỌNG, HẾT BỊ CHÌM */}
       <div className="bgHostWeb w-full overflow-hidden">
         <section id="hosting" className="relative w-full pt-16 pb-12 overflow-hidden">
           <div className="max-w-[1360px] mx-auto px-4 sm:px-8">
@@ -1076,7 +1044,7 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* 9. HỆ SINH THÁI 9 PHÂN HỆ NGHIỆP VỤ ABC */}
+        {/* 8. HỆ SINH THÁI 9 PHÂN HỆ NGHIỆP VỤ ABC */}
         <section id="thiet-ke-web" className="pt-4 pb-24 bg-transparent relative z-30">
           <div className="max-w-[1360px] mx-auto px-4 sm:px-8">
             <div className="text-center max-w-[910px] mx-auto mb-14">
@@ -1391,7 +1359,7 @@ export function HomePage() {
         </section>
       </div>
 
-      {/* 10. ƯU ĐIỂM NỔI BẬT CỦA HỆ THỐNG ABC (#uu-diem) */}
+      {/* 9. ƯU ĐIỂM NỔI BẬT CỦA HỆ THỐNG ABC (#uu-diem) */}
       <section id="uu-diem" className="py-20 bg-white min-h-screen flex items-center border-b border-emerald-950/10">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-8 xl:px-12 w-full">
           <div className="flex-uudiem">
@@ -1501,7 +1469,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 11. QUY TRÌNH 5 BƯỚC TRIỂN KHAI NHANH CHÓNG (#quy-trinh) */}
+      {/* 10. QUY TRÌNH 5 BƯỚC TRIỂN KHAI NHANH CHÓNG (#quy-trinh) */}
       <section id="quy-trinh" className="py-24 bg-[#f4f7f5] border-b border-emerald-950/10">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-8">
           <div className="text-center max-w-[800px] mx-auto mb-16">
@@ -1558,7 +1526,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 12. SẴN SÀNG TRIỂN KHAI VẬN HÀNH (#nina-support-page) */}
+      {/* 11. SẴN SÀNG TRIỂN KHAI VẬN HÀNH (#nina-support-page) */}
       <section id="nina-support-page" className="py-16 relative z-20 bg-[#eaf3ee]">
         <div className="max-w-[1360px] mx-auto px-4 text-center">
           <h3 className="text-2xl sm:text-3xl lg:text-4xl text-[#0f4c3a] font-bold mb-3">
@@ -1597,7 +1565,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 13. FOOTER 4 CỘT CHÍNH THỨC ABC - NỀN XANH THÔNG LIỀN MẠCH, KHÔNG CÓ KHOẢNG TRẮNG (#nina-footer) */}
+      {/* 12. FOOTER 4 CỘT CHÍNH THỨC ABC - NỀN XANH THÔNG LIỀN MẠCH, KHÔNG CÓ KHOẢNG TRẮNG (#nina-footer) */}
       <footer id="nina-footer" className="bg-[#0f4c3a] border-t border-emerald-900 overflow-hidden pb-16 lg:pb-24">
         <div className="nina-footer-top bg-white py-10 lg:py-12 border-b border-slate-200">
           <div className="max-w-[1360px] mx-auto px-4 sm:px-8">
@@ -1665,7 +1633,7 @@ export function HomePage() {
           </div>
         </div>
 
-        {/* 14. FOOTER BOTTOM: BẢN QUYỀN ABC (TONE XANH THÔNG GIÁNG SINH #0f4c3a) */}
+        {/* 13. FOOTER BOTTOM: BẢN QUYỀN ABC (TONE XANH THÔNG GIÁNG SINH #0f4c3a) */}
         <div className="nina-footer-bottom bg-[#0f4c3a] text-white py-8 pb-16">
           <div className="max-w-[1360px] mx-auto px-4 sm:px-8">
             <div className="flex flex-col lg:flex-row items-start justify-between gap-8">
@@ -1717,7 +1685,7 @@ export function HomePage() {
         </div>
       </footer>
 
-      {/* 15. DẢI HOTLINE TƯ VẤN VIÊN CỐ ĐỊNH Ở ĐÁY MÀN HÌNH (STICKY FIXED BOTTOM - TO LÊN & CHE KHOẢNG CÁCH) */}
+      {/* 14. DẢI HOTLINE TƯ VẤN VIÊN CỐ ĐỊNH Ở ĐÁY MÀN HÌNH (STICKY FIXED BOTTOM - TO LÊN & CHE KHOẢNG CÁCH) */}
       <aside className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f4c3a] text-white shadow-[0_-4px_25px_rgba(0,0,0,0.3)] border-t-2 border-[#165b4c] py-2.5 sm:py-3">
         <div className="w-full px-2 sm:px-4">
           <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 text-[12px] divide-x divide-emerald-800/80 items-center">
