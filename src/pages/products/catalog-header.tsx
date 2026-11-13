@@ -86,17 +86,17 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
     <header className={`sticky top-0 z-40 bg-white border-b border-[#eaecf0]${mode === "purchases" || mode === "sales" ? " order-workspace-header" : ""}`}>
       <div className="h-16 pl-6 pr-5 flex items-center gap-6">
         <Link className="flex items-center gap-2.5 shrink-0" to={(mode === "purchases" || mode === "sales") ? "/app/orders" : "/products"}>
-          <div className="w-9 h-9 rounded-lg bg-[#0f4c3a] grid place-items-center text-white shadow-[0_4px_10px_rgba(79,70,229,0.35)]">
+          <div className="w-9 h-9 rounded-lg bg-[#0f4c3a] grid place-items-center text-white border border-[#0a3528]/20 shadow-xs">
             <Icon name="auto_awesome" className="text-[19px]" />
           </div>
           <div className="leading-tight">
             <div className="flex items-baseline gap-2">
-              <span className="text-[16px] font-extrabold tracking-tight">ABC Retail</span>
-              <span className="text-[9px] font-bold tracking-[0.14em] text-[#0f4c3a] bg-[#ecfdf5] px-1.5 py-0.5 rounded">
-                COPILOT
+              <span className="text-[15.5px] font-bold tracking-tight text-slate-900">ABC Retail</span>
+              <span className="text-[11px] font-medium text-[#0f4c3a] bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
+                ERP
               </span>
             </div>
-            <div className="text-[10.5px] font-medium text-[#98a2b3] mt-0.5">{(mode === "purchases" || mode === "sales") ? "ERP Đơn Hàng & Thanh Toán" : "ERP Tồn Kho & Mã Hàng"}</div>
+            <div className="text-[11.5px] font-normal text-slate-500 mt-0.5">{(mode === "purchases" || mode === "sales") ? "Quản lý Đơn hàng & Thanh toán" : "Quản lý Kho & Danh mục"}</div>
           </div>
         </Link>
 

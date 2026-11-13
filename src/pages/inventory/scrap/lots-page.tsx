@@ -123,10 +123,10 @@ export function LotsPage() {
 
           <Card className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#eef3ff] text-slate-500">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                 <tr>
                   {["Lô hàng", "Số SKU", "Hạn gần nhất", "Tồn trong lô", "Trạng thái", "Thao tác"].map((head) => (
-                    <th className="px-4 py-3 font-semibold" key={head}>{head}</th>
+                    <th className="px-4 py-3 font-semibold text-xs" key={head}>{head}</th>
                   ))}
                 </tr>
               </thead>
