@@ -33,6 +33,7 @@ const permissionLabels: Record<string, string> = {
   "vendor_returns.create": "Tạo phiếu trả hàng cho nhà cung cấp",
   "finance.read": "Xem thông tin tài chính và giá vốn",
   "analytics.read": "Xem dữ liệu kinh doanh và báo cáo phân tích",
+  "ai_insights.manage": "Chạy phân tích và cấu hình ngưỡng cảnh báo tồn kho",
   "copilot.use": "Sử dụng trợ lý phân tích và tư vấn kinh doanh",
   "platform.users.manage": "Quản lý tài khoản người dùng",
   "platform.businesses.manage": "Quản lý doanh nghiệp",
@@ -76,6 +77,7 @@ const permissionDescriptions: Record<string, string> = {
   "vendor_returns.create": "Lập phiếu trả hàng hoặc hàng lỗi gửi lại nhà cung cấp.",
   "finance.read": "Truy cập các thông tin tài chính nhạy cảm, gồm cả giá vốn.",
   "analytics.read": "Xem dữ liệu kinh doanh đã tổng hợp và các báo cáo phân tích. Một số dữ liệu tài chính cần thêm quyền xem tài chính.",
+  "ai_insights.manage": "Chạy phân tích cảnh báo tồn kho, đổi ngưỡng cảnh báo, ghi nhận hoặc bỏ qua cảnh báo. Xem cảnh báo chỉ cần quyền xem báo cáo phân tích.",
   "copilot.use": "Sử dụng các công cụ phân tích và gợi ý của trợ lý kinh doanh.",
 };
 

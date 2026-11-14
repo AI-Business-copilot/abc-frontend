@@ -85,7 +85,7 @@ const navigation: NavigationGroup[] = [
   {
     label: "TRỢ LÝ KINH DOANH",
     items: [
-      { to: "/app/insights", label: "Tư vấn kinh doanh", icon: Sparkles, disabled: true },
+      { to: "/app/insights", label: "Cảnh báo tồn kho", icon: Sparkles, permission: "analytics.read" },
       { to: "/app/forecast", label: "Dự báo hàng hóa", icon: PackageSearch, disabled: true },
     ],
   },
