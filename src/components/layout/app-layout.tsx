@@ -7,6 +7,7 @@ import {
   CircleHelp,
   Command,
   CreditCard,
+  FileSpreadsheet,
   LayoutDashboard,
   KeyRound,
   LogOut,
@@ -68,6 +69,17 @@ const navigation: NavigationGroup[] = [
         permissionGroups: [["business_data.manage"], ["analytics.read", "finance.read"]],
       },
       { to: "/returns", label: "Đổi trả hàng", icon: RotateCcw },
+    ],
+  },
+  {
+    label: "BÁO CÁO BỔ SUNG",
+    items: [
+      {
+        to: "/online-reports/shopee",
+        label: "Báo cáo Shopee",
+        icon: FileSpreadsheet,
+        permissionGroups: [["business_data.manage", "finance.read"], ["analytics.read", "finance.read"]],
+      },
     ],
   },
   {
