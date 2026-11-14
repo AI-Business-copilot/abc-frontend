@@ -31,6 +31,7 @@ const permissionGroupLabels: Record<string, string> = {
   vendor_returns: "Trả hàng nhà cung cấp",
   finance: "Tài chính",
   analytics: "Báo cáo",
+  ai_insights: "Cảnh báo tồn kho",
   copilot: "Trợ lý kinh doanh",
 };
 

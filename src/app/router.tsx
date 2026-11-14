@@ -45,6 +45,7 @@ const SalesPage = lazy(() => import("@/pages/sales/sales-page").then((module) =>
 const PromotionsPage = lazy(() => import("@/pages/promotions/promotions-page").then((module) => ({ default: module.PromotionsPage })));
 const ShopeeReportsPage = lazy(() => import("@/pages/online-reports/shopee-reports-page").then((module) => ({ default: module.ShopeeReportsPage })));
 const BusinessDataPage = lazy(() => import("@/pages/business-data/business-data-page").then((module) => ({ default: module.BusinessDataPage })));
+const AiInsightsPage = lazy(() => import("@/pages/ai-insights/ai-insights-page").then((module) => ({ default: module.AiInsightsPage })));
 const ReturnsPage = lazy(() => import("@/pages/returns/returns-page").then((module) => ({ default: module.ReturnsPage })));
 const AdminBusinessesPage = lazy(() => import("@/pages/admin/admin-management-page").then((module) => ({ default: module.AdminBusinessesPage })));
 const AdminUsersPage = lazy(() => import("@/pages/admin/admin-management-page").then((module) => ({ default: module.AdminUsersPage })));
@@ -241,6 +242,7 @@ export const router = createBrowserRouter([
       { path: "/sales/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><SalesPage /></Suspense></RequireBusiness> },
       { path: "/promotions", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><PromotionsPage /></Suspense></RequireBusiness> },
       { path: "/business-data", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><BusinessDataPage /></Suspense></RequireBusiness> },
+      { path: "/app/insights", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><AiInsightsPage /></Suspense></RequireBusiness> },
       { path: "/online-reports/shopee", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><ShopeeReportsPage /></Suspense></RequireBusiness> },
       { path: "/returns/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><ReturnsPage /></Suspense></RequireBusiness> },
       {
