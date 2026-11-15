@@ -8,7 +8,7 @@ export const money = (value: string | number) => new Intl.NumberFormat("vi-VN", 
 export const date = (value: string | null) => value ? new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "short" }).format(new Date(value)) : "—";
 export const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 export const code = (prefix: string) => `${prefix}-${today().replaceAll("-", "")}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-export const statuses: Record<string, string> = { ORDERED: "Đã đặt mua", PARTIALLY_RECEIVED: "Nhận một phần", COMPLETED: "Đã nhận đủ", CLOSED_SHORT: "Đóng phần thiếu", CANCELLED: "Đã hủy", RECEIVED: "Đã nhận" };
+export const statuses: Record<string, string> = { DRAFT: "Nháp - chờ duyệt", ORDERED: "Đã đặt mua", PARTIALLY_RECEIVED: "Nhận một phần", COMPLETED: "Đã nhận đủ", CLOSED_SHORT: "Đóng phần thiếu", CANCELLED: "Đã hủy", RECEIVED: "Đã nhận" };
 export function Status({ value }: { value: string }) { return <span className={`purchase-status ${value.toLowerCase()}`}>{statuses[value] || value}</span>; }
 export function ErrorBox({ error }: { error: string }) { return error ? <div role="alert" className="purchase-error">{error}</div> : null; }
 export function Field({ label, children }: { label: string; children: ReactNode }) { return <label className="purchase-field"><span>{label}</span>{children}</label>; }

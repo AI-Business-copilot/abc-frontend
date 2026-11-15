@@ -1,6 +1,6 @@
 import { apiRequest } from "@/services/api.service";
 
-export type InsightType = "LOW_STOCK" | "SLOW_MOVING" | "DECLINING_SALES" | "OVERSTOCK" | "EXPIRATION_RISK";
+export type InsightType = "STOCKOUT_RISK" | "LOW_STOCK" | "SLOW_MOVING" | "DECLINING_SALES" | "OVERSTOCK" | "EXPIRATION_RISK";
 export type InsightSeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 export type InsightStatus = "OPEN" | "ACKNOWLEDGED" | "DISMISSED" | "RESOLVED";
 
@@ -66,6 +66,69 @@ export type InsightSettings = {
   slowMoving: { noSaleDays: number; maxUnitsInWindow: number };
   declining: { periodDays: number; minBaseUnits: number; mediumPct: number; highPct: number };
   overstock: { thresholdDays: number; targetDays: number };
+  forecast: { minSeriesDays: number; serviceLevelPct: number };
+  stockout: { highSlackDays: number; mediumSlackDays: number };
+};
+
+export type Urgency = InsightSeverity;
+export type ReplenishmentStatus = "PENDING" | "ORDERED" | "DISMISSED" | "RESOLVED";
+
+export type ReplenishmentItem = {
+  id: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  category: string | null;
+  status: ReplenishmentStatus;
+  urgency: Urgency;
+  confidence: "HIGH" | "MEDIUM" | "LOW" | null;
+  suggestedQty: number;
+  unitCost: number;
+  amount: number;
+  orderByDate: string | null;
+  stockoutDate: string | null;
+  snoozeUntil: string | null;
+  supplierId: string | null;
+  supplierName: string | null;
+  poId: string | null;
+  poCode: string | null;
+  poStatus: string | null;
+  details: Record<string, unknown>;
+};
+
+export type ReplenishmentList = {
+  items: ReplenishmentItem[];
+  forecastReady: boolean;
+  forecastAsOf: string | null;
+  warnings: InsightWarning[];
+  summary: { pendingCount: number; pendingAmount: number; byUrgency: Record<string, number>; noSupplierCount: number };
+};
+
+type ForecastTotals = { d7: number; d14: number; d28: number };
+export type ForecastDetail = {
+  asOf: string | null;
+  stale: boolean;
+  status: "OK" | "INSUFFICIENT_DATA";
+  forecast: {
+    model: string | null;
+    dailyRate: number;
+    totals: ForecastTotals;
+    dailyRates?: number[];
+    modelVersion?: string;
+    datasetKind?: string;
+    comparison?: Array<{
+      model: string;
+      totals: ForecastTotals;
+      count: number;
+      mae: number | null;
+      wape: number | null;
+      bias: number | null;
+    }>;
+    wape: number | null;
+    confidence: "HIGH" | "MEDIUM" | "LOW" | null;
+    seriesDays: number;
+  };
+  history: Array<{ day: string; units: number }>;
 };
 
 export type InsightListQuery = { type?: string; severity?: string; status?: string; page: number; pageSize: number };
@@ -89,4 +152,13 @@ export const aiInsightsApi = {
     request<Insight>(`/${id}`, json("PATCH", body)),
   settings: () => request<InsightSettings>("/settings"),
   saveSettings: (settings: InsightSettings) => request<InsightSettings>("/settings", json("PUT", settings)),
+  replenishment: (status?: string) => request<ReplenishmentList>(`/replenishment${status ? `?status=${status}` : ""}`),
+  forecast: (variantId: string) => request<ForecastDetail>(`/forecasts/${variantId}`),
+  setReplenishmentStatus: (id: string, body: { status: "PENDING" | "DISMISSED"; snoozeDays?: number }) =>
+    request<ReplenishmentItem>(`/replenishment/${id}`, json("PATCH", body)),
+  createDraftOrders: (items: Array<{ id: string; qty?: number; supplierId?: string }>) =>
+    request<{ orders: Array<{ id: string; poCode: string; supplierId: string; lines: number }> }>(
+      "/replenishment/draft-orders",
+      json("POST", { items }),
+    ),
 };
