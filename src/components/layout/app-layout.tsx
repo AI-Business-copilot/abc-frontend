@@ -13,6 +13,7 @@ import {
   LogOut,
   Wallet,
   PackageSearch,
+  PackagePlus,
   RotateCcw,
   Settings2,
   ShieldCheck,
@@ -86,6 +87,7 @@ const navigation: NavigationGroup[] = [
     label: "TRỢ LÝ KINH DOANH",
     items: [
       { to: "/app/insights", label: "Cảnh báo tồn kho", icon: Sparkles, permission: "analytics.read" },
+      { to: "/app/replenishment", label: "Gợi ý nhập hàng", icon: PackagePlus, permission: "analytics.read" },
       { to: "/app/forecast", label: "Dự báo hàng hóa", icon: PackageSearch, disabled: true },
     ],
   },

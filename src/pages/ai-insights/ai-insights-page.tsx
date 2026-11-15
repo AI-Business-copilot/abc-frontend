@@ -21,6 +21,7 @@ import "@/pages/business-data/business-data.css";
 import "./ai-insights.css";
 
 const TYPE_LABELS: Record<InsightType, string> = {
+  STOCKOUT_RISK: "Dự kiến hết hàng",
   LOW_STOCK: "Sắp hết hàng",
   SLOW_MOVING: "Bán chậm",
   DECLINING_SALES: "Doanh số giảm",
@@ -53,6 +54,8 @@ const ACTION_LABELS: Record<string, string> = {
   STOP_REORDER: "Tạm dừng nhập thêm",
   PREPARE_SCRAP: "Chuẩn bị xuất hủy",
   PROMOTE: "Chạy khuyến mãi để đẩy bán",
+  REORDER_NOW: "Đặt hàng ngay",
+  EXPEDITE_PO: "Giục nhà cung cấp giao sớm",
 };
 
 const METRIC_LABELS: Record<string, string> = {
@@ -85,6 +88,14 @@ const METRIC_LABELS: Record<string, string> = {
   atRiskQty: "Số lượng có nguy cơ",
   lotStatus: "Trạng thái lô",
   possibleStockoutBias: "Từng hết hàng gần đây",
+  rateSource: "Nguồn tốc độ bán",
+  stockoutInDays: "Dự kiến hết hàng sau (ngày)",
+  restockInDays: "Hàng bổ sung về sau (ngày)",
+  gapDays: "Số ngày hết hàng chờ hàng về",
+  slackDays: "Chênh lệch so với ngày hàng về (ngày)",
+  model: "Mô hình dự báo",
+  confidence: "Độ tin cậy",
+  onOrderQty: "Đang đặt, chưa về",
 };
 
 const BUCKET_LABELS: Record<string, string> = { "0-30": "Đủ bán 0–30 ngày", "31-60": "31–60 ngày", "61-90": "61–90 ngày", ">90": "Trên 90 ngày", "no-sales": "Không có doanh số" };
@@ -118,6 +129,16 @@ const SETTING_GROUPS: Array<{ title: string; description: string; fields: Settin
     ],
   },
   {
+    title: "Dự báo hết hàng",
+    description: "Cách hệ thống dự báo nhu cầu và nhập hàng.",
+    fields: [
+      { label: "Cần ít nhất bao nhiêu ngày dữ liệu để dự báo", unit: "ngày", hint: "Tối thiểu 28 ngày; sản phẩm ít dữ liệu hơn sẽ chưa được dự báo.", read: (s) => s.forecast.minSeriesDays, write: (s, v) => ({ ...s, forecast: { ...s.forecast, minSeriesDays: v } }) },
+      { label: "Mức phục vụ để tính tồn an toàn", unit: "%", hint: "Chỉ nhận 80, 85, 90, 95, 97 hoặc 99. Đây là giả định tính toán, không đảm bảo tỷ lệ thực tế.", read: (s) => s.forecast.serviceLevelPct, write: (s, v) => ({ ...s, forecast: { ...s.forecast, serviceLevelPct: v } }) },
+      { label: "Báo “Cao” khi hết hàng sát ngày hàng về trong", unit: "ngày", hint: "Hết hàng trước hoặc sát ngày hàng về trong khoảng này là mức Cao.", read: (s) => s.stockout.highSlackDays, write: (s, v) => ({ ...s, stockout: { ...s.stockout, highSlackDays: v } }) },
+      { label: "Báo “Trung bình” trong", unit: "ngày", hint: "Phải bằng hoặc lớn hơn mức Cao.", read: (s) => s.stockout.mediumSlackDays, write: (s, v) => ({ ...s, stockout: { ...s.stockout, mediumSlackDays: v } }) },
+    ],
+  },
+  {
     title: "Tồn kho quá nhiều",
     description: "Báo khi hàng trong kho đủ bán quá lâu, làm đọng vốn.",
     fields: [
@@ -129,6 +150,8 @@ const SETTING_GROUPS: Array<{ title: string; description: string; fields: Settin
 
 function formatMetric(key: string, value: unknown): string {
   if (value === null || value === undefined) return "—";
+  if (key === "rateSource") return value === "FORECAST" ? "Dự báo" : "Trung bình 30 ngày";
+  if (key === "model" && typeof value === "string") return value;
   if (typeof value === "boolean") return value ? "Có" : "Không";
   if (key === "expirationDate" && typeof value === "string") return displayDate(value);
   if (key === "costPrice" && typeof value === "number") return money(value);
@@ -150,6 +173,17 @@ function describe(item: Insight): { title: string; text: string; todo: string } 
   const qty = (value: number | null) => (value === null ? "—" : fmt(value));
 
   switch (item.type) {
+    case "STOCKOUT_RISK": {
+      const out = num(m, "stockoutInDays");
+      const restock = num(m, "restockInDays");
+      const gap = num(m, "gapDays");
+      const high = item.reasonCode === "STOCKOUT_IF_DEMAND_HIGH";
+      return {
+        title: out === 0 ? "Đã hết hàng" : high ? "Có thể hết hàng nếu bán tốt hơn dự kiến" : "Dự kiến hết hàng trước khi hàng về",
+        text: `Còn ${qty(stock)} sản phẩm, dự báo hết sau khoảng ${qty(out)} ngày.${restock !== null ? ` Hàng bổ sung về sau khoảng ${qty(restock)} ngày${gap ? `, nghĩa là thiếu hàng ${qty(gap)} ngày` : ""}.` : ""}`,
+        todo: ACTION_LABELS[item.suggestedAction] ?? "Nhập thêm hàng",
+      };
+    }
     case "LOW_STOCK": {
       const short = num(m, "shortfallToReorderPoint");
       const lead = num(m, "leadTimeDays");
