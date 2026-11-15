@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Eye, PackagePlus } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { aiInsightsApi, type ForecastDetail, type ReplenishmentItem, type Urgency } from "@/api/ai-insights";
+import { aiInsightsApi, type ForecastDetail, type ForecastHistory, type ReplenishmentItem, type Urgency } from "@/api/ai-insights";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -36,10 +36,20 @@ const MODEL_LABELS: Record<string, string> = {
   CROSTON_SBA: "Croston (hàng bán thưa)",
   LIGHTGBM: "LightGBM (nghiên cứu)",
 };
+const EVALUATION_LABELS = {
+  PENDING: "Chưa đủ thời gian", OUTSIDE_HISTORY: "Ngoài phạm vi kiểm tra",
+  UNKNOWN_STOCK: "Không rõ tồn kho", STOCKOUT: "Có ngày đóng cửa hết hàng",
+  PARTIAL_START: "Ngày đầu đã trôi qua một phần", COMPARABLE: "Có thể so sánh",
+} as const;
 
 const fmt = (value: number | null | undefined, digits = 1) =>
   value === null || value === undefined ? "—" : value.toLocaleString("vi-VN", { maximumFractionDigits: digits });
 const detailNum = (item: ReplenishmentItem, key: string) => (typeof item.details[key] === "number" ? (item.details[key] as number) : null);
+const overdueOrders = (item: ReplenishmentItem) => Array.isArray(item.details.incoming)
+  ? item.details.incoming.filter((entry): entry is { poCode: string; qty: number; arrivalDate: string; overdue: true } =>
+    entry !== null && typeof entry === "object" && entry.overdue === true &&
+    typeof entry.poCode === "string" && typeof entry.qty === "number" && typeof entry.arrivalDate === "string")
+  : [];
 
 function Chart({ detail }: { detail: ForecastDetail }) {
   const { history, forecast } = detail;
@@ -70,6 +80,7 @@ export function ReplenishmentPage() {
   const [picked, setPicked] = useState<Record<string, number>>({});
   const [detail, setDetail] = useState<ReplenishmentItem | null>(null);
   const [forecast, setForecast] = useState<ForecastDetail | null>(null);
+  const [forecastHistory, setForecastHistory] = useState<ForecastHistory | null>(null);
   const [notice, setNotice] = useState<{ code: string; id: string }[]>([]);
 
   const items = list.data?.items ?? [];
@@ -94,7 +105,12 @@ export function ReplenishmentPage() {
   const openDetail = (item: ReplenishmentItem) => action.run(async () => {
     setDetail(item);
     setForecast(null);
-    setForecast(await aiInsightsApi.forecast(item.variantId));
+    setForecastHistory(null);
+    const [current, history] = await Promise.all([
+      aiInsightsApi.forecast(item.variantId), aiInsightsApi.forecastHistory(item.variantId),
+    ]);
+    setForecast(current);
+    setForecastHistory(history);
   });
 
   const createDrafts = () => action.run(async () => {
@@ -212,6 +228,12 @@ export function ReplenishmentPage() {
             </div>
             {forecast?.stale && <div className="bd-notice warning" role="status">Đây là kết quả cũ, chưa thể dùng để tạo đơn nháp. Hãy chạy lại phân tích khi dịch vụ dự báo hoạt động.</div>}
             <div className="ai-callout action"><strong>{forecast?.stale ? "Gợi ý cũ" : "Nên nhập"} {fmt(detail.suggestedQty, 0)} sản phẩm</strong> ({money(detail.amount)}){detail.orderByDate ? `, đặt trước ${displayDate(detail.orderByDate)}` : ""}.</div>
+            {overdueOrders(detail).map((po) => (
+              <div className="bd-notice warning" key={`${po.poCode}-${po.arrivalDate}`} role="status">
+                Đơn {po.poCode}: còn {fmt(po.qty, 0)} sản phẩm, dự kiến giao {displayDate(po.arrivalDate)} (đã quá hạn).
+                Mô phỏng giả định hàng về sớm nhất ngày mai; ngày này chưa được nhà cung cấp xác nhận.
+              </div>
+            ))}
             {forecast?.status === "OK" && (
               <>
                 <Chart detail={forecast} />
@@ -233,6 +255,22 @@ export function ReplenishmentPage() {
               <DetailLine label="Sai số dự báo gần đây" value={detail.details.wape === null || detail.details.wape === undefined ? "Chưa đo được" : `${fmt(Number(detail.details.wape) * 100)}%`} />
             </div>
             <p className="bd-modal-note">Cách tính: {String(detail.details.formula ?? "")}</p>
+            <details className="ai-details">
+              <summary>Lịch sử dự báo và đối chiếu</summary>
+              <p className="bd-modal-note">So với số bán POS trước trừ trả, theo ngày trọn vẹn. Nếu dự báo được tạo sau khi ngày đầu bắt đầu, chênh lệch chỉ để tham khảo, không dùng làm điểm đánh giá đáng tin cậy. Hết hàng hoặc thiếu ledger cũng làm kết quả không thể đánh giá nhu cầu đầy đủ.</p>
+              {forecastHistory && forecastHistory.items.length === 0 && <p className="bd-modal-note">Chưa có lịch sử dự báo được lưu.</p>}
+              {forecastHistory?.items.map((entry) => (
+                <div key={entry.id}>
+                  <p className="bd-modal-note">Dữ liệu đến hết {displayDate(entry.asOf)} · {MODEL_LABELS[entry.model ?? ""] ?? entry.model ?? "—"} · {entry.modelVersion}</p>
+                  <div className="bd-table-wrap"><table className="bd-table">
+                    <thead><tr><th>Kỳ</th><th>Dự báo</th><th>Đã bán</th><th>Chênh lệch tuyệt đối</th><th>Điều kiện</th></tr></thead>
+                    <tbody>{entry.evaluations.map((evaluation) => (
+                      <tr key={evaluation.days}><td>{evaluation.days} ngày</td><td>{fmt(evaluation.predicted)}</td><td>{fmt(evaluation.actual)}</td><td>{fmt(evaluation.absoluteError)}</td><td>{EVALUATION_LABELS[evaluation.status]}{evaluation.partialStart && evaluation.status !== "PARTIAL_START" ? "; ngày đầu đã trôi qua một phần" : ""}</td></tr>
+                    ))}</tbody>
+                  </table></div>
+                </div>
+              ))}
+            </details>
             <details className="ai-details">
               <summary>So sánh các phương pháp dự báo</summary>
               <p className="bd-modal-note">So sánh cùng dữ liệu POS trước trừ trả và cùng các kỳ 7 ngày không hết hàng. WAPE dùng để chọn phương pháp, không phải đánh giá độc lập; chưa đo được khi không có doanh số. LightGBM huấn luyện bằng dữ liệu giả lập; kết quả không chứng minh độ chính xác tại cửa hàng thật.</p>
