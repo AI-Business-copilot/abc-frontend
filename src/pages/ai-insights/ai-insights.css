@@ -1,3 +1,15 @@
+.app-content.ai-insights-content {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.app-content.ai-insights-content .bd-page {
+  max-width: none;
+  padding-right: 0;
+  padding-left: 0;
+}
+
 .ai-header {
   display: flex;
   flex-wrap: wrap;

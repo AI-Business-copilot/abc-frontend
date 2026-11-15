@@ -277,7 +277,7 @@ export function AiInsightsPage() {
   const run = data?.latestRun;
 
   return (
-    <AppLayout>
+    <AppLayout contentClassName="ai-insights-content">
       <main className="bd-page">
         <header className="ai-header">
           <div className="ai-header-main">

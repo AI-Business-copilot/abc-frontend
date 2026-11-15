@@ -131,6 +131,28 @@ export type ForecastDetail = {
   history: Array<{ day: string; units: number }>;
 };
 
+export type ForecastHistory = {
+  items: Array<{
+    id: string;
+    asOf: string;
+    issuedAt: string;
+    model: string | null;
+    modelVersion: string | null;
+    evaluations: Array<{
+      days: 7 | 14 | 28;
+      start: string;
+      end: string;
+      predicted: number;
+      actual: number | null;
+      absoluteError: number | null;
+      status: "PENDING" | "OUTSIDE_HISTORY" | "UNKNOWN_STOCK" | "STOCKOUT" | "PARTIAL_START" | "COMPARABLE";
+      partialStart: boolean;
+      stockoutDays: number | null;
+      unknownDays: number | null;
+    }>;
+  }>;
+};
+
 export type InsightListQuery = { type?: string; severity?: string; status?: string; page: number; pageSize: number };
 
 const request = <T>(path: string, init?: RequestInit) => apiRequest<T>(`/ai-insights${path}`, init);
@@ -154,6 +176,7 @@ export const aiInsightsApi = {
   saveSettings: (settings: InsightSettings) => request<InsightSettings>("/settings", json("PUT", settings)),
   replenishment: (status?: string) => request<ReplenishmentList>(`/replenishment${status ? `?status=${status}` : ""}`),
   forecast: (variantId: string) => request<ForecastDetail>(`/forecasts/${variantId}`),
+  forecastHistory: (variantId: string) => request<ForecastHistory>(`/forecasts/${variantId}/history`),
   setReplenishmentStatus: (id: string, body: { status: "PENDING" | "DISMISSED"; snoozeDays?: number }) =>
     request<ReplenishmentItem>(`/replenishment/${id}`, json("PATCH", body)),
   createDraftOrders: (items: Array<{ id: string; qty?: number; supplierId?: string }>) =>

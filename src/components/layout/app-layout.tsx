@@ -102,7 +102,7 @@ function initials(value: string) {
     .join("");
 }
 
-export function AppLayout({ children }: { children?: ReactNode }) {
+export function AppLayout({ children, contentClassName }: { children?: ReactNode; contentClassName?: string }) {
   const { profile, logout } = useAuth();
   const { can, isSystemAdmin } = usePermissions();
   const platformItems: NavigationItem[] = [
@@ -195,7 +195,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
             <Button asChild className="topbar-logout" size="sm" variant="ghost"><Link to="/app/security"><Settings2 size={15} /> Tài khoản</Link></Button>
           </div>
         </header>
-        <main className="app-content">{children ?? <Outlet />}</main>
+        <main className={`app-content${contentClassName ? ` ${contentClassName}` : ""}`}>{children ?? <Outlet />}</main>
         <footer className="app-footer"><span>© 2026 ABC Copilot</span><span>Thông tin được hiển thị theo vai trò của bạn</span><span><ShieldCheck size={13} /> Kết nối an toàn</span></footer>
       </div>
     </div>
