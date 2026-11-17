@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, Minus, Plus, RefreshCw, Search, ShoppingBag, ShoppingCart, Trash2, Users } from "lucide-react";
-import { salesApi, type Customer, type SaleVariant } from "@/api/sales";
+import { Link, useSearchParams } from "react-router-dom";
+import { ArrowRight, LockKeyhole, Plus, RefreshCw, Search, ShoppingBag, ShoppingCart, Trash2 } from "lucide-react";
+import { salesApi, type SaleVariant } from "@/api/sales";
 import { inventoryApi } from "@/api/inventory";
 import { usePermissions } from "@/hooks/use-permissions";
 import { MoneyInput } from "@/pages/purchases/money-input";
 import { Modal } from "@/components/ui/modal";
-import { code, date, Empty, ErrorBox, Field, Heading, money, total, useAction, useLoad, validateMoney, validateQty, today } from "@/pages/purchases/shared";
+import { code, date, Empty, ErrorBox, Field, Heading, money, total, useAction, useLoad, validateMoney, today } from "@/pages/purchases/shared";
+
+import { SaleCheckout, type CartLine } from "./sale-checkout";
+import { SaleCheckoutSteps } from "./sale-checkout-steps";
 
 export function SaleEditor() {
   const { can } = usePermissions();
-  const navigate = useNavigate();
+  const [step, setStep] = useState(0);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [params] = useSearchParams();
   const action = useAction();
   const shift = useLoad(salesApi.shift, []);
@@ -24,16 +28,8 @@ export function SaleEditor() {
   useEffect(() => { setSearch(params.get("search") || ""); }, [params.toString()]);
   useEffect(() => { const timer = setTimeout(() => setTerm(search.trim()), 300); return () => clearTimeout(timer); }, [search]);
   const variants = useLoad(() => can("inventory.read") ? salesApi.variants(term, category) : Promise.resolve({ items: [], categories: [], total: 0 }), [term, category, can("inventory.read")]);
-  const [lines, setLines] = useState<{ variant: SaleVariant; qty: string }[]>([]);
-  const [orderCode, setCode] = useState(() => code("POS"));
-  const [customerTerm, setCustomerTerm] = useState("");
-  const [customerSearch, setCustomerSearch] = useState("");
-  useEffect(() => { const timer = setTimeout(() => setCustomerTerm(customerSearch.trim()), 300); return () => clearTimeout(timer); }, [customerSearch]);
-  const customers = useLoad(() => salesApi.customers({ search: customerTerm, pageSize: 50 }), [customerTerm]);
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [addingCustomer, setAddingCustomer] = useState(false);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [lines, setLines] = useState<CartLine[]>([]);
+  const [orderCode] = useState(() => code("POS"));
   const [lotVariant, setLotVariant] = useState<SaleVariant | null>(null);
   const lots = useLoad(() => lotVariant ? inventoryApi.getVariantLots(lotVariant.id) : Promise.resolve({ lots: [] }), [lotVariant?.id]);
   const amount = total(lines.map(line => ({ qty: line.qty, price: String(line.variant.basePrice) })));
@@ -43,23 +39,22 @@ export function SaleEditor() {
     return salesApi.promotionPreview(lines.map(line => ({ variantId: line.variant.id, quantity: Number(line.qty) })));
   }, [previewKey]);
   const products = variants.data?.items.filter(v => !inStock || v.onHand > 0) || [];
-  const invalidQty = lines.some(l => !/^\d+$/.test(l.qty) || Number(l.qty) < 1 || Number(l.qty) > l.variant.onHand || Number(l.qty) > 2147483647);
   const add = (variant: SaleVariant) => setLines(current => {
     const existing = current.find(l => l.variant.id === variant.id);
     if (existing) return current.map(l => l.variant.id === variant.id ? { ...l, variant, qty: String(Math.min(variant.onHand, (Number(l.qty) || 0) + 1)) } : l);
     return current.length < 500 ? [...current, { variant, qty: "1" }] : current;
   });
-  const changeQty = (id: string, qty: string) => setLines(current => current.map(l => l.variant.id === id ? { ...l, qty } : l));
   if (!can("orders.create")) return <ErrorBox error="Bạn cần quyền tạo đơn bán để bán hàng tại quầy." />;
 
   return <>
-    <Heading title="Bán hàng tại quầy" description="Chọn hàng · Tạo đơn · Thu tiền"><Link to="/sales" className="sales-text-link">Đơn chờ & lịch sử <ArrowRight size={16} /></Link></Heading>
-    <div className="sales-shift-bar"><div><span className={`sales-dot ${shift.data ? "open" : ""}`} /><strong>{shift.loading ? "Đang kiểm tra ca…" : shift.data ? "Ca bán đang mở" : "Mở ca để bắt đầu bán hàng"}</strong>{shift.data && <small>{date(shift.data.openedAt)} · Đầu ca {money(shift.data.openingCash)}</small>}</div><button type="button" aria-label="Kiểm tra lại ca" disabled={shift.loading || action.busy} onClick={shift.reload}><RefreshCw size={16} /></button></div>
-    {shift.data && <p className="purchase-hint">{previousDayShift ? "Ca n?y ???c m? t? ng?y tr??c v? ch?a ??ng. " : ""}Thanh to?n ??n h?ng kh?ng t? ??ng ca.{can("cash.shift.read") && <> <Link className="sales-text-link" to="/app/cash-shifts">Qu?n l? / ??ng ca ?</Link></>}</p>}
+    <Heading title="Bán hàng tại quầy" description="Chọn sản phẩm, kiểm tra đơn hàng và hoàn tất thanh toán theo từng bước."><Link to="/sales" className="sales-text-link">Đơn chờ & lịch sử <ArrowRight size={16} /></Link></Heading>
+    <div className="sales-shift-bar"><div><span className={`sales-dot ${shift.data ? "open" : ""}`} /><strong>{shift.loading ? "Đang kiểm tra ca…" : shift.data ? "Ca bán đang mở" : "Mở ca để bắt đầu bán hàng"}</strong>{shift.data && <small>{date(shift.data.openedAt)} · Đầu ca {money(shift.data.openingCash)}</small>}</div><button type="button" aria-label="Kiểm tra lại ca" disabled={shift.loading || action.busy || checkoutBusy} onClick={shift.reload}><RefreshCw size={16} /></button></div>
+    {shift.data && <p className="purchase-hint">{previousDayShift ? "Ca này được mở từ ngày trước và chưa đóng. " : ""}Thanh toán đơn hàng không tự đóng ca.{can("cash.shift.read") && <> <Link className="sales-text-link" to="/app/cash-shifts">Quản lý / đóng ca →</Link></>}</p>}
     <ErrorBox error={shift.error} /><ErrorBox error={action.error} />
     {!shift.loading && !shift.data && !shift.error && <form className="sales-open-shift" onSubmit={e => { e.preventDefault(); void action.run(async () => { await salesApi.openShift(validateMoney(opening)); shift.reload(); }); }}><Field label="Tiền mặt đầu ca"><MoneyInput value={opening} onValueChange={setOpening} required disabled={action.busy} /></Field><button className="purchase-primary" disabled={action.busy}>{action.busy ? "Đang mở…" : "Mở ca bán"}</button></form>}
     {action.error && <p className="purchase-hint">Nếu lỗi xảy ra khi tạo đơn, <Link to={`/sales?search=${encodeURIComponent(orderCode)}`}>tra cứu mã {orderCode}</Link> trước khi gửi lại.</p>}
-    <div className="sales-pos">
+    <SaleCheckoutSteps step={step} onBack={setStep} busy={checkoutBusy} />
+    <div hidden={step !== 0}><div className="sales-pos">
       <section className="purchase-panel sales-products">
         <div className="sales-section-title"><div><h3>Danh sách sản phẩm</h3><p>Tìm hàng nhanh bằng tên, SKU hoặc mã vạch</p></div><button type="button" aria-label="Tải lại sản phẩm" disabled={variants.loading} onClick={variants.reload}><RefreshCw size={16} /></button></div>
         {!can("inventory.read") ? <ErrorBox error="Bạn cần quyền xem tồn kho để chọn sản phẩm bán." /> : <>
@@ -81,34 +76,19 @@ export function SaleEditor() {
       </section>
       <aside className="purchase-panel sales-cart">
         <div className="sales-section-title"><div><h3><ShoppingCart size={19} /> Đơn bán mới</h3><p>{lines.length} SKU · {lines.reduce((sum, l) => sum + (Number(l.qty) || 0), 0)} sản phẩm</p></div></div>
-        <form onSubmit={e => { e.preventDefault(); void action.run(async () => {
-          if (!shift.data || shift.loading || shift.error) throw new Error("Kiểm tra và mở ca bán trước khi tạo đơn.");
-          if (!lines.length || invalidQty) throw new Error("Kiểm tra số lượng sản phẩm trong giỏ.");
-          validateMoney(amount);
-          const saved = await salesApi.create({ orderCode: orderCode.trim(), shiftId: shift.data.id, ...(customer ? { customerId: customer.id } : {}), items: lines.map(l => ({ variantId: l.variant.id, quantity: validateQty(l.qty) })) });
-          navigate(`/sales/${saved.id}`, { replace: true });
-        }); }}><fieldset disabled={action.busy}>
-          <Field label="Mã đơn"><input required maxLength={50} value={orderCode} onChange={e => setCode(e.target.value)} /></Field>
-          <div className="sales-customer-heading"><strong><Users size={16} /> Khách hàng</strong><button type="button" onClick={() => setAddingCustomer(v => !v)}>{addingCustomer ? "Đóng" : "+ Thêm mới"}</button></div>
-          <input aria-label="Tìm khách hàng" maxLength={255} placeholder="Tìm tên hoặc số điện thoại…" value={customerSearch} onChange={e => setCustomerSearch(e.target.value)} />
-          <select aria-label="Khách hàng của đơn" value={customer?.id || ""} onChange={e => setCustomer(customers.data?.items.find(c => c.id === e.target.value) || null)}><option value="">Khách vãng lai</option>{customer && !customers.data?.items.some(c => c.id === customer.id) && <option value={customer.id}>{customer.name} · {customer.phone}</option>}{customers.data?.items.map(c => <option key={c.id} value={c.id}>{c.name} · {c.phone}</option>)}</select>
-          {customers.loading && <small role="status">Đang tìm khách hàng…</small>}<ErrorBox error={customers.error} />{customers.error && <button type="button" onClick={customers.reload}>Tải lại khách hàng</button>}
-          {addingCustomer && <div className="sales-new-customer"><Field label="Tên khách hàng"><input maxLength={150} value={name} onChange={e => setName(e.target.value)} /></Field><Field label="Số điện thoại"><input type="tel" maxLength={20} value={phone} onChange={e => setPhone(e.target.value)} /></Field><button type="button" onClick={() => void action.run(async () => { if (!name.trim() || !phone.trim()) throw new Error("Nhập tên và số điện thoại khách hàng."); const saved = await salesApi.createCustomer(name, phone); setCustomer(saved); setName(""); setPhone(""); setAddingCustomer(false); customers.reload(); })}>Lưu & chọn khách</button></div>}
-          <div className="sales-cart-lines">{lines.length ? lines.map(l => <div className="sales-cart-line" key={l.variant.id}><div><strong>{l.variant.productName}</strong><small>{l.variant.sku} · {money(l.variant.basePrice)}</small><div className="sales-quantity"><button type="button" aria-label={`Giảm ${l.variant.sku}`} disabled={Number(l.qty) <= 1} onClick={() => changeQty(l.variant.id, String(Number(l.qty) - 1))}><Minus size={13} /></button><input aria-label={`Số lượng ${l.variant.sku}`} type="number" required min="1" max={Math.min(l.variant.onHand, 2147483647)} step="1" value={l.qty} onChange={e => changeQty(l.variant.id, e.target.value)} /><button type="button" aria-label={`Tăng ${l.variant.sku}`} disabled={Number(l.qty) >= l.variant.onHand} onClick={() => changeQty(l.variant.id, String((Number(l.qty) || 0) + 1))}><Plus size={13} /></button></div></div><div className="sales-line-end"><strong>{money(total([{ qty: l.qty, price: String(l.variant.basePrice) }]))}</strong><button type="button" aria-label={`Xóa ${l.variant.sku}`} onClick={() => setLines(current => current.filter(row => row.variant.id !== l.variant.id))}><Trash2 size={16} /></button></div></div>) : <Empty><ShoppingCart size={30} className="sales-empty-icon" />Giỏ hàng đang trống<p>Chọn sản phẩm ở bên trái để bắt đầu.</p></Empty>}</div>
-          {invalidQty && <ErrorBox error="Số lượng phải là số nguyên dương và không vượt tồn hiển thị." />}
-          <div className="sales-cart-summary">
-            <ErrorBox error={promotionPreview.error} />
-            {promotionPreview.error && <button type="button" onClick={promotionPreview.reload}>Tính lại khuyến mãi</button>}
-            <div className="sales-total"><span>Tạm tính</span><strong>{money(promotionPreview.data?.totalGrossAmount ?? amount)}</strong></div>
-            {promotionPreview.data && Number(promotionPreview.data.discountAmount) > 0 && <div className="sales-total"><span>{promotionPreview.data.promotion?.name || "Khuyến mãi tự động"}</span><strong>−{money(promotionPreview.data.discountAmount)}</strong></div>}
-            <div className="sales-total"><span>Tổng cần thu</span><strong>{money(promotionPreview.data?.totalNetAmount ?? amount)}</strong></div>
-            {promotionPreview.loading && <p className="purchase-hint" role="status">Đang kiểm tra khuyến mãi…</p>}
-            <p className="purchase-hint">Khuyến mãi hợp lệ được tự động áp dụng. Giá và ưu đãi được chốt khi tạo đơn.</p>
-            <button className="purchase-primary sales-full" disabled={!lines.length || invalidQty || !shift.data || shift.loading || !!shift.error || !can("inventory.read") || Number(amount) <= 0}>{action.busy ? "Đang lưu đơn…" : <>Tạo đơn & thanh toán <ArrowRight size={17} /></>}</button>
-          </div>
-        </fieldset></form>
+        <div className="sales-order-code"><LockKeyhole size={13} /><span>{orderCode}</span><small>Tự động</small></div>
+        <div className="sales-cart-lines">{lines.length ? lines.map(l => <div className="sales-cart-line" key={l.variant.id}><div><strong>{l.variant.productName}</strong><small>{l.variant.sku} · {l.qty} × {money(l.variant.basePrice)}</small></div><div className="sales-line-end"><strong>{money(total([{ qty: l.qty, price: String(l.variant.basePrice) }]))}</strong><button type="button" aria-label={`Xóa ${l.variant.sku}`} onClick={() => setLines(current => current.filter(row => row.variant.id !== l.variant.id))}><Trash2 size={16} /></button></div></div>) : <Empty><ShoppingCart size={30} className="sales-empty-icon" />Giỏ hàng đang trống<p>Chọn sản phẩm ở bên trái để bắt đầu.</p></Empty>}</div>
+        <div className="sales-cart-summary">
+          <div className="sales-total"><span>Tạm tính</span><strong>{money(promotionPreview.data?.totalGrossAmount ?? amount)}</strong></div>
+          {promotionPreview.data && Number(promotionPreview.data.discountAmount) > 0 && <div className="sales-summary-discount"><span>{promotionPreview.data.promotion?.name || "Khuyến mãi"}</span><strong>−{money(promotionPreview.data.discountAmount)}</strong></div>}
+          <div className="sales-total"><span>Tổng dự kiến</span><strong>{money(promotionPreview.data?.totalNetAmount ?? amount)}</strong></div>
+          <p className="purchase-hint">Tiếp theo: điều chỉnh số lượng, thông tin khách hàng và chọn phương thức thanh toán.</p>
+          <button type="button" className="purchase-primary sales-full" disabled={!lines.length || !can("inventory.read")} onClick={() => setStep(1)}>Thanh toán <ArrowRight size={17} /></button>
+        </div>
       </aside>
     </div>
+    </div>
+    <SaleCheckout step={step} setStep={setStep} lines={lines} setLines={setLines} orderCode={orderCode} shiftId={shift.data?.id} shiftReady={!!shift.data && !shift.loading && !shift.error} preview={promotionPreview.data} previewLoading={promotionPreview.loading} previewError={promotionPreview.error} reloadPreview={promotionPreview.reload} onBusyChange={setCheckoutBusy} />
     <Modal open={!!lotVariant} title={`Lô hàng · ${lotVariant?.productName || ""}`} onClose={() => setLotVariant(null)}><p className="purchase-hint">{lotVariant?.sku} · Hệ thống tự chọn lô còn hạn gần nhất khi thanh toán. Tồn lô là tổng tồn, chưa loại trừ hàng hỏng.</p><ErrorBox error={lots.error} />{lots.error && <button onClick={lots.reload}>Thử lại</button>}{lots.loading ? <Empty>Đang tải lô hàng…</Empty> : <div className="purchase-table"><table><thead><tr><th>Số lô</th><th>Hạn sử dụng</th><th>Tồn</th></tr></thead><tbody>{lots.data?.lots.map(l => <tr key={l.id}><td>{l.lotNumber}</td><td>{date(l.expirationDate)}</td><td>{l.quantityOnHand}</td></tr>)}</tbody></table>{!lots.data?.lots.length && !lots.error && <Empty>Chưa có lô hàng.</Empty>}</div>}</Modal>
   </>;
 }

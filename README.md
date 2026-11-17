@@ -2,6 +2,34 @@
 
 React, TypeScript, Vite and shadcn-style UI components for the initial authentication, onboarding and role-aware workspace.
 
+## Chạy unit test
+
+Chạy trong thư mục `abc-frontend`, sau khi đã cài dependencies:
+
+```powershell
+# Chạy toàn bộ unit/component test: Vitest và các test Node cũ
+npm test
+
+# Chỉ chạy nhóm Vitest
+npm run test:unit
+
+# Chạy Vitest khi sửa code; nhấn Ctrl+C để dừng
+npm run test:watch
+
+# Chỉ chạy các test Node cũ về sales và purchases
+npm run test:legacy
+
+# Chỉ chạy nhóm test sales
+npm run test:sales
+
+# Kiểm tra TypeScript của source và test
+npm run test:types
+```
+
+Test dùng jsdom và fixture/mock, không cần khởi động frontend, backend hoặc database thật. `npm run test:unit` chỉ chạy nhóm Vitest; dùng `npm test` để bao gồm cả các test Node hiện có.
+
+Xem thêm [TESTING.md](TESTING.md).
+
 ## Run locally
 
 1. Copy `.env.example` to `.env`.
