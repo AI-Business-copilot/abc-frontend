@@ -26,6 +26,7 @@ import type { LucideIcon } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 
 import { Brand } from "@/components/layout/brand";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -189,6 +190,7 @@ export function AppLayout({ children, contentClassName }: { children?: ReactNode
         <header className="app-topbar">
           <div className="topbar-context"><span className="context-dot" />{isSystemAdmin ? "Quản trị nền tảng" : profile?.business?.name || "Không gian quản trị"}</div>
           <div className="topbar-right">
+            <NotificationBell />
             <span className="topbar-date">{new Intl.DateTimeFormat("vi-VN", { dateStyle: "full" }).format(new Date())}</span>
             <span className="topbar-divider" />
             <div className="topbar-account"><span className="avatar small">{initials(displayName)}</span><span><strong>{displayName}</strong><small>{roleLabel}</small></span></div>
