@@ -32,6 +32,51 @@
 .purchases :is(input, select, button, a):focus-visible { outline: 3px solid rgba(15, 76, 58, 0.35); outline-offset: 2px; }
 .purchase-field { display: flex; flex-direction: column; gap: 7px; font-size: 13px; font-weight: 500; line-height: 1.5; color: #475467; }
 .purchase-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.supplier-code-control { position: relative; }
+.supplier-code-control svg { position: absolute; left: 12px; top: 13px; color: #667085; pointer-events: none; }
+.purchases .supplier-code-control input[readonly] { padding-left: 36px; background: #f2f4f7; border-color: #e4e7ec; color: #667085; cursor: default; }
+.supplier-code-hint { color: #667085; font-size: 12px; font-weight: 400; }
+.supplier-profile-dialog { width: min(1000px, calc(100vw - 40px)); }
+.supplier-profile-dialog .purchase-dialog-header { background: #fff; padding: 22px 26px; }
+.supplier-profile-dialog .purchase-dialog-header h2 { font-size: 20px; }
+.supplier-profile-dialog .purchase-dialog-body { padding: 22px 26px; background: #f8fafb; }
+.supplier-profile-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 20px; }
+.supplier-profile-main, .supplier-profile-aside { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.supplier-form-section { padding: 20px; border: 1px solid #e4e7ec; border-radius: 12px; background: #fff; }
+.supplier-section-heading { display: flex; align-items: center; gap: 11px; margin-bottom: 20px; }
+.supplier-section-icon { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 9px; background: #ecfdf5; color: #0f4c3a; }
+.purchases .supplier-form-section h3 { margin: 0; font-size: 14px; font-weight: 600; color: #101828; }
+.supplier-section-heading p, .supplier-note-hint { margin: 4px 0 0; color: #667085; font-size: 12px; line-height: 1.6; }
+.supplier-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.supplier-field-wide { grid-column: 1 / -1; }
+.supplier-profile-dialog .purchase-field { gap: 6px; color: #344054; }
+.purchases .supplier-profile-dialog :is(input, select, textarea) { width: 100%; min-width: 0; min-height: 42px; border: 1px solid #d0d5dd; background: #fff; border-radius: 8px; padding: 10px 12px; color: #101828; font: inherit; font-size: 13px; line-height: 1.5; box-shadow: 0 1px 2px #10182805; transition: border-color .15s, box-shadow .15s; }
+.supplier-profile-dialog textarea { display: block; resize: vertical; }
+.supplier-profile-dialog textarea::placeholder { color: #8a94a6; }
+.purchases .supplier-profile-dialog :is(input, select, textarea):focus-visible { outline: none; border-color: #0f4c3a; box-shadow: 0 0 0 3px #0f4c3a14; }
+.purchases .supplier-profile-dialog [aria-invalid="true"] { border-color: #f04438; }
+.supplier-status-hint { display: flex; align-items: flex-start; gap: 8px; padding: 12px; margin-top: 12px; border-radius: 8px; background: #f8fafb; color: #667085; }
+.supplier-status-hint svg { flex-shrink: 0; margin-top: 2px; }
+.supplier-status-hint p { margin: 0; font-size: 12px; line-height: 1.65; }
+.supplier-code-block { margin-top: 20px; padding-top: 18px; border-top: 1px solid #eaecf0; }
+.purchases .supplier-profile-dialog .supplier-code-control input[readonly] { padding-left: 35px; background: #f2f4f7; border-color: #e4e7ec; color: #667085; font-size: 12px; }
+.supplier-note-label { display: block; margin-top: 14px; }
+.supplier-note-hint { margin-top: 10px; }
+.purchase-dialog-custom-footer { flex-shrink: 0; margin: 0; padding: 16px 26px; background: #fff; }
+.supplier-required-note { margin-right: auto; font-size: 12px; color: #667085; }
+.supplier-required-note > span { color: #d92d20; }
+.supplier-profile-dialog .purchase-dialog-custom-footer button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 10px 16px; }
+@media (max-width: 760px) {
+  .supplier-profile-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .supplier-profile-dialog .purchase-dialog-body { padding: 16px; }
+  .supplier-form-section { padding: 16px; }
+  .supplier-profile-dialog .purchase-dialog-custom-footer { padding: 14px 16px; }
+}
+@media (max-width: 420px) {
+  .supplier-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .supplier-required-note { flex-basis: 100%; }
+  .supplier-profile-dialog .purchase-dialog-custom-footer button { flex: 1; }
+}
 .purchase-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin: 20px 0; padding: 18px; background: white; border-radius: 12px; }
 .purchase-panel .purchase-filters { padding: 0; }
 .purchase-filters .purchase-field:first-child { flex: 1 1 220px; }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { Banknote, CheckCircle2, CreditCard, Printer, RefreshCw } from "lucide-react";
 import { salesApi } from "@/api/sales";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -9,6 +9,8 @@ import { Back, date, Empty, ErrorBox, Field, Heading, money, useAction, useLoad,
 import { cashChange } from "./sale-money";
 
 export function SaleDetail() {
+  const location = useLocation();
+  const checkoutNotice = typeof location.state?.checkoutNotice === "string" ? location.state.checkoutNotice : "";
   const { id = "" } = useParams();
   const { can } = usePermissions();
   const { profile } = useAuth();
@@ -37,6 +39,7 @@ export function SaleDetail() {
       <button className="sales-no-print" disabled={action.busy} onClick={refresh}><RefreshCw size={15} /> Tải lại</button>
       {completed && <><button className="sales-no-print" onClick={() => window.print()}><Printer size={15} /> In hóa đơn</button><Link className="purchase-primary sales-no-print" to="/sales/new">+ Đơn mới</Link></>}
     </Heading>
+    {!completed && checkoutNotice && <ErrorBox error={checkoutNotice} />}
     <ErrorBox error={action.error} />{action.error && <p className="purchase-hint">Tải lại đơn để kiểm tra kết quả trước khi thử lại. Nếu đã nhận tiền, đối chiếu ca và tồn kho trước khi xử lý tiếp.</p>}
     {completed && <div className="sales-completed" role="status"><CheckCircle2 size={25} /><div><strong>{freeOrder ? "Đơn hàng đã hoàn tất" : "Thanh toán thành công"}</strong><p>{freeOrder ? "Đơn được thanh toán toàn bộ bằng khuyến mãi; hàng đã xuất kho." : "Đã ghi nhận tiền và xuất kho cho đơn hàng này."}</p></div></div>}
     <div className="sales-detail">

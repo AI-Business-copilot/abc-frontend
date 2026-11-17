@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Icon } from "@/pages/products/ui-icon";
 import { signOut } from "@/services/auth.service";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 type CatalogHeaderProps = {
   active:
@@ -117,16 +118,7 @@ export function CatalogHeader({ active, keyword, onKeywordChange, mode = "catalo
 
         <div className="ml-auto flex items-center gap-3.5">
           <span className="w-2 h-2 rounded-full bg-[#12b76a]" />
-          <button
-            type="button"
-            className="relative w-8 h-8 grid place-items-center rounded-md hover:bg-[#f2f4f7] text-[#475467]"
-            aria-label="Thông báo"
-          >
-            <Icon name="notifications" className="text-[21px]" />
-            <span className="absolute -top-0.5 right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-[#f04438] text-white text-[9.5px] font-bold grid place-items-center">
-              3
-            </span>
-          </button>
+          <NotificationBell />
           {/* Dropdown Menu Tài Khoản Người Dùng */}
           <div className="relative">
             <button

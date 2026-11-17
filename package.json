@@ -6,8 +6,13 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
-    "test:sales": "node tests/sales-money.test.cjs",
-    "preview": "vite preview --host 0.0.0.0"
+    "test:sales": "node tests/sales-money.test.cjs && node tests/sales-checkout.test.cjs",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "npm run test:unit && npm run test:legacy",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "test:legacy": "node --test tests/*.test.cjs tests/*.test.mjs",
+    "test:types": "tsc -p tsconfig.test.json --noEmit"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.17",
@@ -28,12 +33,18 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.14",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.12",
     "@types/node": "^24.7.2",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.4",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4.1.14",
     "typescript": "~5.9.3",
-    "vite": "^7.1.9"
+    "vite": "^7.1.9",
+    "vitest": "^5.1.0"
   }
 }
