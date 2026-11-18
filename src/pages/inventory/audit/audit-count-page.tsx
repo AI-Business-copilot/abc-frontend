@@ -99,19 +99,6 @@ export function AuditCountPage() {
     return true;
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      setSubmitError(null);
-      if (!(await saveCurrent())) return;
-      backToAudit(`${item?.sku} đã được lưu`);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Không lưu được dòng kiểm kê');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleSubmit = async () => {
     if (!item || !auditId) return;
     try {
@@ -210,9 +197,6 @@ export function AuditCountPage() {
             <div className="flex gap-3 mt-6">
               <Button onClick={() => backToAudit()} variant="outline" disabled={saving}>
                 Hủy
-              </Button>
-              <Button onClick={handleSave} disabled={saving} className="flex-1">
-                {saving ? 'Đang lưu...' : 'Lưu'}
               </Button>
               <Button
                 onClick={handleSubmit}
