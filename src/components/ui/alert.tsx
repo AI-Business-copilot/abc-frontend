@@ -8,9 +8,9 @@ export function Alert({
   ...props
 }: HTMLAttributes<HTMLDivElement> & { variant?: "default" | "destructive" | "success" }) {
   const variants = {
-    default: "border-sky-200 bg-sky-50 text-sky-900",
-    destructive: "border-rose-200 bg-rose-50 text-rose-800",
-    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    default: "border-emerald-200 bg-emerald-50/80 text-emerald-950",
+    destructive: "border-red-200 bg-red-50 text-red-800",
+    success: "border-emerald-300 bg-emerald-50 text-emerald-900",
   };
 
   return (

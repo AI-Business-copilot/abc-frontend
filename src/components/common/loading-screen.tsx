@@ -5,7 +5,7 @@ export function LoadingScreen({ label = "Đang tải không gian làm việc…"
   return (
     <main className="loading-screen">
       <Brand />
-      <Spinner className="h-6 w-6 text-violet-600" />
+      <Spinner className="h-6 w-6 text-[#0f4c3a]" />
       <p>{label}</p>
     </main>
   );

@@ -8,12 +8,12 @@ export function usePermissions() {
     const platformAdmin = profile?.platformRoles.some(
       (role) => role.code === "SYSTEM_ADMIN",
     );
-
     return {
       can: (permission: string) => permissions.has(permission),
       isOwner: profile?.business?.role === "OWNER",
-      isStaff: profile?.business?.role === "STAFF",
+      isStaff: Boolean(profile?.business && profile.business.role !== "OWNER"),
       isSystemAdmin: Boolean(platformAdmin),
+      canManageSystemAdmins: Boolean(profile?.canManageSystemAdmins),
     };
   }, [profile]);
 }

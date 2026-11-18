@@ -4,8 +4,11 @@ export interface BusinessSummary {
   phone?: string;
   address?: string | null;
   industryType?: string;
+  status: "ACTIVE" | "SUSPENDED";
+  membershipStatus: "ACTIVE" | "SUSPENDED" | "INACTIVE";
   createdAt?: string | null;
-  role: "OWNER" | "STAFF";
+  role: string;
+  roleName?: string;
 }
 
 export interface ApplicationUser {
@@ -20,6 +23,7 @@ export interface AuthProfile {
   business: BusinessSummary | null;
   platformRoles: { code: string; displayName: string }[];
   permissions: string[];
+  canManageSystemAdmins: boolean;
   onboardingRequired: boolean;
 }
 
@@ -27,6 +31,8 @@ export interface BusinessInvitation {
   id: string;
   email: string;
   role: string;
+  roleId: string;
+  roleName?: string;
   status: string;
   emailStatus: string;
   expiresAt: string;
@@ -35,13 +41,15 @@ export interface BusinessInvitation {
 
 export interface BusinessMember {
   id: string;
-  status: string;
+  status: "ACTIVE" | "SUSPENDED" | "INACTIVE";
   createdAt: string;
   role: string;
+  roleId: string;
   roleName: string;
-  user: { id: string; email: string; fullName: string };
+  user: { id: string; email: string; fullName: string; status: "ACTIVE" | "SUSPENDED" };
 }
 
 export interface ApiErrorPayload {
   error?: string;
+  message?: string;
 }

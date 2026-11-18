@@ -2,16 +2,16 @@ import {
   ArrowRight,
   ArrowUpRight,
   BadgeCheck,
+  Boxes,
   Building2,
   CircleCheck,
-  CircleHelp,
-  Clock3,
   LockKeyhole,
   MailPlus,
   PackageCheck,
   ShieldCheck,
-  Sparkles,
-  UsersRound,
+  ShoppingCart,
+  Truck,
+  Wallet,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
@@ -21,63 +21,282 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
-import { getPermissionLabel } from "@/lib/permission-label";
-
-const onboardingChecks = [
-  { label: "Tài khoản đã xác minh", detail: "Email tài khoản đã được xác nhận.", icon: BadgeCheck },
-  { label: "Doanh nghiệp đã khởi tạo", detail: "Thông tin cửa hàng và quyền chủ doanh nghiệp đã sẵn sàng.", icon: Building2 },
-  { label: "Mời nhân viên", detail: "Mời đồng đội cùng tham gia cửa hàng.", icon: UsersRound },
-];
 
 export function DashboardPage() {
   const { profile, profileError, refreshProfile } = useAuth();
-  const { isOwner, isSystemAdmin, isStaff, can } = usePermissions();
+  const { isOwner, isSystemAdmin, can } = usePermissions();
   const [searchParams] = useSearchParams();
-  const roleLabel = isSystemAdmin ? "Quản trị viên hệ thống" : isOwner ? "Chủ doanh nghiệp" : "Nhân viên cửa hàng";
+  const roleLabel = isSystemAdmin
+    ? "Quản trị viên hệ thống"
+    : isOwner
+      ? "Chủ doanh nghiệp"
+      : "Nhân viên cửa hàng";
+
+  const firstName = profile?.user.fullName?.split(" ").slice(-1)[0] || "bạn";
+
+  const coreOperations = [
+    {
+      title: "POS Bán hàng & Thu ngân",
+      desc: "Thao tác tính tiền quầy 3 giây, quét barcode, VietQR động và chốt ca thu ngân.",
+      icon: ShoppingCart,
+      to: "/sales",
+      actionText: "Mở POS",
+      accent: "text-emerald-700 bg-emerald-50",
+    },
+    {
+      title: "Sản phẩm & Quản trị kho FEFO",
+      desc: "Theo dõi tồn kho theo lô date (EXP/MFG), cảnh báo cận hạn và ma trận biến thể.",
+      icon: Boxes,
+      to: "/products",
+      actionText: "Kho hàng",
+      accent: "text-[#0f4c3a] bg-[#ecfdf5]",
+    },
+    {
+      title: "Đơn mua hàng & Nhập kho NCC",
+      desc: "Quản trị đơn đặt hàng PO, nhận hàng theo lô và kiểm soát công nợ nhà cung cấp.",
+      icon: Truck,
+      to: "/purchases",
+      actionText: "Đơn PO",
+      accent: "text-amber-700 bg-amber-50",
+    },
+    {
+      title: "Quản lý ca trực & Két tiền",
+      desc: "Mở ca đầu ngày, ghi nhận phiếu thu/chi và chốt ca tiền mặt minh bạch chống thất thoát.",
+      icon: Wallet,
+      to: "/app/cash-shifts",
+      actionText: "Ca trực",
+      accent: "text-blue-700 bg-blue-50",
+    },
+  ];
 
   return (
     <AppLayout>
-      <div className="dashboard-breadcrumb"><span>Không gian làm việc</span><span>/</span><strong>Tổng quan</strong><span className="breadcrumb-live"><i /> Tài khoản đang hoạt động</span></div>
-      {profileError && <Alert className="mb-5" variant="destructive">{profileError} <button className="inline-action" onClick={() => void refreshProfile()} type="button">Thử tải lại</button></Alert>}
-      {searchParams.get("invitation") === "accepted" && <Alert className="mb-5" variant="success">Bạn đã tham gia doanh nghiệp với tư cách nhân viên.</Alert>}
+      {/* Breadcrumb thoáng đãng, tự nhiên */}
+      <div className="dashboard-breadcrumb">
+        <span>Không gian vận hành</span>
+        <span className="text-slate-400">/</span>
+        <strong>Bảng điều khiển</strong>
+        <span className="breadcrumb-live">
+          <i /> Cửa hàng đang hoạt động
+        </span>
+      </div>
+
+      {profileError && (
+        <Alert className="mb-5" variant="destructive">
+          {profileError}{" "}
+          <button className="inline-action ml-2 underline font-semibold" onClick={() => void refreshProfile()} type="button">
+            Thử tải lại
+          </button>
+        </Alert>
+      )}
+
+      {searchParams.get("invitation") === "accepted" && (
+        <Alert className="mb-5" variant="success">
+          Bạn đã tham gia doanh nghiệp với tư cách nhân viên.
+        </Alert>
+      )}
+
+      {/* Banner chào mừng: Nhã nhặn, tự nhiên, chuẩn phong cách SaaS cao cấp */}
       <section className="dashboard-welcome">
-        <div><span className="eyebrow">{profile?.business ? "TỔNG QUAN CỬA HÀNG" : "QUẢN TRỊ NỀN TẢNG"}</span><h1>Xin chào, {profile?.user.fullName?.split(" ")[0] || "bạn"}.</h1><p>{profile?.business ? `Chào mừng bạn đến với ${profile.business.name}.` : "Quản lý tài khoản và hoạt động của nền tảng ABC Copilot."} Những thông tin bạn xem phụ thuộc vào vai trò được cấp.</p></div>
-        <div className="welcome-actions">{isOwner && <Button asChild variant="outline"><Link to="/app/team"><MailPlus size={16} /> Mời nhân viên</Link></Button>}<Button asChild><Link to="/app/security"><LockKeyhole size={16} /> Tài khoản</Link></Button></div>
-      </section>
-      <div className="kpi-grid">
-        <Card className="kpi-card"><CardContent><div className="kpi-top"><span>VAI TRÒ CỦA BẠN</span><span className="kpi-icon violet"><ShieldCheck size={17} /></span></div><strong className="kpi-value role-value">{roleLabel}</strong><div className="kpi-foot"><span className="status-inline"><i /> Đang hoạt động</span><span>Trong hệ thống</span></div></CardContent></Card>
-        <Card className="kpi-card"><CardContent><div className="kpi-top"><span>DOANH NGHIỆP</span><span className="kpi-icon blue"><Building2 size={17} /></span></div><strong className="kpi-value">{profile?.business?.name || "Nền tảng"}</strong><div className="kpi-foot"><span>{profile?.business ? "Không gian làm việc" : "Quản trị nền tảng"}</span><span className="metric-dot" /></div></CardContent></Card>
-        <Card className="kpi-card"><CardContent><div className="kpi-top"><span>QUYỀN TRUY CẬP</span><span className="kpi-icon green"><PackageCheck size={17} /></span></div><strong className="kpi-value">{profile?.permissions.length ?? 0} <small>quyền</small></strong><div className="kpi-foot"><span>Theo vai trò của bạn</span><ArrowUpRight size={15} /></div></CardContent></Card>
-        <Card className="kpi-card"><CardContent><div className="kpi-top"><span>TÀI KHOẢN</span><span className="kpi-icon amber"><LockKeyhole size={17} /></span></div><strong className="kpi-value">Đã đăng nhập</strong><div className="kpi-foot"><span>Email {profile?.user.emailVerified ? "đã xác minh" : "chưa xác minh"}</span><CircleCheck size={15} /></div></CardContent></Card>
-      </div>
-      <div className="dashboard-content-grid">
-        <Card className="onboarding-checklist">
-          <CardHeader className="dashboard-card-header"><div><span className="eyebrow">BẮT ĐẦU VẬN HÀNH</span><CardTitle>{isOwner ? "Thiết lập doanh nghiệp" : isStaff ? "Không gian làm việc của bạn" : "Quản trị nền tảng"}</CardTitle></div><span className="progress-counter"><CheckMark /> {isOwner ? "2/3" : "SẴN SÀNG"}</span></CardHeader>
-          <CardContent>
-            {isOwner ? (
-              <div className="checklist">{onboardingChecks.map(({ label, detail, icon: Icon }, index) => <div className={`checklist-row ${index < 2 ? "complete" : ""}`} key={label}><span className="checklist-icon">{index < 2 ? <CircleCheck size={18} /> : <Icon size={18} />}</span><span className="checklist-copy"><strong>{label}</strong><small>{detail}</small></span>{index < 2 ? <span className="done-label">Hoàn tất</span> : <Button asChild size="sm" variant="outline"><Link to="/app/team">Mời ngay <ArrowRight size={14} /></Link></Button>}</div>)}</div>
-            ) : isStaff ? (
-              <div className="staff-welcome"><span className="staff-welcome-icon"><UsersRound size={22} /></span><div><strong>Bạn đang tham gia {profile?.business?.name}</strong><p>Vai trò nhân viên cho phép bạn xem sản phẩm, ghi nhận hàng hóa và tạo đơn hàng theo quyền được cấp.</p><div className="permission-chip-row">{profile?.permissions.map((permission) => <span className="permission-chip" key={permission}>{getPermissionLabel(permission)}</span>)}</div></div></div>
+        <div>
+          <span className="eyebrow">
+            {profile?.business ? "HỆ THỐNG QUẢN TRỊ BÁN LẺ & KHO FEFO" : "QUẢN TRỊ NỀN TẢNG"}
+          </span>
+          <h1>Xin chào, {firstName}.</h1>
+          <p>
+            {profile?.business ? (
+              <>
+                Không gian làm việc: <strong className="text-slate-800 font-semibold">{profile.business.name}</strong> · Vai trò: <strong className="text-slate-800 font-semibold">{roleLabel}</strong>.
+              </>
             ) : (
-              <div className="staff-welcome"><span className="staff-welcome-icon"><ShieldCheck size={22} /></span><div><strong>Tài khoản quản trị nền tảng</strong><p>Vai trò này hỗ trợ quản lý hoạt động chung của ABC Copilot, không bao gồm quyền sở hữu dữ liệu của từng doanh nghiệp.</p><Button asChild className="mt-4" size="sm" variant="outline"><Link to="/app/admin">Mở trang quản trị <ArrowRight size={14} /></Link></Button></div></div>
+              "Không gian quản trị tài khoản và hoạt động toàn nền tảng ABC Copilot."
             )}
+          </p>
+        </div>
+        <div className="welcome-actions">
+          <Button asChild className="bg-[#0f4c3a] hover:bg-[#0a3528] !text-white font-semibold shadow-xs">
+            <Link to="/sales">
+              <ShoppingCart size={16} /> Mở POS Bán hàng
+            </Link>
+          </Button>
+          {isOwner && (
+            <Button asChild variant="outline">
+              <Link to="/app/team">
+                <MailPlus size={16} /> Đội ngũ
+              </Link>
+            </Button>
+          )}
+        </div>
+      </section>
+
+      {/* Dải 4 KPI chỉ số nghiệp vụ thiết thực */}
+      <div className="kpi-grid">
+        <Link to="/sales" className="kpi-card group cursor-pointer">
+          <CardContent>
+            <div className="kpi-top">
+              <span>BÁN HÀNG TẠI QUẦY</span>
+              <span className="kpi-icon violet group-hover:scale-110 transition-transform">
+                <ShoppingCart size={17} />
+              </span>
+            </div>
+            <strong className="kpi-value">POS Thu Ngân</strong>
+            <div className="kpi-foot">
+              <span className="status-inline">
+                <i /> Vào bán hàng ngay
+              </span>
+              <ArrowUpRight size={15} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </div>
+          </CardContent>
+        </Link>
+
+        <Link to="/products" className="kpi-card group cursor-pointer">
+          <CardContent>
+            <div className="kpi-top">
+              <span>KHO HÀNG & LÔ DATE</span>
+              <span className="kpi-icon green group-hover:scale-110 transition-transform">
+                <Boxes size={17} />
+              </span>
+            </div>
+            <strong className="kpi-value">Kho FEFO</strong>
+            <div className="kpi-foot">
+              <span>Quản lý date & tồn kho</span>
+              <ArrowUpRight size={15} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </div>
+          </CardContent>
+        </Link>
+
+        <Link to="/purchases" className="kpi-card group cursor-pointer">
+          <CardContent>
+            <div className="kpi-top">
+              <span>MUA HÀNG & NCC</span>
+              <span className="kpi-icon amber group-hover:scale-110 transition-transform">
+                <Truck size={17} />
+              </span>
+            </div>
+            <strong className="kpi-value">Đơn Nhập PO</strong>
+            <div className="kpi-foot">
+              <span>Kiểm đếm & công nợ</span>
+              <ArrowUpRight size={15} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </div>
+          </CardContent>
+        </Link>
+
+        <Link to="/app/team" className="kpi-card group cursor-pointer">
+          <CardContent>
+            <div className="kpi-top">
+              <span>ĐỘI NGŨ & PHÂN QUYỀN</span>
+              <span className="kpi-icon blue group-hover:scale-110 transition-transform">
+                <ShieldCheck size={17} />
+              </span>
+            </div>
+            <strong className="kpi-value role-value">{profile?.permissions.length ?? 0} quyền hạn</strong>
+            <div className="kpi-foot">
+              <span>{roleLabel}</span>
+              <CircleCheck size={15} />
+            </div>
+          </CardContent>
+        </Link>
+      </div>
+
+      {/* Khung nội dung chính: Phân hệ vận hành & Thông tin danh tính */}
+      <div className="dashboard-content-grid">
+        {/* Cột trái: Phân hệ nghiệp vụ cốt lõi sẵn sàng sử dụng */}
+        <Card className="onboarding-checklist">
+          <CardHeader className="dashboard-card-header">
+            <div>
+              <span className="eyebrow">QUY TRÌNH VẬN HÀNH</span>
+              <CardTitle>Phân hệ nghiệp vụ cốt lõi</CardTitle>
+            </div>
+            <span className="progress-counter">
+              <CircleCheck aria-hidden="true" size={13} /> SẴN SÀNG HOẠT ĐỘNG
+            </span>
+          </CardHeader>
+          <CardContent>
+            <div className="checklist">
+              {coreOperations.map((op) => {
+                const Icon = op.icon;
+                return (
+                  <div className="checklist-row group hover:bg-slate-50/70 px-2 rounded-xl transition-colors" key={op.title}>
+                    <span className={`checklist-icon ${op.accent}`}>
+                      <Icon size={18} />
+                    </span>
+                    <span className="checklist-copy">
+                      <strong>{op.title}</strong>
+                      <small>{op.desc}</small>
+                    </span>
+                    <Button asChild size="sm" variant="outline" className="border-slate-200 hover:border-[#0f4c3a] hover:text-[#0f4c3a] group-hover:bg-white transition-all">
+                      <Link to={op.to}>
+                        {op.actionText} <ArrowRight size={14} className="ml-1" />
+                      </Link>
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
+
+        {/* Cột phải: Thông tin tài khoản & Không gian làm việc */}
         <Card className="access-card">
-          <CardHeader className="dashboard-card-header"><div><span className="eyebrow">TRUY CẬP TÀI KHOẢN</span><CardTitle>Danh tính & quyền hạn</CardTitle></div><span className="secure-badge"><LockKeyhole size={13} /> Bảo mật</span></CardHeader>
+          <CardHeader className="dashboard-card-header">
+            <div>
+              <span className="eyebrow">TÀI KHOẢN VẬN HÀNH</span>
+              <CardTitle>Danh tính & Quyền hạn</CardTitle>
+            </div>
+            <span className="secure-badge">
+              <LockKeyhole size={13} /> Bảo mật
+            </span>
+          </CardHeader>
           <CardContent>
-            <div className="identity-card"><span className="identity-avatar">{profile?.user.fullName?.slice(0, 1).toUpperCase() || "A"}</span><span className="identity-info"><strong>{profile?.user.fullName}</strong><small>{profile?.user.email}</small></span><span className="verified-badge"><BadgeCheck size={14} /> Xác thực</span></div>
-            <div className="access-list"><div><span><ShieldCheck size={15} /> Vai trò hiện tại</span><strong>{roleLabel}</strong></div><div><span><Clock3 size={15} /> Không gian</span><strong>{profile?.business?.name || "Nền tảng ABC Copilot"}</strong></div><div><span><CircleHelp size={15} /> Quyền được cấp</span><strong>{profile?.permissions.length ?? 0} quyền</strong></div></div>
-            <Button asChild className="access-link" variant="ghost"><Link to="/app/security">Cài đặt tài khoản <ArrowRight size={15} /></Link></Button>
+            <div className="identity-card">
+              <span className="identity-avatar">
+                {profile?.user.fullName?.slice(0, 1).toUpperCase() || "A"}
+              </span>
+              <span className="identity-info">
+                <strong>{profile?.user.fullName || "Người dùng"}</strong>
+                <small>{profile?.user.email}</small>
+              </span>
+              <span className="verified-badge">
+                <BadgeCheck size={14} /> Đã xác thực
+              </span>
+            </div>
+
+            <div className="access-list">
+              <div>
+                <span>
+                  <ShieldCheck size={15} /> Vai trò tài khoản
+                </span>
+                <strong>{roleLabel}</strong>
+              </div>
+              <div>
+                <span>
+                  <Building2 size={15} /> Cửa hàng trực thuộc
+                </span>
+                <strong>{profile?.business?.name || "Chưa gán cửa hàng"}</strong>
+              </div>
+              <div>
+                <span>
+                  <PackageCheck size={15} /> Quyền thao tác
+                </span>
+                <strong>{profile?.permissions.length ?? 0} quyền được cấp</strong>
+              </div>
+            </div>
+
+            <Button asChild className="access-link mt-4" variant="ghost">
+              <Link to="/app/security" className="flex items-center justify-between w-full font-semibold text-[#0f4c3a]">
+                <span>Cài đặt bảo mật tài khoản</span>
+                <ArrowRight size={15} />
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
-      <section className="coming-panel"><div className="coming-icon"><Sparkles size={18} /></div><div><span className="eyebrow">SẮP CÓ TRÊN ABC COPILOT</span><h2>Công cụ quản lý cửa hàng đang được hoàn thiện</h2><p>Báo cáo bán hàng, quản lý hàng hóa và phân tích kinh doanh sẽ được bổ sung trong các bản cập nhật tiếp theo.</p></div><span className="coming-tag">SẮP RA MẮT</span></section>
-      {can("business.read") && profile?.business && <p className="dashboard-note">Các số liệu bán hàng và tồn kho sẽ xuất hiện tại đây khi cửa hàng bắt đầu sử dụng những công cụ tương ứng.</p>}
+
+      {can("business.read") && profile?.business && (
+        <p className="dashboard-note">
+          Dữ liệu bán hàng và kho hàng được đồng bộ tự động theo thời gian thực giữa POS thu ngân và kho hàng trung tâm.
+        </p>
+      )}
     </AppLayout>
   );
-}
-
-function CheckMark() {
-  return <CircleCheck aria-hidden="true" size={13} />;
 }
