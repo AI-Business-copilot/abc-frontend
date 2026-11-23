@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuditCountImages } from '../hooks/use-audit-count-images';
+import { ImageViewer } from '../../../../components/common/image-viewer';
 import type { AuditItemCountImage } from '../../../../types/audit';
 
 const formatDateTime = (value?: string | Date | null) =>
@@ -25,7 +26,7 @@ export function AuditCountGallery({
   images?: AuditItemCountImage[];
 }) {
   const { images, refetch } = useAuditCountImages(auditId, itemId, countId);
-  const [zoom, setZoom] = useState<AuditItemCountImage | null>(null);
+  const [viewing, setViewing] = useState<number | null>(null);
 
   // Until the signed links arrive, fall back to the metadata from the item payload.
   const list = images.length > 0 ? images : (knownImages ?? []);
@@ -35,7 +36,7 @@ export function AuditCountGallery({
   return (
     <div className="space-y-2">
       <ul className="grid grid-cols-3 gap-2">
-        {list.map((image) => (
+        {list.map((image, index) => (
           <li
             className="overflow-hidden rounded-lg border border-gray-200 bg-white"
             key={image.id}
@@ -44,7 +45,7 @@ export function AuditCountGallery({
               <button
                 aria-label="Phóng to ảnh"
                 className="block aspect-[4/3] w-full bg-gray-100"
-                onClick={() => setZoom(image)}
+                onClick={() => setViewing(index)}
                 type="button"
               >
                 <img
@@ -66,23 +67,19 @@ export function AuditCountGallery({
         ))}
       </ul>
 
-      {zoom?.url && (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-gray-900/80 p-4"
-          onClick={() => setZoom(null)}
-          onKeyDown={(event) => event.key === 'Escape' && setZoom(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Xem ảnh"
-          tabIndex={-1}
-        >
-          <img
-            alt="Ảnh bằng chứng hàng hỏng"
-            className="max-h-full max-w-full rounded-lg"
-            onError={refetch}
-            src={zoom.url}
-          />
-        </div>
+      {viewing !== null && (
+        <ImageViewer
+          alt="Ảnh bằng chứng hàng hỏng"
+          images={list.map((image) => ({
+            id: image.id,
+            url: image.url ?? null,
+            caption: `${image.uploadedByName} · ${formatDateTime(image.createdAt)}`,
+          }))}
+          index={viewing}
+          onClose={() => setViewing(null)}
+          onImageError={refetch}
+          onIndexChange={setViewing}
+        />
       )}
     </div>
   );

@@ -575,13 +575,13 @@ export function AuditItemDetailPage() {
                 </div>
               )}
 
-              {/* The photos taken at that moment. */}
+              {/* The photos taken at that moment, behind a button so the numbers stay readable. */}
               {(history.images ?? []).length > 0 && (
                 <div className="mt-3">
-                  <p className="mb-2 text-xs font-semibold text-gray-700">
-                    Ảnh hàng hỏng lúc đó
-                  </p>
-                  <AuditHistoryGallery images={history.images ?? []} />
+                  <AuditHistoryGallery
+                    counts={history.counts ?? []}
+                    images={history.images ?? []}
+                  />
                 </div>
               )}
 
