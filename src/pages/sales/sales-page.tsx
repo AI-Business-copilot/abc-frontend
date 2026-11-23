@@ -10,6 +10,7 @@ import "@/pages/purchases/purchases.css";
 import "./sales.css";
 import { SaleEditor } from "./sale-editor";
 import { SaleDetail } from "./sale-detail";
+import { ReceiptSettings } from "./receipt-settings";
 
 const labels = { DRAFT: "Chờ thanh toán", COMPLETED: "Đã thanh toán", CANCELLED: "Đã hủy" };
 
@@ -39,6 +40,7 @@ export function SalesPage() {
     />
     <main className="purchases sales">
       <div className="purchase-breadcrumb"><Link to="/app/orders">Đơn hàng &amp; thanh toán</Link><span>›</span><strong>Bán lẻ &amp; thanh toán</strong></div>
+      {can("orders.read") && <ReceiptSettings />}
       {!can("orders.read") ? <ErrorBox error="Bạn cần quyền xem đơn bán để sử dụng chức năng này." /> : <Routes key={`${profile?.business?.id}:${location.pathname}${active === "pos" ? "" : location.search}`}>
         <Route index element={<SaleList />} />
         <Route path="new" element={<SaleEditor />} />

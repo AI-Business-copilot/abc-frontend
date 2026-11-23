@@ -2,6 +2,7 @@ import { Check, LockKeyhole, Star } from "lucide-react";
 import { toast } from "react-toastify";
 import { PurchaseDialog } from "./purchase-dialog";
 import { PurchaseForm } from "./purchase-form";
+import { SupplierImport } from "./supplier-import";
 import { MoneyInput } from "./money-input";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -11,6 +12,7 @@ import { Editor, type EditorLine } from "./orders";
 import { date, Empty, ErrorBox, Field, Heading, money, Pager, useAction, useLoad, validateMoney } from "./shared";
 
 export function SupplierProducts({ supplier, onClose }: { supplier: Supplier; onClose: () => void }) {
+  const [importing, setImporting] = useState(false);
   const { can } = usePermissions(); const writable = can("inventory.receive") && supplier.isActive; const navigate = useNavigate();
   const [active, setActive] = useState<"true" | "false" | "all">("true");
   const [conditions, setConditions] = useState<Partial<SupplierCatalog>>({});
@@ -48,10 +50,12 @@ export function SupplierProducts({ supplier, onClose }: { supplier: Supplier; on
   return <>
     <button type="button" className="purchase-back" onClick={onClose}>← Danh sách nhà cung cấp</button>
     <Heading title={supplier.name} description="Quản lý SKU nhà cung cấp đang bán và tham khảo các lần nhập trước.">
+      {writable && can("products.manage") && <button onClick={() => setImporting(true)}>Nhập Excel / CSV</button>}
       {writable && <button className="purchase-primary" onClick={() => { setAdding(true); setCandidate(null); setSkuSearch(""); setSkuTerm(""); setPrice(""); setConditions({}); }}> + Thêm sản phẩm NCC</button>}
       <button disabled={action.busy} onClick={result.reload}>Tải lại</button>
     </Heading>
     <ErrorBox error={result.error} />
+    {importing && writable && can("products.manage") && <SupplierImport supplier={supplier} onClose={() => setImporting(false)} onSaved={message => { setImporting(false); setSelected([]); setKind("catalog"); setActive("true"); setPage(1); result.reload(); toast.success(message); }} />}
     <div className="purchase-actions" role="group" aria-label="Danh sách sản phẩm nhà cung cấp">
       <button className={kind === "catalog" ? "purchase-primary" : ""} aria-pressed={kind === "catalog"} onClick={() => { setKind("catalog"); setPage(1); }}>Sản phẩm cung cấp</button>
       <button className={kind === "history" ? "purchase-primary" : ""} aria-pressed={kind === "history"} onClick={() => { setKind("history"); setPage(1); }}>Hàng đã mua</button>

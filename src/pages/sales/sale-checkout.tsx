@@ -69,7 +69,7 @@ export function SaleCheckout({ step, setStep, lines, setLines, orderCode, shiftI
           orderCode, shiftId, ...(activeCustomer ? { customerId: activeCustomer.id } : {}),
           items: lines.map(l => ({ variantId: l.variant.id, quantity: validateQty(l.qty) })),
         }, { method, expectedAmount: due, reference: method === "BANK_TRANSFER" ? reference : "" });
-        navigate(`/sales/${result.id}`, { replace: true, state: { checkoutNotice: result.notice } });
+        navigate(`/sales/${result.id}`, { replace: true, state: { checkoutNotice: result.notice, autoPrintReceipt: !result.notice } });
       });
     }}>
       <fieldset disabled={action.busy}>

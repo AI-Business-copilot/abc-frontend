@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { Banknote, CheckCircle2, CreditCard, Printer, RefreshCw } from "lucide-react";
 import { salesApi } from "@/api/sales";
@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { MoneyInput } from "@/pages/purchases/money-input";
 import { Back, date, Empty, ErrorBox, Field, Heading, money, useAction, useLoad, validateMoney } from "@/pages/purchases/shared";
 import { cashChange } from "./sale-money";
+import { printSaleReceipt, printSaleReceiptInFrame } from "./sale-receipt";
+import { claimAutomaticReceipt, readReceiptPreferences } from "./receipt-preferences";
 
 export function SaleDetail() {
   const location = useLocation();
@@ -22,6 +24,27 @@ export function SaleDetail() {
   const [received, setReceived] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [cancel, setCancel] = useState(false);
+  const [printError, setPrintError] = useState("");
+  const [printMessage, setPrintMessage] = useState("");
+  const [printing, setPrinting] = useState(false);
+  const [automaticRequested, setAutomaticRequested] = useState(location.state?.autoPrintReceipt === true);
+  useEffect(() => {
+    const order = result.data;
+    const settings = readReceiptPreferences();
+    if (!automaticRequested || order?.status !== "COMPLETED" || !settings.automatic) return;
+    try {
+      if (!claimAutomaticReceipt(profile?.business?.id || "", order.id)) return;
+    } catch {
+      setPrintError("Không thể lưu trạng thái chống in trùng. Vui lòng bấm In hóa đơn để in thủ công.");
+      return;
+    }
+    setPrinting(true); setPrintError("");
+    void printSaleReceiptInFrame(order, settings.width).then(() => {
+      setPrintMessage("Đã gọi lệnh in. Kiểm tra bill tại máy Epson; hệ thống chưa xác nhận được giấy đã in xong.");
+    }).catch((error: unknown) => {
+      setPrintError(error instanceof Error ? error.message : "Không thể gửi in. Đơn đã được lưu; kiểm tra máy in rồi bấm in lại.");
+    }).finally(() => setPrinting(false));
+  }, [result.data, automaticRequested, profile?.business?.id]);
   if (result.loading) return <Empty>Đang tải đơn bán…</Empty>;
   if (!result.data) return <><Back to="/sales">Đơn bán hàng</Back><ErrorBox error={result.error} /><button onClick={result.reload}>Thử lại</button></>;
   const order = result.data;
@@ -37,8 +60,21 @@ export function SaleDetail() {
     <Heading title={order.orderCode} description={`${date(order.createdAt)} · ${order.customer?.name || "Khách vãng lai"}${order.customer ? ` · ${order.customer.phone}` : ""}`}>
       <span className={`purchase-status ${order.status.toLowerCase()}`}>{completed ? "Đã thanh toán" : order.status === "DRAFT" ? "Chờ thanh toán" : "Đã hủy"}</span>
       <button className="sales-no-print" disabled={action.busy} onClick={refresh}><RefreshCw size={15} /> Tải lại</button>
-      {completed && <><button className="sales-no-print" onClick={() => window.print()}><Printer size={15} /> In hóa đơn</button><Link className="purchase-primary sales-no-print" to="/sales/new">+ Đơn mới</Link></>}
+      {completed && <><button className="sales-no-print" disabled={printing} onClick={() => {
+        setPrintError("");
+        const settings = readReceiptPreferences();
+        if (settings.automatic) {
+          setPrinting(true);
+          void printSaleReceiptInFrame(order, settings.width).then(() => setPrintMessage("Đã gọi lệnh in. Vui lòng kiểm tra bill tại máy Epson.")).catch((error: unknown) => setPrintError(error instanceof Error ? error.message : "Không thể gửi in.")).finally(() => setPrinting(false));
+          return;
+        }
+        try { printSaleReceipt(order, settings.width); }
+        catch (error) { setPrintError(error instanceof Error ? error.message : "Không thể mở cửa sổ in. Vui lòng thử lại."); }
+      }}><Printer size={15} /> {printing ? "Đang gửi in…" : "In hóa đơn / In lại"}</button><Link className="purchase-primary sales-no-print" to="/sales/new">+ Đơn mới</Link></>}
     </Heading>
+    {completed && <p className="purchase-hint sales-no-print">In trên Windows: chọn máy in Epson, khổ giấy tương ứng, tỷ lệ 100% và tắt đầu/chân trang trong hộp thoại in. Nếu hủy hoặc in lỗi, bạn có thể bấm in lại mà không thanh toán lại.</p>}
+    <ErrorBox error={printError} />
+    {printMessage && <p role="status" className="purchase-hint sales-no-print">{printMessage}</p>}
     {!completed && checkoutNotice && <ErrorBox error={checkoutNotice} />}
     <ErrorBox error={action.error} />{action.error && <p className="purchase-hint">Tải lại đơn để kiểm tra kết quả trước khi thử lại. Nếu đã nhận tiền, đối chiếu ca và tồn kho trước khi xử lý tiếp.</p>}
     {completed && <div className="sales-completed" role="status"><CheckCircle2 size={25} /><div><strong>{freeOrder ? "Đơn hàng đã hoàn tất" : "Thanh toán thành công"}</strong><p>{freeOrder ? "Đơn được thanh toán toàn bộ bằng khuyến mãi; hàng đã xuất kho." : "Đã ghi nhận tiền và xuất kho cho đơn hàng này."}</p></div></div>}
@@ -61,6 +97,7 @@ export function SaleDetail() {
             if (!freeOrder && method === "CASH") validateMoney(received);
             // Only the order total is collected; customer tender/change is a local calculator.
             await salesApi.pay(id, method, order.totalNetAmount, method === "BANK_TRANSFER" ? reference : "");
+            setAutomaticRequested(true);
             refresh();
           }); }}><fieldset disabled={action.busy}>
             {!freeOrder && <><div className="sales-methods">{([["CASH", "Tiền mặt", Banknote], ["BANK_TRANSFER", "Chuyển khoản", CreditCard]] as const).map(([value, label, Icon]) => <button type="button" key={value} aria-pressed={method === value} className={method === value ? "selected" : ""} onClick={() => { setMethod(value); setConfirmed(false); }}><Icon size={21} />{label}</button>)}</div>
