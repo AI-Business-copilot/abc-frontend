@@ -1,6 +1,8 @@
 import { apiRequest } from "@/services/api.service";
 
 export type Money = string;
+export type SupplierImportMapping = Partial<Record<"sku" | "name" | "price" | "supplierSku" | "unit", number>>;
+export type SupplierImportPreview = { headers: string[]; mapping: SupplierImportMapping; issues: string[]; digest: string; valid: boolean; items: { row: number; sku: string; name: string; price: string; unit: string; action: string; currentName: string | null; error?: string }[] };
 export type Page<T> = { items: T[]; pagination: { page: number; pageSize: number; total: number; totalPages: number } };
 export type Supplier = { id: string; name: string; phone: string | null; contactPerson: string | null; debtAmount: Money; supplierCode: string | null; email: string | null; address: string | null; taxCode: string | null; note: string | null; isActive: boolean };
 export type Variant = { id: string; sku: string; template: { name: string; unitOfMeasure: string | null; hasLotTracking: boolean } };
@@ -31,6 +33,16 @@ const read = <T>(path: string) => apiRequest<T>(`/purchases${path}`);
 const write = <T>(path: string, body: unknown, method = "POST") => apiRequest<T>(`/purchases${path}`, { method, body: JSON.stringify(body) });
 
 export const purchasesApi = {
+  lookupSupplierTax: (taxCode: string) => read<{ taxCode: string; name: string; address: string; source: string }>(`/suppliers/tax-lookup?${new URLSearchParams({ taxCode })}`),
+  previewSupplierImport: (id: string, file: File, mapping?: SupplierImportMapping) => {
+    const body = new FormData(); body.append("file", file);
+    if (mapping) body.append("mapping", JSON.stringify(mapping));
+    return apiRequest<SupplierImportPreview>(`/purchases/suppliers/${id}/products/import/preview`, { method: "POST", body });
+  },
+  confirmSupplierImport: (id: string, file: File, preview: SupplierImportPreview) => {
+    const body = new FormData(); body.append("file", file); body.append("mapping", JSON.stringify(preview.mapping)); body.append("digest", preview.digest);
+    return apiRequest<{ created: number; linked: number; updated: number; total: number }>(`/purchases/suppliers/${id}/products/import/confirm`, { method: "POST", body });
+  },
   orders: (params: Query) => read<Page<Order>>(`/orders?${query(params)}`),
   order: (id: string) => read<Order>(`/orders/${id}`),
   saveOrder: (body: OrderPayload, id?: string) => write<{ id: string }>(id ? `/orders/${id}` : "/orders", body, id ? "PATCH" : "POST"),
