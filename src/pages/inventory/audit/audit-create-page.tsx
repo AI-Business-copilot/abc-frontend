@@ -63,12 +63,8 @@ export function AuditCreatePage() {
         <p className="font-semibold mb-2">Trước khi tạo đợt kiểm kê:</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
           <li>Tạo đợt kiểm kê trước, sau đó thêm dòng ở trang chi tiết</li>
-          <li>
-            Loại kiểm kê quyết định cách xử lý lô: Lô mới nghĩa là mỗi dòng là một lô mới do nhân viên
-            nhập; Kiểm kê lại nghĩa là mỗi dòng dùng một lô có sẵn do bạn chọn khi thêm dòng
-          </li>
-          <li>Với kiểm kê lại, nhân viên giữ nguyên lô đó nhưng vẫn có thể sửa ngày của lô và nhập số đếm</li>
-          <li>Lô chưa tồn tại sẽ được tạo khi bạn áp dụng đợt kiểm kê</li>
+          <li>Mỗi dòng kiểm kê dùng một lô có sẵn do bạn chọn khi thêm dòng</li>
+          <li>Nhân viên giữ nguyên lô đó nhưng vẫn có thể sửa ngày của lô và nhập số đếm</li>
         </ul>
       </div>
       </main>

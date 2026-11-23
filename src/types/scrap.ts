@@ -19,6 +19,19 @@ export function scrapStatusText(status: string | null | undefined): string {
   return scrapStatusLabel[status as ScrapStatus] ?? status;
 }
 
+/**
+ * True when the newest scrap order of a lot still blocks a new one. Only a PENDING order does:
+ * a rejected or cancelled order is settled, so the lot stays quarantined and any staff member
+ * can file a fresh order. The server sends `scrapOrderBlocksNew`; fall back to the status when
+ * the field is missing.
+ */
+export function scrapOrderBlocksNew(
+  lot: Pick<ExpiringLot, "scrapOrder" | "scrapOrderBlocksNew">,
+): boolean {
+  if (typeof lot.scrapOrderBlocksNew === "boolean") return lot.scrapOrderBlocksNew;
+  return lot.scrapOrder?.status === "PENDING";
+}
+
 export const REJECTION_REASON_CODES = [
   "WRONG_QUANTITY",
   "PHOTO_UNCLEAR",
@@ -35,6 +48,23 @@ export interface LotVariant {
   id: string;
   sku: string;
   template: { name: string };
+}
+
+/**
+ * The quarantine state of a product that has no lot item. The quantity pulled off the shelf is
+ * recorded on the variant, the same way the lot flow records it on the lot item, so the goods
+ * can then be scrapped.
+ */
+export interface VariantQuarantine {
+  id: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  /** Units pulled off the shelf. The scrap order cannot exceed it. */
+  quarantineQty: number;
+  quarantinedAt: string;
+  quarantinedBy: string;
+  quarantineNote: string | null;
 }
 
 export interface ExpiringLot {
@@ -57,10 +87,15 @@ export interface ExpiringLot {
   /** Units already marked damaged. */
   damaged: number;
   /**
-   * The scrap order already raised for this lot item, in any status. A lot can only have one
-   * scrap order, so a new one cannot be created while this is set.
+   * The scrap order already raised for this lot item, in any status. It is the audit trail and
+   * the link the staff need, so it always points at the newest order.
    */
   scrapOrder: { id: string; scrapCode: string; status: ScrapStatus } | null;
+  /**
+   * True when the newest scrap order still blocks a new one. Only a PENDING order does: a
+   * rejected or cancelled order is settled, so any staff member can file a fresh order.
+   */
+  scrapOrderBlocksNew?: boolean;
 }
 
 /** One batch (product_lots row) with only the variant items that matched the filter. */

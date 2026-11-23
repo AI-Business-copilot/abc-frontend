@@ -6,6 +6,8 @@ import { Alert } from '../../../components/ui/alert';
 import { PermissionGate } from '../../../components/common/permission-gate';
 import { AuditStatusBadge } from './components/audit-status-badge';
 import { useAudits } from './hooks/use-audits';
+import { useAuditActions } from './hooks/use-audit-actions';
+import { usePermissions } from '../../../hooks/use-permissions';
 import { CatalogHeader } from '../../products/catalog-header';
 import type { AuditScopeType, AuditStatus } from '../../../types/audit';
 
@@ -13,13 +15,15 @@ export function AuditListPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<AuditStatus | undefined>(undefined);
+  const { can } = usePermissions();
+  const { deleteAudit } = useAuditActions();
   const SCOPE_LABELS: Record<AuditScopeType, string> = {
     FULL_STORE: 'Toàn cửa hàng',
     CATEGORY: 'Theo danh mục',
     SHELF: 'Theo kệ',
   };
 
-  const { audits, total, page, totalPages, loading, error, goToPage, updateFilter } = useAudits({
+  const { audits, total, page, totalPages, loading, error, goToPage, updateFilter, refetch } = useAudits({
     status: statusFilter,
   });
 
@@ -30,6 +34,16 @@ export function AuditListPage() {
 
   const handleViewAudit = (auditId: string) => {
     navigate(`/inventory/audit/${auditId}`);
+  };
+
+  /** Owner: a draft can be deleted. The list is reloaded so the row disappears. */
+  const handleDelete = async (auditId: string) => {
+    try {
+      await deleteAudit(auditId);
+      await refetch();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Không xoá được đợt kiểm kê.');
+    }
   };
 
   // The backend has no text search, so the header box narrows the loaded page.
@@ -68,6 +82,12 @@ export function AuditListPage() {
           Tất cả ({total})
         </Button>
         <Button
+          variant={statusFilter === 'DRAFT' ? 'default' : 'outline'}
+          onClick={() => handleStatusChange('DRAFT')}
+        >
+          Nháp
+        </Button>
+        <Button
           variant={statusFilter === 'IN_PROGRESS' ? 'default' : 'outline'}
           onClick={() => handleStatusChange('IN_PROGRESS')}
         >
@@ -84,6 +104,12 @@ export function AuditListPage() {
           onClick={() => handleStatusChange('DONE')}
         >
           Hoàn thành
+        </Button>
+        <Button
+          variant={statusFilter === 'CANCELLED' ? 'default' : 'outline'}
+          onClick={() => handleStatusChange('CANCELLED')}
+        >
+          Đã hủy
         </Button>
       </div>
 
@@ -112,11 +138,34 @@ export function AuditListPage() {
                     <span>•</span>
                     <span>Số dòng: {audit.itemCount}</span>
                     <span>•</span>
-                    <span>Bắt đầu: {new Date(audit.countStartAt).toLocaleDateString('vi-VN')}</span>
+                    <span>
+                      Bắt đầu:{' '}
+                      {audit.countStartAt
+                        ? new Date(audit.countStartAt).toLocaleDateString('vi-VN')
+                        : 'Chưa bắt đầu'}
+                    </span>
                   </div>
                 </div>
                 <div className="flex gap-2">
 
+                  {audit.status === 'DRAFT' && can('inventory.audit.create') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (
+                          !window.confirm(
+                            `Xoá đợt kiểm kê ${audit.auditCode}? Toàn bộ dòng đã giao sẽ bị xoá.`,
+                          )
+                        ) {
+                          return;
+                        }
+                        void handleDelete(audit.id);
+                      }}
+                    >
+                      Xoá
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"

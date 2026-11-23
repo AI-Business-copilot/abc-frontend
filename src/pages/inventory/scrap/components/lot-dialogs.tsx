@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
   ALLOWED_SCRAP_IMAGE_TYPES,
-  MAX_SCRAP_IMAGES,
+    MAX_SCRAP_IMAGES,
   MAX_SCRAP_IMAGE_BYTES,
+  scrapOrderBlocksNew,
   scrapStatusText,
   type ExpiringLot,
 } from "@/types/scrap";
@@ -114,8 +115,10 @@ export function CreateScrapDialog({
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // A lot can only have one scrap order, so a lot that already has one cannot get another.
+  // Only a pending order blocks a new one. A rejected or cancelled order is settled, so the lot
+  // stays quarantined and any staff member can file a fresh order.
   const existingOrder = lot.scrapOrder;
+  const existingBlocksNew = scrapOrderBlocksNew(lot);
 
   const addFiles = (list: FileList | null) => {
     const chosen = list ? Array.from(list) : [];
@@ -141,10 +144,10 @@ export function CreateScrapDialog({
   };
 
   const submit = async () => {
-    if (existingOrder) {
+    if (existingBlocksNew) {
       setError(
-        `Lô này đã có phiếu hủy ${existingOrder.scrapCode} (${scrapStatusText(existingOrder.status)}). ` +
-          "Mỗi lô chỉ được có một phiếu hủy.",
+        `Lô này đã có phiếu hủy ${existingOrder?.scrapCode} đang chờ duyệt. ` +
+          "Hãy chờ chủ cửa hàng xử lý phiếu đó trước khi tạo phiếu mới.",
       );
       return;
     }
@@ -182,10 +185,16 @@ export function CreateScrapDialog({
       <p className="mb-4 text-sm text-slate-600">
         {lot.variant.template.name} · {lot.variant.sku} · lô {lot.lotNumber}
       </p>
-      {existingOrder && (
+      {existingOrder && existingBlocksNew && (
         <Alert className="mb-3" variant="destructive">
-          Lô này đã có phiếu hủy {existingOrder.scrapCode} ({scrapStatusText(existingOrder.status)}). Mỗi
-          lô chỉ được có một phiếu hủy, nên không thể tạo phiếu mới.
+          Lô này đã có phiếu hủy {existingOrder.scrapCode} ({scrapStatusText(existingOrder.status)}) đang chờ
+          duyệt, nên chưa thể tạo phiếu mới.
+        </Alert>
+      )}
+      {existingOrder && !existingBlocksNew && (
+        <Alert className="mb-3">
+          Phiếu hủy trước {existingOrder.scrapCode} đã bị xử lý ({scrapStatusText(existingOrder.status)}). Lô
+          hàng vẫn đang được cách ly, và bạn có thể tạo một phiếu hủy mới.
         </Alert>
       )}
       {error && <Alert className="mb-3" variant="destructive">{error}</Alert>}

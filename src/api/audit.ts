@@ -6,6 +6,8 @@ const BASE_URL = `${apiBaseUrl}/inventory/audits`;
 import type {
   ApproveItemResult,
   AuditItemAssignment,
+  AuditItemCountImage,
+  AuditItemHistory,
   CreateAuditRequest,
   StockAudit,
   StockAuditItem,
@@ -16,6 +18,8 @@ import type {
 export type {
   ApproveItemResult,
   AuditItemAssignment,
+  AuditItemCountImage,
+  AuditItemHistory,
   CreateAuditRequest,
   StockAudit,
   StockAuditItem,
@@ -230,19 +234,23 @@ export const auditApi = {
   },
 
   /**
-   * Owner: reassign an item to a different employee
+   * Owner: reassign an item to a different employee, and set the second counter.
+   *
+   * Every row is counted by two people, so secondCounterUserId is required and must differ from
+   * assignedToUserId.
    */
   async reassignItem(
     auditId: string,
     itemId: string,
-    assignedToUserId: string
+    assignedToUserId: string,
+    secondCounterUserId: string
   ): Promise<StockAuditItem> {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(`${BASE_URL}/${auditId}/items/${itemId}/assign`, {
         method: 'PATCH',
         headers,
-        body: JSON.stringify({ assignedToUserId }),
+        body: JSON.stringify({ assignedToUserId, secondCounterUserId }),
       });
 
       if (!response.ok) {
@@ -335,19 +343,52 @@ export const auditApi = {
   },
 
   /**
-   * Update count for an audit item (including discrepancy reason)
+   * Update count for an audit item (including discrepancy reason).
+   *
+   * When photos are attached the request goes out as multipart/form-data; the server needs the
+   * Content-Type header to stay unset so the browser adds the multipart boundary itself.
    */
   async updateCount(
     auditId: string,
     itemId: string,
-    payload: UpdateCountRequest
+    payload: UpdateCountRequest,
+    images: File[] = []
   ): Promise<StockAuditItem> {
     try {
-      const headers = await getAuthHeaders();
+      const authHeaders = await getAuthHeaders();
+      const hasImages = images.length > 0;
+
+      let body: BodyInit;
+      let headers: Record<string, string>;
+      if (hasImages) {
+        const form = new FormData();
+        form.append('countedQty', String(payload.countedQty));
+        if (payload.countedDamagedQty !== undefined) {
+          form.append('countedDamagedQty', String(payload.countedDamagedQty));
+        }
+        if (payload.discrepancyReason !== undefined && payload.discrepancyReason !== null) {
+          form.append('discrepancyReason', payload.discrepancyReason);
+        }
+        if (payload.lotItemId) form.append('lotItemId', payload.lotItemId);
+        if (payload.newLotExpirationDate) {
+          form.append('newLotExpirationDate', String(payload.newLotExpirationDate));
+        }
+        if (payload.newLotManufacturingDate) {
+          form.append('newLotManufacturingDate', String(payload.newLotManufacturingDate));
+        }
+        for (const image of images) form.append('files', image);
+        body = form;
+        // The browser must set the multipart boundary itself, so the JSON Content-Type is left out.
+        headers = { Authorization: authHeaders.Authorization };
+      } else {
+        body = JSON.stringify(payload);
+        headers = authHeaders;
+      }
+
       const response = await fetch(`${BASE_URL}/${auditId}/items/${itemId}`, {
         method: 'PATCH',
         headers,
-        body: JSON.stringify(payload),
+        body,
       });
 
       if (!response.ok) {
@@ -358,6 +399,56 @@ export const auditApi = {
       return response.json();
     } catch (error) {
       handleApiError(error);
+    }
+  },
+
+  /**
+   * The evidence photos of one counter's count, with fresh signed links.
+   */
+  async getAuditCountImages(
+    auditId: string,
+    itemId: string,
+    countId: string
+  ): Promise<AuditItemCountImage[]> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `${BASE_URL}/${auditId}/items/${itemId}/counts/${countId}/images`,
+        { method: 'GET', headers }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Failed to load count photos (${response.status})`);
+      }
+
+      return response.json();
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+
+  /**
+   * The history of one row: what was counted each time the owner decided something.
+   *
+   * Only the owner may read it, so a staff member gets a 403 from the server.
+   */
+  async getAuditItemHistory(auditId: string, itemId: string): Promise<AuditItemHistory[]> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/${auditId}/items/${itemId}/history`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Failed to load the history of the row`);
+      }
+
+      return response.json();
+    } catch (err) {
+      handleApiError(err);
     }
   },
 
@@ -423,6 +514,115 @@ export const auditApi = {
       }
 
       return response.json();
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+
+  /**
+   * Owner: the two counters disagree, so send the row back to both of them for another count.
+   */
+  async requestRecount(auditId: string, itemId: string, reason: string): Promise<StockAuditItem> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/${auditId}/items/${itemId}/recount`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ reason }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        const failure = new Error(error.message || `Failed to request recount (${response.status})`);
+        (failure as Error & { status?: number }).status = response.status;
+        throw failure;
+      }
+
+      return response.json();
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+
+  /**
+   * Owner: start the counting of a draft. The SKUs are locked and the snapshot is taken here.
+   */
+  async startAudit(auditId: string): Promise<StockAudit> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/${auditId}/start`, {
+        method: 'PATCH',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Failed to start audit (${response.status})`);
+      }
+
+      return response.json();
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+
+  /**
+   * Owner: cancel a running audit. The locked SKUs are freed again.
+   */
+  async cancelAudit(auditId: string): Promise<StockAudit> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/${auditId}/cancel`, {
+        method: 'PATCH',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Failed to cancel audit (${response.status})`);
+      }
+
+      return response.json();
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+
+  /**
+   * Owner: delete a draft. A running audit can only be cancelled.
+   */
+  async deleteAudit(auditId: string): Promise<void> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/${auditId}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Failed to delete audit (${response.status})`);
+      }
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+
+  /**
+   * Owner: remove one row from a draft.
+   */
+  async deleteAuditItem(auditId: string, itemId: string): Promise<void> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/${auditId}/items/${itemId}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Failed to delete audit item (${response.status})`);
+      }
     } catch (error) {
       handleApiError(error);
     }

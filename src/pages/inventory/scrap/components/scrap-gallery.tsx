@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { ImageViewer } from "@/components/common/image-viewer";
 import type { ScrapImage } from "@/types/scrap";
 import { formatDateTime } from "./scrap-ui";
 
@@ -14,7 +15,7 @@ export function ScrapGallery({
   /** Called when a signed link fails to load (most likely expired) so the page can fetch fresh links. */
   onImageError: () => void;
 }) {
-  const [zoom, setZoom] = useState<ScrapImage | null>(null);
+  const [viewing, setViewing] = useState<number | null>(null);
 
   return (
     <div className="space-y-4">
@@ -24,13 +25,13 @@ export function ScrapGallery({
         </p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {images.map((image) => (
+          {images.map((image, index) => (
             <li className="overflow-hidden rounded-xl border border-slate-200 bg-white" key={image.id}>
               {image.url ? (
                 <button
                   aria-label="Phóng to ảnh"
                   className="block aspect-[4/3] w-full bg-slate-100"
-                  onClick={() => setZoom(image)}
+                  onClick={() => setViewing(index)}
                   type="button"
                 >
                   <img
@@ -55,18 +56,19 @@ export function ScrapGallery({
         </ul>
       )}
 
-      {zoom?.url && (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-slate-900/80 p-4"
-          onClick={() => setZoom(null)}
-          onKeyDown={(event) => event.key === "Escape" && setZoom(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Xem ảnh"
-          tabIndex={-1}
-        >
-          <img alt="Ảnh bằng chứng" className="max-h-full max-w-full rounded-lg" onError={onImageError} src={zoom.url} />
-        </div>
+      {viewing !== null && (
+        <ImageViewer
+          alt="Ảnh bằng chứng"
+          images={images.map((image) => ({
+            id: image.id,
+            url: image.url ?? null,
+            caption: `${image.uploadedByName} · ${formatDateTime(image.createdAt)}`,
+          }))}
+          index={viewing}
+          onClose={() => setViewing(null)}
+          onImageError={onImageError}
+          onIndexChange={setViewing}
+        />
       )}
     </div>
   );

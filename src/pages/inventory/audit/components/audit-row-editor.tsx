@@ -10,7 +10,6 @@ import { getPrimaryImage } from '../../../../lib/image-utils';
 import { Icon } from '../../../products/ui-icon';
 import type {
   AuditProductOption,
-  AuditType,
   VariantLot,
   VariantOption,
 } from '../../../../types/audit';
@@ -330,11 +329,10 @@ interface AuditRowEditorProps {
   rows: AuditRowDraft[];
   onChange: (rows: AuditRowDraft[]) => void;
   members: BusinessMember[];
-  auditType: AuditType;
   disabled?: boolean;
 }
 
-export function AuditRowEditor({ rows, onChange, members, auditType, disabled }: AuditRowEditorProps) {
+export function AuditRowEditor({ rows, onChange, members, disabled }: AuditRowEditorProps) {
   const updateRow = (key: string, patch: Partial<AuditRowDraft>) => {
     onChange(rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   };
@@ -366,11 +364,22 @@ export function AuditRowEditor({ rows, onChange, members, auditType, disabled }:
           </div>
 
           <div>
-            <Label className="text-xs font-medium">Nhân viên</Label>
+            <Label className="text-xs font-medium">
+              Nhân viên <span className="text-red-600">*</span>
+            </Label>
             <select
               value={row.assignedToUserId}
               disabled={disabled}
-              onChange={(e) => updateRow(row.key, { assignedToUserId: e.target.value })}
+              onChange={(e) =>
+                updateRow(row.key, {
+                  assignedToUserId: e.target.value,
+                  // Changing the first person invalidates a conflicting second person.
+                  secondCounterUserId:
+                    e.target.value && row.secondCounterUserId === e.target.value
+                      ? ''
+                      : row.secondCounterUserId,
+                })
+              }
               className={selectClass}
             >
               <option value="">Chọn nhân viên</option>
@@ -380,6 +389,31 @@ export function AuditRowEditor({ rows, onChange, members, auditType, disabled }:
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <Label className="text-xs font-medium">
+              Người kiểm kê thứ hai <span className="text-red-600">*</span>
+            </Label>
+            <select
+              value={row.secondCounterUserId}
+              disabled={disabled}
+              onChange={(e) => updateRow(row.key, { secondCounterUserId: e.target.value })}
+              className={selectClass}
+            >
+              <option value="">Chọn người kiểm kê thứ hai</option>
+              {members
+                .filter((member) => member.user.id !== row.assignedToUserId)
+                .map((member) => (
+                  <option key={member.user.id} value={member.user.id}>
+                    {member.user.fullName} ({member.user.email})
+                  </option>
+                ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-600">
+              Hai người kiểm kê độc lập, không ai thấy số của người kia. Nếu hai số khác nhau, chủ
+              cửa hàng sẽ quyết định có kiểm kê lại hay không.
+            </p>
           </div>
 
           <div>
@@ -409,14 +443,14 @@ export function AuditRowEditor({ rows, onChange, members, auditType, disabled }:
             </div>
           )}
 
-          {row.variant && auditType === 'RE_AUDIT' && (
+          {row.variant && (
             <div>
               <Label className="text-xs font-medium">
                 Lô có sẵn <span className="text-red-600">*</span>
               </Label>
               {row.product && !row.product.hasLotTracking ? (
                 <p className="mt-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-xs text-amber-800">
-                  Sản phẩm này không quản lý lô nên không thể kiểm kê lại. Hãy dùng kiểm kê lô mới.
+                  Sản phẩm này không quản lý lô nên không thể kiểm kê.
                 </p>
               ) : (
                 <>
@@ -432,12 +466,6 @@ export function AuditRowEditor({ rows, onChange, members, auditType, disabled }:
                 </>
               )}
             </div>
-          )}
-
-          {row.variant && auditType === 'NEW_LOTS' && (
-            <p className="text-xs text-gray-600">
-              Lô mới: nhân viên nhập số lô và hạn sử dụng khi đếm.
-            </p>
           )}
         </div>
       ))}

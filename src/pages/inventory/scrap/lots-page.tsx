@@ -165,6 +165,12 @@ export function LotsPage() {
                         {open && batch.items.map((lot) => {
                           const scrapOrder = lot.scrapOrder;
                           const blocked = lot.effectiveStatus === "SCRAPPED";
+                          // A settled order (rejected or cancelled) does not block a new one, so the
+                          // staff can file a fresh order while the previous one stays as the trail.
+                          const settledOrder =
+                            scrapOrder?.status === "REJECTED" || scrapOrder?.status === "CANCELLED";
+                          const canCreateNew =
+                            settledOrder && canAct && !blocked && lot.effectiveStatus === "QUARANTINED";
                           return (
                             <tr className="border-t border-slate-100" key={lot.id}>
                               <td className="px-4 py-3 pl-12">
@@ -187,11 +193,17 @@ export function LotsPage() {
                               <td className="px-4 py-3"><LotStatusBadge status={lot.effectiveStatus} /></td>
                               <td className="px-4 py-3">
                                 {scrapOrder ? (
-                                  // A lot can only have one scrap order, so the existing one is the
-                                  // only thing the staff can act on.
+                                  // A settled order (rejected or cancelled) does not block a new one, so
+                                  // the staff can file a fresh order while the previous one stays as the
+                                  // trail. The create button comes first, before the details link.
                                   <div className="space-y-1">
+                                    {canCreateNew && (
+                                      <Button onClick={() => setScrapLot(lot)} size="sm">
+                                        Tạo phiếu hủy hàng
+                                      </Button>
+                                    )}
                                     <Link
-                                      className="font-semibold text-[#0f4c3a] hover:underline"
+                                      className="block font-semibold text-[#0f4c3a] hover:underline"
                                       to={`/inventory/scrap/${scrapOrder.id}`}
                                     >
                                       Xem phiếu {scrapOrder.scrapCode}
@@ -205,7 +217,7 @@ export function LotsPage() {
                                 ) : canAct && !blocked ? (
                                   <div className="flex gap-2">
                                     {lot.effectiveStatus === "QUARANTINED" ? (
-                                      <Button onClick={() => setScrapLot(lot)} size="sm">Tạo phiếu hủy</Button>
+                                      <Button onClick={() => setScrapLot(lot)} size="sm">Tạo phiếu hủy hàng</Button>
                                     ) : (
                                       <Button onClick={() => setQuarantineLot(lot)} size="sm" variant="outline">Cách ly</Button>
                                     )}

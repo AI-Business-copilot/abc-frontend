@@ -40,6 +40,7 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sourceUserId, setSourceUserId] = useState('');
   const [targetUserId, setTargetUserId] = useState('');
+  const [secondCounterUserId, setSecondCounterUserId] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -82,12 +83,15 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
   }, [items, sourceUserId]);
 
   const targetOptions = members.filter((member) => member.user.id !== sourceUserId);
+  // Every row is counted by two people, so the second counter must differ from the first.
+  const secondCounterOptions = members.filter((member) => member.user.id !== targetUserId);
   const allVisibleSelected = visible.length > 0 && visible.every((item) => selected.has(item.id));
 
   const changeSource = (value: string) => {
     setSourceUserId(value);
     setSelected(new Set());
     if (value === targetUserId) setTargetUserId('');
+    if (value === secondCounterUserId) setSecondCounterUserId('');
     setError(null);
   };
 
@@ -111,6 +115,15 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
 
   const handleSubmit = async () => {
     if (!targetUserId || selected.size === 0) return;
+    // Every row is counted by two people, so the second counter is required.
+    if (!secondCounterUserId) {
+      setError('Chọn người kiểm kê thứ hai.');
+      return;
+    }
+    if (secondCounterUserId === targetUserId) {
+      setError('Người kiểm kê thứ hai phải khác người được giao.');
+      return;
+    }
     const ids = visible.filter((item) => selected.has(item.id)).map((item) => item.id);
 
     let moved = 0;
@@ -119,7 +132,7 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
       setError(null);
       setProgress(0);
       for (const itemId of ids) {
-        await auditApi.reassignItem(auditId, itemId, targetUserId);
+        await auditApi.reassignItem(auditId, itemId, targetUserId, secondCounterUserId);
         moved += 1;
         setProgress(moved);
       }
@@ -227,6 +240,32 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
                 </div>
               </div>
 
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-medium text-gray-700" htmlFor="reassign-second-counter">
+                    Người kiểm kê thứ hai <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    id="reassign-second-counter"
+                    value={secondCounterUserId}
+                    disabled={submitting}
+                    onChange={(e) => setSecondCounterUserId(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="">Chọn người kiểm kê thứ hai</option>
+                    {secondCounterOptions.map((member) => (
+                      <option key={member.user.id} value={member.user.id}>
+                        {member.user.fullName}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Hai người kiểm kê độc lập. Nếu hai số khác nhau, chủ cửa hàng quyết định có kiểm kê
+                    lại hay không.
+                  </p>
+                </div>
+              </div>
+
               <div className="space-y-2 border-t pt-4">
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -284,7 +323,9 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={submitting || !targetUserId || selected.size === 0}
+                  disabled={
+                    submitting || !targetUserId || !secondCounterUserId || selected.size === 0
+                  }
                   className="flex-1 bg-[#0f4c3a] hover:bg-[#0a3528] text-white"
                 >
                   {submitLabel}
