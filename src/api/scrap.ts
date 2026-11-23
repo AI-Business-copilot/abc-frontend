@@ -11,6 +11,7 @@ import type {
   ScrapSource,
   ScrapStatistics,
   ScrapStatus,
+  VariantQuarantine,
 } from "@/types/scrap";
 
 const base = "/inventory";
@@ -44,6 +45,19 @@ export const scrapApi = {
     });
   },
 
+  /** Quarantine a quantity of one product that has no lot item. */
+  quarantineVariant(variantId: string, body: { quantity: number; note?: string }) {
+    return apiRequest<VariantQuarantine>(`${base}/variants/${variantId}/quarantine`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  /** The variant-level quarantine of a SKU, or null when it is not quarantined. */
+  getVariantQuarantine(variantId: string) {
+    return apiRequest<VariantQuarantine | null>(`${base}/variants/${variantId}/quarantine`);
+  },
+
   listScrapOrders(params: { status?: ScrapStatus; skip?: number; take?: number } = {}) {
     return apiRequest<ScrapOrdersResponse>(`${base}/scrap-orders${query(params)}`);
   },
@@ -54,14 +68,18 @@ export const scrapApi = {
 
   /** Creates the order and its evidence photos in one request. Photos cannot be added or removed afterward. */
   createScrapOrder(body: {
-    lotItemId: string;
+    /** The lot item the scrap is taken from. Omit it for a product that has no lot. */
+    lotItemId?: string;
+    /** The product the scrap is taken from, required when there is no lot item. */
+    variantId?: string;
     scrapReason: string;
     scrapQty?: number;
     scrapSource?: ScrapSource;
     images: File[];
   }) {
     const form = new FormData();
-    form.append("lotItemId", body.lotItemId);
+    if (body.lotItemId) form.append("lotItemId", body.lotItemId);
+    if (body.variantId) form.append("variantId", body.variantId);
     form.append("scrapReason", body.scrapReason);
     if (body.scrapQty !== undefined) form.append("scrapQty", String(body.scrapQty));
     if (body.scrapSource) form.append("scrapSource", body.scrapSource);

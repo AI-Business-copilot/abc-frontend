@@ -16,6 +16,12 @@ import { inventoryApi } from '@/api/inventory';
 import { BarcodeScannerModal, stopAllGlobalMediaStreams } from '@/pages/products/barcode-scanner-modal';
 import { BarcodePrintModal, type PrintableVariant } from '@/pages/products/barcode-print-modal';
 import { ProductEditModal } from '@/pages/products/product-edit-modal';
+import { scrapApi } from '@/api/scrap';
+import type { VariantQuarantine } from '@/types/scrap';
+import {
+  CreateVariantScrapDialog,
+  QuarantineVariantDialog,
+} from '@/pages/inventory/scrap/components/variant-dialogs';
 
 const vnd = (value: number) => new Intl.NumberFormat('vi-VN').format(Math.round(value || 0)) + ' đ';
 const compactVnd = (value: number) => {
@@ -287,11 +293,14 @@ function SkuModal({
   onClose,
   onPrintVariants,
   onOpenLots,
+  onNavigate,
 }: {
   product: ProductItem;
   onClose: () => void;
   onPrintVariants: (variants: PrintableVariant[]) => void;
   onOpenLots?: (sku: ProductSku, product: ProductItem) => void;
+  /** Used to open the scrap order that was just created. */
+  onNavigate?: (path: string) => void;
 }) {
   const images = useMemo(() => getAllImages(product.imageUrl), [product.imageUrl]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -307,6 +316,27 @@ function SkuModal({
   });
 
   const [assigningSku, setAssigningSku] = useState<ProductSku | null>(null);
+
+  // F08: a product with no lot keeps its quarantine on the variant, so broken goods can be scrapped.
+  const [quarantineTarget, setQuarantineTarget] = useState<ProductSku | null>(null);
+  const [scrapTarget, setScrapTarget] = useState<ProductSku | null>(null);
+  const [variantQuarantine, setVariantQuarantine] = useState<VariantQuarantine | null>(null);
+  const [scrapError, setScrapError] = useState<string | null>(null);
+
+  const openVariantScrap = async (sku: ProductSku) => {
+    setScrapError(null);
+    try {
+      const quarantine = await scrapApi.getVariantQuarantine(sku.id);
+      if (!quarantine) {
+        setScrapError("Sản phẩm này chưa được cách ly. Hãy cách ly trước khi tạo phiếu hủy hàng.");
+        return;
+      }
+      setVariantQuarantine(quarantine);
+      setScrapTarget(sku);
+    } catch (err) {
+      setScrapError(err instanceof Error ? err.message : "Không tải được thông tin cách ly.");
+    }
+  };
 
   const handleAssignImage = (skuId: string, imgUrl: string) => {
     setVariantImages((prev) => {
@@ -477,6 +507,28 @@ function SkuModal({
                             <span>Xem lô</span>
                           </button>
                         )}
+                        {!product.hasLotTracking && (
+                          <button
+                            type="button"
+                            onClick={() => setQuarantineTarget(sku)}
+                            className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-bold text-[#b54708] hover:text-[#912018] bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded transition-colors"
+                            title="Cách ly hàng hỏng để tạo phiếu hủy hàng (F08)"
+                          >
+                            <Icon name="block" className="text-[12px]" />
+                            <span>Cách ly</span>
+                          </button>
+                        )}
+                        {!product.hasLotTracking && (
+                          <button
+                            type="button"
+                            onClick={() => void openVariantScrap(sku)}
+                            className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-bold text-[#b42318] hover:text-[#912018] bg-rose-50 hover:bg-rose-100 px-1.5 py-0.5 rounded transition-colors"
+                            title="Tạo phiếu hủy hàng cho sản phẩm đã cách ly (F08)"
+                          >
+                            <Icon name="delete" className="text-[12px]" />
+                            <span>Tạo phiếu hủy</span>
+                          </button>
+                        )}
                         {isLowStock && (
                           <span className="block text-[10px] text-amber-600 font-semibold mt-0.5">
                             Tồn an toàn (≤ {safetyLimit})
@@ -589,6 +641,48 @@ function SkuModal({
               <img src={previewImage} alt="Preview" className="w-full max-h-[70vh] object-contain rounded-xl" />
             </div>
           </div>
+        )}
+
+        {/* F08: cách ly và tạo phiếu hủy hàng cho sản phẩm không có lô */}
+        {scrapError && (
+          <div className="mx-6 mb-3 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-4 py-2.5 text-[12.5px] text-[#b42318]">
+            {scrapError}
+          </div>
+        )}
+        {quarantineTarget && (
+          <QuarantineVariantDialog
+            target={{
+              variantId: quarantineTarget.id,
+              sku: quarantineTarget.sku,
+              productName: product.name,
+              stock: quarantineTarget.stockQty,
+            }}
+            onClose={() => setQuarantineTarget(null)}
+            onDone={() => {
+              setQuarantineTarget(null);
+              setScrapError(null);
+            }}
+          />
+        )}
+        {scrapTarget && variantQuarantine && (
+          <CreateVariantScrapDialog
+            target={{
+              variantId: scrapTarget.id,
+              sku: scrapTarget.sku,
+              productName: product.name,
+              stock: scrapTarget.stockQty,
+            }}
+            quarantine={variantQuarantine}
+            onClose={() => {
+              setScrapTarget(null);
+              setVariantQuarantine(null);
+            }}
+            onCreated={(orderId) => {
+              setScrapTarget(null);
+              setVariantQuarantine(null);
+              onNavigate?.(`/inventory/scrap/${orderId}`);
+            }}
+          />
         )}
 
         <div className="px-6 py-3 bg-[#f9fafb] border-t border-[#eaecf0] flex items-center justify-between text-[12px] text-[#667085]">
@@ -1310,6 +1404,7 @@ export default function ProductsPage() {
           onClose={() => setSelected(null)}
           onPrintVariants={(v) => setBarcodeVariants(v)}
           onOpenLots={(sku, prod) => setViewingLots({ sku, product: prod })}
+          onNavigate={(path) => navigate(path)}
         />
       )}
 

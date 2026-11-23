@@ -7,10 +7,11 @@ import { Spinner } from '../../../components/ui/spinner';
 import { ItemCounter } from './components/item-counter';
 import { DiscrepancyForm } from './components/discrepancy-form';
 import { LotSection, type LotSelection } from './components/lot-section';
+import { AuditCountPhotoPicker } from './components/audit-count-photo-picker';
 import { CatalogHeader } from '../../products/catalog-header';
 import { auditApi } from '../../../api/audit';
-import { useAudit } from './hooks/use-audit';
-import type { AuditType, StockAuditItem } from '../../../types/audit';
+import { usePermissions } from '../../../hooks/use-permissions';
+import type { StockAuditItem } from '../../../types/audit';
 
 /** Counts one audit item. Opened from the "Count" button on an item in the audit detail page. */
 export function AuditCountPage() {
@@ -18,6 +19,7 @@ export function AuditCountPage() {
   const [searchParams] = useSearchParams();
   const itemId = searchParams.get('itemId');
   const navigate = useNavigate();
+  const { isOwner } = usePermissions();
   const [keyword, setKeyword] = useState('');
 
   const [item, setItem] = useState<StockAuditItem | null>(null);
@@ -25,16 +27,14 @@ export function AuditCountPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [countedQty, setCountedQty] = useState(0);
+  const [countedDamagedQty, setCountedDamagedQty] = useState(0);
   const [systemQty, setSystemQty] = useState(0);
   const [lotSelection, setLotSelection] = useState<LotSelection | undefined>(undefined);
   const [discrepancyReason, setDiscrepancyReason] = useState<string | null>(null);
+  /** The evidence photos of the broken goods, sent with the count. */
+  const [photos, setPhotos] = useState<File[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  // The audit type decides what the employee may do with the lot: a re-audit keeps the owner's lot fixed.
-  const { audit } = useAudit(auditId);
-  const auditType: AuditType =
-    audit?.auditType ?? (item?.lotMode === 'EXISTING' ? 'RE_AUDIT' : 'NEW_LOTS');
 
   const backToAudit = (message?: string) =>
     navigate(`/inventory/audit/${auditId}`, message ? { state: { message } } : undefined);
@@ -46,6 +46,13 @@ export function AuditCountPage() {
       return;
     }
 
+    // The owner does not count: the two counters count, the owner reviews and resolves.
+    if (isOwner) {
+      setLoading(false);
+      setLoadError('Chủ cửa hàng không đếm hộ. Hai người kiểm kê phải tự đếm dòng này.');
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
@@ -54,16 +61,20 @@ export function AuditCountPage() {
         const loaded = await auditApi.getAuditItem(auditId, itemId);
         if (cancelled) return;
         setItem(loaded);
-        // Dòng kiểm kê lại dùng lô có sẵn: điền sẵn tồn của lô đó vào ô đếm, nhân viên chỉ cần
-        // đếm rồi điều chỉnh. Dòng lô mới để 0 vì khi áp dụng sẽ tạo lô mới với số đếm làm tồn.
+        // Điền sẵn tồn của lô vào ô đếm, nhân viên chỉ cần đếm rồi điều chỉnh.
         // Chỉ điền khi dòng chưa lưu lần nào (mọi lần lưu đều bắt buộc có lý do).
-        const isFreshRow = !loaded.discrepancyReason && loaded.countedQty === 0;
-        setCountedQty(
-          loaded.lotMode === 'EXISTING' && isFreshRow ? loaded.snapshotQty : loaded.countedQty,
-        );
+        // Với hai người kiểm kê, chỉ số của chính người đang đếm được dùng: người kia không được
+        // thấy số của mình và người này cũng không thấy số của người kia.
+        const ownCount = loaded.counts?.[0];
+        const ownQty = ownCount?.countedQty ?? loaded.countedQty;
+        const ownDamagedQty = ownCount?.countedDamagedQty ?? loaded.countedDamagedQty ?? 0;
+        const ownReason = ownCount?.discrepancyReason ?? loaded.discrepancyReason;
+        const isFreshRow = !ownReason && ownQty === 0;
+        setCountedQty(isFreshRow ? loaded.snapshotQty : ownQty);
+        setCountedDamagedQty(ownDamagedQty);
         setSystemQty(loaded.snapshotQty);
         setLotSelection(undefined);
-        setDiscrepancyReason(loaded.discrepancyReason || null);
+        setDiscrepancyReason(ownReason || null);
       } catch (err) {
         if (!cancelled) setLoadError(err instanceof Error ? err.message : 'Không tải được dòng kiểm kê');
       } finally {
@@ -74,7 +85,7 @@ export function AuditCountPage() {
     return () => {
       cancelled = true;
     };
-  }, [auditId, itemId]);
+  }, [auditId, itemId, isOwner]);
 
   const handleLotChange = (selection: LotSelection, qty: number) => {
     setLotSelection(selection);
@@ -90,12 +101,26 @@ export function AuditCountPage() {
       return false;
     }
 
-    const updated = await auditApi.updateCount(auditId, item.id, {
-      countedQty,
-      discrepancyReason,
-      ...lotSelection,
-    });
+    // Broken goods are documented with photos, so the owner can see what was found.
+    if (countedDamagedQty > 0 && photos.length === 0) {
+      setSubmitError('Khi phát hiện hàng hỏng, bắt buộc có ít nhất một ảnh bằng chứng.');
+      return false;
+    }
+
+    const updated = await auditApi.updateCount(
+      auditId,
+      item.id,
+      {
+        countedQty,
+        countedDamagedQty,
+        discrepancyReason,
+        ...lotSelection,
+      },
+      photos,
+    );
     setItem(updated);
+    // The photos are stored with the count now, so they must not be sent again.
+    setPhotos([]);
     return true;
   };
 
@@ -171,7 +196,6 @@ export function AuditCountPage() {
           <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
             <LotSection
               item={item}
-              auditType={auditType}
               disabled={saving || !editable}
               onChange={handleLotChange}
             />
@@ -179,18 +203,27 @@ export function AuditCountPage() {
             <ItemCounter
               snapshotQty={systemQty}
               initialCountedQty={countedQty}
+              initialCountedDamagedQty={countedDamagedQty}
               onCountChange={setCountedQty}
+              onDamagedCountChange={setCountedDamagedQty}
               disabled={saving || !editable}
-              isNewLot={item.isNewLot}
             />
 
             <DiscrepancyForm
-              diffQty={item.isNewLot ? null : countedQty - systemQty}
+              diffQty={countedQty - systemQty}
               initialReason={discrepancyReason}
               onReasonChange={setDiscrepancyReason}
               disabled={saving || !editable}
-              isNewLot={item.isNewLot}
             />
+
+            <div className="border-t border-gray-200 pt-4">
+              <AuditCountPhotoPicker
+                disabled={saving || !editable}
+                files={photos}
+                onChange={setPhotos}
+                required={countedDamagedQty > 0}
+              />
+            </div>
           </div>
 
           {editable && (

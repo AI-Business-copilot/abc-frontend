@@ -50,6 +50,23 @@ export interface LotVariant {
   template: { name: string };
 }
 
+/**
+ * The quarantine state of a product that has no lot item. The quantity pulled off the shelf is
+ * recorded on the variant, the same way the lot flow records it on the lot item, so the goods
+ * can then be scrapped.
+ */
+export interface VariantQuarantine {
+  id: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  /** Units pulled off the shelf. The scrap order cannot exceed it. */
+  quarantineQty: number;
+  quarantinedAt: string;
+  quarantinedBy: string;
+  quarantineNote: string | null;
+}
+
 export interface ExpiringLot {
   /** Lot item id: one SKU inside a lot. Scrap orders and quarantine act on this. */
   id: string;

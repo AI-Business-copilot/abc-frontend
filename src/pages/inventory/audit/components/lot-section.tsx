@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Input } from '../../../../components/ui/input';
 import { Label } from '../../../../components/ui/label';
-import type { AuditType, StockAuditItem, UpdateAuditItemRequest } from '../../../../types/audit';
+import type { StockAuditItem, UpdateAuditItemRequest } from '../../../../types/audit';
 
 export type LotSelection = Pick<
   UpdateAuditItemRequest,
-  'lotItemId' | 'newLotNumber' | 'newLotExpirationDate' | 'newLotManufacturingDate'
+  'lotItemId' | 'newLotExpirationDate' | 'newLotManufacturingDate'
 >;
 
 const toDateInput = (value?: string | Date | null) => {
@@ -16,102 +16,16 @@ const toDateInput = (value?: string | Date | null) => {
 
 interface LotSectionProps {
   item: StockAuditItem;
-  /** A new-lot audit makes the employee type a lot; a re-audit keeps the lot the owner assigned. */
-  auditType: AuditType;
   disabled?: boolean;
-  /** Called whenever the lot or one of its dates changes. `systemQty` is the quantity on hand for that lot. */
+  /** Called whenever one of the lot's dates changes. `systemQty` is the quantity on hand for that lot. */
   onChange: (selection: LotSelection, systemQty: number) => void;
 }
 
 /**
- * Lot section for the count page. The audit type decides the whole group:
- * - New-lot audit: the row is a lot that does not exist yet, so the employee types the number and expiry.
- * - Re-audit: the lot was chosen by the owner and is fixed. Only its dates can be corrected.
+ * Lot section for the count page. The lot was chosen by the owner and is fixed: the employee counts
+ * it and may correct its dates. The number is never typed here.
  */
-export function LotSection({ auditType, ...props }: LotSectionProps) {
-  return auditType === 'RE_AUDIT' ? <FixedLot {...props} /> : <NewLot {...props} />;
-}
-
-type ModeProps = Omit<LotSectionProps, 'auditType'>;
-
-/** New lot: number and expiry typed by the employee; the lot is created when the owner applies the audit. */
-function NewLot({ item, disabled, onChange }: ModeProps) {
-  const [number, setNumber] = useState(item.lotNumber ?? '');
-  const [expiry, setExpiry] = useState(toDateInput(item.expirationDate));
-  const [mfg, setMfg] = useState(toDateInput(item.newLotManufacturingDate));
-
-  const emit = (nextNumber: string, nextExpiry: string, nextMfg: string) =>
-    onChange(
-      {
-        lotItemId: null,
-        newLotNumber: nextNumber.trim() || null,
-        newLotExpirationDate: nextExpiry || null,
-        newLotManufacturingDate: nextMfg || null,
-      },
-      0
-    );
-
-  return (
-    <div className="space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
-      <p className="text-xs text-amber-800">
-        Đây là lô mới chưa có trong hệ thống. Lô sẽ được tạo khi chủ cửa hàng áp dụng đợt kiểm kê.
-      </p>
-      <div>
-        <Label htmlFor="new-lot-number" className="text-xs font-medium">
-          Số lô <span className="text-red-600">*</span>
-        </Label>
-        <Input
-          id="new-lot-number"
-          value={number}
-          disabled={disabled}
-          maxLength={100}
-          onChange={(e) => {
-            setNumber(e.target.value);
-            emit(e.target.value, expiry, mfg);
-          }}
-          className="mt-1"
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor="new-lot-expiry" className="text-xs font-medium">
-            Hạn sử dụng <span className="text-red-600">*</span>
-          </Label>
-          <Input
-            id="new-lot-expiry"
-            type="date"
-            value={expiry}
-            disabled={disabled}
-            onChange={(e) => {
-              setExpiry(e.target.value);
-              emit(number, e.target.value, mfg);
-            }}
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <Label htmlFor="new-lot-mfg" className="text-xs font-medium">
-            Ngày sản xuất (không bắt buộc)
-          </Label>
-          <Input
-            id="new-lot-mfg"
-            type="date"
-            value={mfg}
-            disabled={disabled}
-            onChange={(e) => {
-              setMfg(e.target.value);
-              emit(number, expiry, e.target.value);
-            }}
-            className="mt-1"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Existing lot assigned by the owner: the number is fixed, the dates may be corrected. */
-function FixedLot({ item, disabled, onChange }: ModeProps) {
+export function LotSection({ item, disabled, onChange }: LotSectionProps) {
   const [expiry, setExpiry] = useState(toDateInput(item.expirationDate));
   const [mfg, setMfg] = useState(toDateInput(item.manufacturingDate));
 
@@ -138,7 +52,7 @@ function FixedLot({ item, disabled, onChange }: ModeProps) {
         </div>
         <div>
           <Label htmlFor="lot-expiry" className="text-xs font-medium">
-            Hạn sử dụng <span className="text-red-600">*</span>
+            Hạn sử dụng (không bắt buộc)
           </Label>
           <Input
             id="lot-expiry"
@@ -154,6 +68,9 @@ function FixedLot({ item, disabled, onChange }: ModeProps) {
           {expiryChanged && (
             <p className="mt-1 text-xs text-amber-700">Hệ thống: {toDateInput(item.lotExpirationDate)}</p>
           )}
+          <p className="mt-1 text-xs text-gray-600">
+            Bỏ trống nếu sản phẩm không có hạn sử dụng (quần áo, phụ kiện). Mỹ phẩm thì nhập hạn sử dụng của lô.
+          </p>
         </div>
         <div>
           <Label htmlFor="lot-mfg" className="text-xs font-medium">

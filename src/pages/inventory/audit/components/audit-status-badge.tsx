@@ -9,7 +9,13 @@ interface AuditStatusBadgeProps {
 const statusConfig: Record<
   AuditStatus,
   { label: string; bgColor: string; textColor: string }
-> = {  IN_PROGRESS: {
+> = {
+  DRAFT: {
+    label: 'Nháp',
+    bgColor: 'bg-slate-100',
+    textColor: 'text-slate-700',
+  },
+  IN_PROGRESS: {
     label: 'Đang thực hiện',
     bgColor: 'bg-emerald-100',
     textColor: 'text-emerald-800',
@@ -24,12 +30,19 @@ const statusConfig: Record<
     bgColor: 'bg-green-100',
     textColor: 'text-green-800',
   },
+  CANCELLED: {
+    label: 'Đã hủy',
+    bgColor: 'bg-slate-200',
+    textColor: 'text-slate-700',
+  },
 };
 
 export const AUDIT_STATUS_LABELS: Record<AuditStatus, string> = {
+  DRAFT: statusConfig.DRAFT.label,
   IN_PROGRESS: statusConfig.IN_PROGRESS.label,
   PENDING_APPROVAL: statusConfig.PENDING_APPROVAL.label,
   DONE: statusConfig.DONE.label,
+  CANCELLED: statusConfig.CANCELLED.label,
 };
 
 const sizeConfig = {

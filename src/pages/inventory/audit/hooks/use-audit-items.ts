@@ -72,10 +72,11 @@ export function useAuditItems(auditId: string | undefined, options: { mine?: boo
     async (
       itemId: string,
       countedQty: number,
+      countedDamagedQty: number,
       discrepancyReason?: string | null,
       lot?: Pick<
         UpdateAuditItemRequest,
-        'lotItemId' | 'newLotNumber' | 'newLotExpirationDate' | 'newLotManufacturingDate'
+        'lotItemId' | 'newLotExpirationDate' | 'newLotManufacturingDate'
       >
     ) => {
       if (!auditId) return;
@@ -83,6 +84,7 @@ export function useAuditItems(auditId: string | undefined, options: { mine?: boo
       try {
         const updated = await auditApi.updateCount(auditId, itemId, {
           countedQty,
+          countedDamagedQty,
           discrepancyReason,
           ...lot,
         });

@@ -4,7 +4,7 @@ import { Card } from '../../../../components/ui/card';
 import { Spinner } from '../../../../components/ui/spinner';
 import { Alert } from '../../../../components/ui/alert';
 import { auditApi } from '../../../../api/audit';
-import type { AuditType, StockAuditItem } from '../../../../types/audit';
+import type { StockAuditItem } from '../../../../types/audit';
 import { AuditRowEditor } from './audit-row-editor';
 import {
   emptyRow,
@@ -16,18 +16,15 @@ import {
 
 interface AssignStaffModalProps {
   auditId: string;
-  /** The audit type decides which lots a new row may point at. */
-  auditType: AuditType;
   /** Items already in the audit, used to reject duplicate SKU + lot rows early. */
   existingItems?: StockAuditItem[];
   onClose: () => void;
   onAssignSuccess?: () => void;
 }
 
-/** Owner dialog: add employee + SKU (+ lot on a re-audit) rows to an audit. */
+/** Owner dialog: add employee + SKU + lot rows to an audit. */
 export function AssignStaffModal({
   auditId,
-  auditType,
   existingItems = [],
   onClose,
   onAssignSuccess,
@@ -39,7 +36,7 @@ export function AssignStaffModal({
   const [submitting, setSubmitting] = useState(false);
 
   const handleAdd = async () => {
-    const rowsError = validateRows(rows, auditType);
+    const rowsError = validateRows(rows);
     if (rowsError) {
       setError(rowsError);
       setConflict(null);
@@ -87,9 +84,7 @@ export function AssignStaffModal({
           <div>
             <h2 className="text-xl font-bold text-gray-900">Thêm dòng kiểm kê</h2>
             <p className="text-sm text-gray-600 mt-1">
-              {auditType === 'RE_AUDIT'
-                ? 'Mỗi dòng là một SKU giao cho một nhân viên, kèm một lô có sẵn do bạn chọn ngay bây giờ. Nhân viên giữ nguyên lô đó khi đếm và chỉ có thể sửa ngày của lô và nhập số lượng.'
-                : 'Mỗi dòng là một SKU giao cho một nhân viên. Mọi dòng đều là lô mới: nhân viên nhập số lô và hạn sử dụng khi đếm.'}
+              Mỗi dòng là một SKU giao cho một nhân viên, kèm một lô có sẵn do bạn chọn ngay bây giờ. Nhân viên giữ nguyên lô đó khi đếm và chỉ có thể sửa ngày của lô và nhập số lượng.
             </p>
             <p className="text-xs text-gray-500 mt-1">
               Chọn theo thứ tự: sản phẩm → SKU → lô có sẵn.
@@ -123,7 +118,6 @@ export function AssignStaffModal({
                   rows={rows}
                   onChange={setRows}
                   members={members}
-                  auditType={auditType}
                   disabled={submitting}
                 />
               </div>

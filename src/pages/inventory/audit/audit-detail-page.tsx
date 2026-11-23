@@ -10,6 +10,7 @@ import { AssignStaffModal } from './components/assign-staff-modal';
 import { ReassignItemsModal } from './components/reassign-items-modal';
 import { useAudit } from './hooks/use-audit';
 import { useAuditItems } from './hooks/use-audit-items';
+import { useAuditActions } from './hooks/use-audit-actions';
 import { useAuth } from '../../../hooks/use-auth';
 import { usePermissions } from '../../../hooks/use-permissions';
 import { CatalogHeader } from '../../products/catalog-header';
@@ -42,6 +43,71 @@ export function AuditDetailPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(navState?.message ?? null);
   const [showAssignModal, setShowAssignModal] = useState(Boolean(navState?.openAddItems));
   const [showReassignModal, setShowReassignModal] = useState(false);
+  const [acting, setActing] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const { startAudit, cancelAudit, deleteAudit, deleteAuditItem } = useAuditActions();
+
+  /** Owner: start the counting. The SKUs are locked from this moment on. */
+  const handleStart = async () => {
+    if (!auditId) return;
+    try {
+      setActing(true);
+      setActionError(null);
+      await startAudit(auditId);
+      setActionMessage('Đợt kiểm kê đã bắt đầu. Các SKU liên quan đã bị khoá.');
+      setTimeout(() => setActionMessage(null), 4000);
+      refetchAudit();
+      refetchItems();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Không bắt đầu được đợt kiểm kê');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  /** Owner: cancel a running audit. The locked SKUs are freed again. */
+  const handleCancelAudit = async () => {
+    if (!auditId) return;
+    try {
+      setActing(true);
+      setActionError(null);
+      await cancelAudit(auditId);
+      setActionMessage('Đợt kiểm kê đã được huỷ. Các SKU đã được mở khoá.');
+      setTimeout(() => setActionMessage(null), 4000);
+      refetchAudit();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Không huỷ được đợt kiểm kê');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  /** Owner: delete a draft and go back to the list. */
+  const handleDeleteAudit = async () => {
+    if (!auditId) return;
+    try {
+      setActing(true);
+      setActionError(null);
+      await deleteAudit(auditId);
+      navigate('/inventory/audit');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Không xoá được đợt kiểm kê');
+      setActing(false);
+    }
+  };
+
+  /** Owner: remove one row from a draft. */
+  const handleDeleteItem = async (itemId: string) => {
+    if (!auditId) return;
+    try {
+      setActionError(null);
+      await deleteAuditItem(auditId, itemId);
+      refetchItems();
+      refetchAudit();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Không xoá được dòng kiểm kê');
+    }
+  };
 
   if (auditLoading) {
     return (
@@ -72,15 +138,15 @@ export function AuditDetailPage() {
     );
   }
 
-  // Counting happens per item: the assigned employee (or the owner) can count an item that is still in progress
+  // Counting happens per item: only a counter of the row counts it. The owner does not count,
+  // they review the two counters' numbers and resolve the rows that disagree.
   const canCountItem = (item: StockAuditItem) =>
     audit.status === 'IN_PROGRESS' &&
     item.itemStatus === 'IN_PROGRESS' &&
     can('inventory.audit.count') &&
-    (isOwner || item.assignedTo?.id === profile?.user.id);
-
-  // Older audits may not have a type; they behave like new-lot audits.
-  const auditType = audit.auditType ?? 'NEW_LOTS';
+    !isOwner &&
+    (item.assignedTo?.id === profile?.user.id ||
+      item.secondCounterUserId === profile?.user.id);
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
@@ -96,21 +162,65 @@ export function AuditDetailPage() {
                 <h1 className="text-3xl font-bold text-gray-900">{audit.auditCode}</h1>
                 <AuditStatusBadge status={audit.status} />
                 <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                  {auditType === 'RE_AUDIT' ? 'Kiểm kê lại - lô có sẵn' : 'Lô mới'}
+                  Kiểm kê lô có sẵn
                 </span>
               </div>
               <p className="text-gray-600">
-                Số dòng: {audit.itemCount} | Bắt đầu: {new Date(audit.countStartAt).toLocaleDateString('vi-VN')}
+                Số dòng: {audit.itemCount} | Bắt đầu:{' '}
+                {audit.countStartAt
+                  ? new Date(audit.countStartAt).toLocaleDateString('vi-VN')
+                  : 'Chưa bắt đầu'}
                 {audit.createdBy ? ` | Người tạo: ${audit.createdBy.name}` : ''}
               </p>
             </div>
           </div>
 
           <div className="flex gap-2">
-            {audit.status === 'IN_PROGRESS' && (
+            {(audit.status === 'DRAFT' || audit.status === 'IN_PROGRESS') && (
               <PermissionGate permission="inventory.audit.create" fallback={null}>
                 <Button onClick={() => setShowAssignModal(true)}>Thêm dòng</Button>
               </PermissionGate>
+            )}
+            {audit.status === 'DRAFT' && can('inventory.audit.create') && (
+              <>
+                <Button disabled={acting} onClick={handleStart}>
+                  {acting ? 'Đang bắt đầu...' : 'Bắt đầu kiểm kê'}
+                </Button>
+                <Button
+                  disabled={acting}
+                  onClick={() => {
+                    if (
+                      !window.confirm(
+                        `Xoá đợt kiểm kê ${audit.auditCode}? Toàn bộ dòng đã giao sẽ bị xoá.`,
+                      )
+                    ) {
+                      return;
+                    }
+                    void handleDeleteAudit();
+                  }}
+                  variant="outline"
+                >
+                  Xoá đợt kiểm kê
+                </Button>
+              </>
+            )}
+            {audit.status === 'IN_PROGRESS' && can('inventory.audit.create') && (
+              <Button
+                disabled={acting}
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      `Huỷ đợt kiểm kê ${audit.auditCode}? Các SKU đang bị khoá sẽ được mở lại.`,
+                    )
+                  ) {
+                    return;
+                  }
+                  void handleCancelAudit();
+                }}
+                variant="outline"
+              >
+                Huỷ đợt kiểm kê
+              </Button>
             )}
           </div>
         </div>
@@ -127,6 +237,19 @@ export function AuditDetailPage() {
           </Alert>
         )}
 
+        {actionError && (
+          <Alert className="bg-red-50 border-red-200 text-red-700">
+            {actionError}
+          </Alert>
+        )}
+
+        {audit.status === 'DRAFT' && (
+          <Alert className="bg-slate-50 border-slate-200 text-slate-700 text-sm">
+            Đây là đợt kiểm kê nháp: nhân viên chưa thấy và các SKU chưa bị khoá. Bạn có thể thêm, xoá dòng
+            và xoá cả đợt cho tới khi bấm "Bắt đầu kiểm kê".
+          </Alert>
+        )}
+
         {audit.status === 'IN_PROGRESS' && can('inventory.audit.approve_item') && (
           <Alert className="bg-emerald-50 border-emerald-200 text-emerald-800 text-sm">
             Duyệt từng dòng bên dưới. Đợt kiểm kê sẽ được áp dụng vào tồn kho ngay khi dòng cuối cùng được
@@ -137,7 +260,6 @@ export function AuditDetailPage() {
         {showAssignModal && auditId && (
           <AssignStaffModal
             auditId={auditId}
-            auditType={auditType}
             existingItems={items}
             onClose={() => setShowAssignModal(false)}
             onAssignSuccess={() => {
@@ -177,7 +299,7 @@ export function AuditDetailPage() {
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide">Bắt đầu</p>
             <p className="text-lg font-semibold text-gray-900 mt-1">
-              {new Date(audit.countStartAt).toLocaleDateString('vi-VN')}
+              {audit.countStartAt ? new Date(audit.countStartAt).toLocaleDateString('vi-VN') : 'Chưa bắt đầu'}
             </p>
           </div>
           {audit.completedAt && (
@@ -219,9 +341,9 @@ export function AuditDetailPage() {
                   <p className="text-sm text-gray-500">
                     {onlyMine
                       ? 'Bỏ chọn "Chỉ dòng của tôi" để xem toàn bộ đợt kiểm kê.'
-                      : 'Thêm các SKU cần kiểm kê và giao từng dòng cho nhân viên. Đợt kiểm kê lô mới không cần lô, còn kiểm kê lại cần một lô có sẵn cho mỗi SKU.'}
+                      : 'Thêm các SKU cần kiểm kê và giao từng dòng cho nhân viên. Mỗi dòng cần một lô có sẵn cho SKU đó.'}
                   </p>
-                  {audit.status === 'IN_PROGRESS' && !onlyMine && (
+                  {(audit.status === 'DRAFT' || audit.status === 'IN_PROGRESS') && !onlyMine && (
                     <PermissionGate permission="inventory.audit.create" fallback={null}>
                       <Button onClick={() => setShowAssignModal(true)}>Thêm dòng</Button>
                     </PermissionGate>
@@ -230,6 +352,7 @@ export function AuditDetailPage() {
               ) : (
                 <AuditItemList
                   items={items}
+                  auditStatus={audit.status}
                   onItemClick={(item) =>
                     navigate(`/inventory/audit/${auditId}/count?itemId=${item.id}`)
                   }
@@ -238,6 +361,14 @@ export function AuditDetailPage() {
                   onViewDetails={
                     can('inventory.audit.approve_item')
                       ? (item) => navigate(`/inventory/audit/${auditId}/items/${item.id}`)
+                      : undefined
+                  }
+                  onDeleteItem={
+                    audit.status === 'DRAFT' && can('inventory.audit.create')
+                      ? (item) => {
+                          if (!window.confirm(`Xoá dòng ${item.productName}?`)) return;
+                          void handleDeleteItem(item.id);
+                        }
                       : undefined
                   }
                 />

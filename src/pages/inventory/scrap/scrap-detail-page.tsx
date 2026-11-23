@@ -133,7 +133,7 @@ export function ScrapDetailPage() {
               {order.status === "CANCELLED" && (
                 <Alert>
                   Đã hủy bởi {order.cancelledByUser?.fullName ?? "—"} lúc {formatDateTime(order.cancelledAt)}.
-                  Tồn kho không thay đổi và lô hàng vẫn đang được cách ly.
+                  Tồn kho không thay đổi và {order.lotItemId ? "lô hàng" : "sản phẩm"} vẫn đang được cách ly.
                   {order.cancelledNote ? ` — ${order.cancelledNote}` : ""}
                 </Alert>
               )}
@@ -162,8 +162,14 @@ export function ScrapDetailPage() {
                     <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
                       {[
                         ["Sản phẩm", `${order.variant.template.name} (${order.variant.sku})`],
-                        ["Số lô", order.lotItem?.lot.lotNumber ?? "—"],
-                        ["Hạn sử dụng", formatDate(order.lotItem?.expirationDate)],
+                        // A product with no lot has no lot number and no expiry: the order was taken
+                        // from the quantity that was quarantined on the variant itself.
+                        ...(order.lotItemId
+                          ? [
+                              ["Số lô", order.lotItem?.lot.lotNumber ?? "—"],
+                              ["Hạn sử dụng", formatDate(order.lotItem?.expirationDate)],
+                            ]
+                          : [["Cách ly", "Sản phẩm không có lô — hủy từ số lượng đã cách ly"]]),
                         ["Số lượng hủy", String(order.scrapQty)],
                         ["Nguồn tồn kho", order.scrapSource === "DAMAGED_STOCK" ? "Hàng hư hỏng" : "Hàng có thể bán"],
                         ["Giá vốn / sản phẩm", formatMoney(order.unitCost)],
