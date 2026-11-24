@@ -196,6 +196,7 @@ export function AuditCountPage() {
           <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
             <LotSection
               item={item}
+              industryType={item?.industryType}
               disabled={saving || !editable}
               onChange={handleLotChange}
             />

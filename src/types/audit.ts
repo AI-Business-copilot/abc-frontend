@@ -125,6 +125,7 @@ export interface StockAudit {
   itemCount: number;
   businessId?: string;
   note?: string;
+  industryType?: string | null;
 }
 
 export interface StockAuditItem {
@@ -186,6 +187,7 @@ export interface StockAuditItem {
   lotManufacturingDate?: string | Date | null;
   /** True when the employee changed an existing lot's dates. The lot is updated when the audit is applied. */
   datesCorrected?: boolean;
+  industryType?: string | null;
 }
 
 /** Result of approving a single item. `auditAutoApplied` is true when it was the last item to approve. */

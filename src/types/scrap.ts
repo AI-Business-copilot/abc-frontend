@@ -165,6 +165,7 @@ export interface ScrapOrder {
   approvedByUser: ScrapUser | null;
   rejectedByUser: ScrapUser | null;
   cancelledByUser: ScrapUser | null;
+  business?: { industryType: string } | null;
 }
 
 export interface ScrapOrderListItem extends ScrapOrder {

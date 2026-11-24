@@ -17,6 +17,7 @@ const toDateInput = (value?: string | Date | null) => {
 interface LotSectionProps {
   item: StockAuditItem;
   disabled?: boolean;
+  industryType?: string | null;
   /** Called whenever one of the lot's dates changes. `systemQty` is the quantity on hand for that lot. */
   onChange: (selection: LotSelection, systemQty: number) => void;
 }
@@ -25,9 +26,12 @@ interface LotSectionProps {
  * Lot section for the count page. The lot was chosen by the owner and is fixed: the employee counts
  * it and may correct its dates. The number is never typed here.
  */
-export function LotSection({ item, disabled, onChange }: LotSectionProps) {
+export function LotSection({ item, disabled, industryType, onChange }: LotSectionProps) {
   const [expiry, setExpiry] = useState(toDateInput(item.expirationDate));
   const [mfg, setMfg] = useState(toDateInput(item.manufacturingDate));
+
+  const isFashion = industryType === "FASHION";
+  const isCosmetics = industryType === "COSMETICS";
 
   const emit = (nextExpiry: string, nextMfg: string) =>
     onChange(
@@ -52,25 +56,34 @@ export function LotSection({ item, disabled, onChange }: LotSectionProps) {
         </div>
         <div>
           <Label htmlFor="lot-expiry" className="text-xs font-medium">
-            Hạn sử dụng (không bắt buộc)
+            Hạn sử dụng {isCosmetics ? "(bắt buộc)" : "(không bắt buộc)"}
           </Label>
-          <Input
-            id="lot-expiry"
-            type="date"
-            value={expiry}
-            disabled={disabled}
-            onChange={(e) => {
-              setExpiry(e.target.value);
-              emit(e.target.value, mfg);
-            }}
-            className="mt-1"
-          />
-          {expiryChanged && (
-            <p className="mt-1 text-xs text-amber-700">Hệ thống: {toDateInput(item.lotExpirationDate)}</p>
+          {isCosmetics && (
+            <>
+              <Input
+                id="lot-expiry"
+                type="date"
+                value={expiry}
+                disabled={disabled}
+                onChange={(e) => {
+                  setExpiry(e.target.value);
+                  emit(e.target.value, mfg);
+                }}
+                className="mt-1"
+              />
+              {expiryChanged && (
+                <p className="mt-1 text-xs text-amber-700">Hệ thống: {toDateInput(item.lotExpirationDate)}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-600">
+                Mỹ phẩm bắt buộc nhập hạn sử dụng của lô.
+              </p>
+            </>
           )}
-          <p className="mt-1 text-xs text-gray-600">
-            Bỏ trống nếu sản phẩm không có hạn sử dụng (quần áo, phụ kiện). Mỹ phẩm thì nhập hạn sử dụng của lô.
-          </p>
+          {isFashion && (
+            <p className="mt-1 rounded-md bg-blue-50 border border-blue-200 px-2 py-1 text-xs text-blue-800">
+              Thời trang không cần nhập hạn sử dụng
+            </p>
+          )}
         </div>
         <div>
           <Label htmlFor="lot-mfg" className="text-xs font-medium">

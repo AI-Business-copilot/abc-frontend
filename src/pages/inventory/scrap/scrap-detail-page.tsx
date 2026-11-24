@@ -167,7 +167,9 @@ export function ScrapDetailPage() {
                         ...(order.lotItemId
                           ? [
                               ["Số lô", order.lotItem?.lot.lotNumber ?? "—"],
-                              ["Hạn sử dụng", formatDate(order.lotItem?.expirationDate)],
+                              ...(order.business?.industryType === "COSMETICS"
+                                ? [["Hạn sử dụng", formatDate(order.lotItem?.expirationDate)]]
+                                : []),
                             ]
                           : [["Cách ly", "Sản phẩm không có lô — hủy từ số lượng đã cách ly"]]),
                         ["Số lượng hủy", String(order.scrapQty)],
