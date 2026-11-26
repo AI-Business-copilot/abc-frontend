@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { usePermissions } from "@/hooks/use-permissions";
 import { DetailLine, displayDate } from "@/pages/business-data/shared";
+import { SyntheticDemoNotice } from "@/pages/ai-insights/synthetic-demo-notice";
 import { ErrorBox, money, useAction, useLoad } from "@/pages/purchases/shared";
 import "@/pages/purchases/purchases.css";
 import "@/pages/business-data/business-data.css";
@@ -20,8 +21,9 @@ const URGENCY_HINTS: Record<Urgency, string> = {
   MEDIUM: "Nên đặt trong tuần này",
   LOW: "Chưa gấp",
 };
-const CONFIDENCE_LABELS = { HIGH: "Tin cậy cao", MEDIUM: "Tin cậy vừa", LOW: "Tin cậy thấp" } as const;
-const confidenceLabel = (value: ReplenishmentItem["confidence"]) => value ? CONFIDENCE_LABELS[value] : "Chưa đủ dữ liệu đánh giá độ tin cậy";
+const EVIDENCE_LABELS = { HIGH: "tương đối tốt", MEDIUM: "còn hạn chế", LOW: "thấp" } as const;
+const evidenceLabel = (value: ReplenishmentItem["confidence"]) =>
+  value ? `Mức hỗ trợ từ dữ liệu gần đây: ${EVIDENCE_LABELS[value]}` : "Chưa đủ dữ liệu để đánh giá mức hỗ trợ";
 const LEAD_SOURCES: Record<string, string> = {
   SUPPLIER: "theo nhà cung cấp",
   OBSERVED: "theo các lần nhập thực tế",
@@ -40,6 +42,12 @@ const EVALUATION_LABELS = {
   PENDING: "Chưa đủ thời gian", OUTSIDE_HISTORY: "Ngoài phạm vi kiểm tra",
   UNKNOWN_STOCK: "Không rõ tồn kho", STOCKOUT: "Có ngày đóng cửa hết hàng",
   PARTIAL_START: "Ngày đầu đã trôi qua một phần", COMPARABLE: "Có thể so sánh",
+  PUBLICATION_UNKNOWN: "Không rõ thời điểm hoàn tất phân tích",
+} as const;
+const NEXT_DAY_UNAVAILABLE = {
+  MODEL_NOT_CONFIGURED: "Model hiện tại chưa hỗ trợ dự báo ngày đầy đủ.",
+  SERVICE_NOT_SUPPORTED: "Dịch vụ Python chưa hỗ trợ dự báo ngày đầy đủ.",
+  NOT_RECORDED: "Bản dự báo cũ không lưu dự báo ngày đầy đủ.",
 } as const;
 
 const fmt = (value: number | null | undefined, digits = 1) =>
@@ -50,6 +58,21 @@ const overdueOrders = (item: ReplenishmentItem) => Array.isArray(item.details.in
     entry !== null && typeof entry === "object" && entry.overdue === true &&
     typeof entry.poCode === "string" && typeof entry.qty === "number" && typeof entry.arrivalDate === "string")
   : [];
+
+function replenishmentReason(item: ReplenishmentItem): string {
+  const position = detailNum(item, "position");
+  const reorderPoint = detailNum(item, "reorderPoint");
+  if (position === null || reorderPoint === null) {
+    return "Gợi ý dựa trên dự báo bán, tồn kho và hàng đang về. Chưa đủ thông tin để giải thích chi tiết hơn.";
+  }
+  if (position <= reorderPoint) {
+    return `Vị thế tồn hiện tại (${fmt(position)}) thấp hơn điểm đặt lại (${fmt(reorderPoint)}), nên hệ thống đưa ra gợi ý để chủ cửa hàng xem xét.`;
+  }
+  if (item.stockoutDate) {
+    return `Dù vị thế tồn hiện tại (${fmt(position)}) cao hơn điểm đặt lại (${fmt(reorderPoint)}), mô phỏng cho thấy có thể hết hàng vào ${displayDate(item.stockoutDate)} trước khi hàng bổ sung về.`;
+  }
+  return `Vị thế tồn hiện tại (${fmt(position)}) đang gần điểm đặt lại (${fmt(reorderPoint)}); hãy kiểm tra thời gian hàng về và kế hoạch bán sắp tới.`;
+}
 
 function Chart({ detail }: { detail: ForecastDetail }) {
   const { history, forecast } = detail;
@@ -132,11 +155,13 @@ export function ReplenishmentPage() {
         <header className="ai-header">
           <div className="ai-header-main">
             <h1>Gợi ý nhập hàng</h1>
-            <p>Hệ thống dự báo lượng bán 7–28 ngày tới, so với tồn kho, hàng đang về và thời gian nhà cung cấp giao để gợi ý nên nhập gì, bao nhiêu. Chọn các dòng rồi tạo đơn nháp để duyệt trong mục Nhập hàng.</p>
+            <p>AI tham khảo số bán POS, tồn kho, hàng đang về và thời gian nhà cung cấp giao để gợi ý mặt hàng và số lượng cần xem xét. Chủ cửa hàng quyết định có nhập hay không và có thể chỉnh số lượng trước khi tạo đơn nháp.</p>
+            <p className="bd-range-caption">Đây là ước lượng hỗ trợ quyết định, không phải cam kết nhu cầu thực tế. Xếp loại mức hỗ trợ dựa trên một số kỳ kiểm tra gần đây, không phải xác suất dự báo đúng; ngày hết hàng có thể khiến nhu cầu thực cao hơn số bán ghi nhận.</p>
           </div>
         </header>
 
         <ErrorBox error={action.error || list.error} />
+        <SyntheticDemoNotice items={items} />
         {list.data && !list.data.forecastReady && (
           <div className="bd-notice warning" role="status">
             Dự báo chưa cập nhật hoặc dịch vụ dự báo không khả dụng. Các gợi ý bên dưới là dữ liệu cũ
@@ -158,7 +183,7 @@ export function ReplenishmentPage() {
 
         <section className="ai-workspace">
           <div className="ai-kpis">
-            <div className="ai-kpi"><span>Cần nhập</span><strong>{summary?.pendingCount ?? 0} sản phẩm</strong><small>Đang chờ bạn quyết định</small></div>
+            <div className="ai-kpi"><span>Gợi ý đang chờ</span><strong>{summary?.pendingCount ?? 0} sản phẩm</strong><small>Chủ cửa hàng quyết định</small></div>
             <div className="ai-kpi"><span>Dự kiến chi</span><strong>{money(summary?.pendingAmount ?? 0)}</strong><small>Theo giá nhập của nhà cung cấp</small></div>
             {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as Urgency[]).map((key) => (
               <div className={`ai-sev-card ${key.toLowerCase()}`} key={key} title={URGENCY_HINTS[key]}>
@@ -183,7 +208,7 @@ export function ReplenishmentPage() {
               <div className="bd-table-wrap"><table className="bd-table ai-table">
                 <thead><tr>
                   {canOrder && <th><input aria-label="Chọn tất cả" disabled={!list.data?.forecastReady} checked={selected.length > 0 && selected.length === pending.filter((i) => i.supplierId).length} onChange={toggleAll} type="checkbox" /></th>}
-                  <th>Mức độ</th><th>Sản phẩm</th><th>Tình hình</th><th>Số lượng nên nhập</th><th>Thành tiền</th><th>Nhà cung cấp</th><th></th>
+                  <th>Mức độ</th><th>Sản phẩm</th><th>Tình hình</th><th>Lượng AI gợi ý</th><th>Thành tiền</th><th>Nhà cung cấp</th><th></th>
                 </tr></thead>
                 <tbody>{items.map((item) => {
                   const isPending = item.status === "PENDING";
@@ -197,7 +222,7 @@ export function ReplenishmentPage() {
                           Còn {fmt(detailNum(item, "stockAvailable"), 0)}{detailNum(item, "onOrder") ? ` (+${fmt(detailNum(item, "onOrder"), 0)} đang về)` : ""}, bán khoảng {fmt(detailNum(item, "dailyRate"))}/ngày.
                           {item.stockoutDate ? ` Dự kiến hết hàng ${displayDate(item.stockoutDate)}.` : ""}
                         </p>
-                        <small>{confidenceLabel(item.confidence)}</small>
+                        <small>{evidenceLabel(item.confidence)}</small>
                       </td>
                       <td className="ai-money">
                         {isPending && canOrder && item.id in picked ? (
@@ -219,15 +244,19 @@ export function ReplenishmentPage() {
         </section>
       </main>
 
-      <Modal open={detail !== null} onClose={() => setDetail(null)} size="wide" title="Vì sao nên nhập?">
+      <Modal open={detail !== null} onClose={() => setDetail(null)} size="wide" title="Căn cứ gợi ý nhập">
         {detail && (
           <div className="bd-modal-content">
             <div className="bd-modal-intro">
-              <div><h3>{detail.productName}</h3><p>{detail.sku} · {confidenceLabel(detail.confidence)}</p></div>
+              <div><h3>{detail.productName}</h3><p>{detail.sku} · {evidenceLabel(detail.confidence)}</p></div>
               <span className={`ai-sev ai-sev-${detail.urgency.toLowerCase()}`}>{URGENCY_LABELS[detail.urgency]}</span>
             </div>
             {forecast?.stale && <div className="bd-notice warning" role="status">Đây là kết quả cũ, chưa thể dùng để tạo đơn nháp. Hãy chạy lại phân tích khi dịch vụ dự báo hoạt động.</div>}
-            <div className="ai-callout action"><strong>{forecast?.stale ? "Gợi ý cũ" : "Nên nhập"} {fmt(detail.suggestedQty, 0)} sản phẩm</strong> ({money(detail.amount)}){detail.orderByDate ? `, đặt trước ${displayDate(detail.orderByDate)}` : ""}.</div>
+            <div className="ai-callout action">
+              <strong>{forecast?.stale ? "Gợi ý cũ" : "AI gợi ý tham khảo"}: {fmt(detail.suggestedQty, 0)} sản phẩm</strong> ({money(detail.amount)}){detail.orderByDate ? `, cân nhắc đặt trước ${displayDate(detail.orderByDate)}` : ""}.
+              <p>Chủ cửa hàng quyết định có nhập hay không. Tạo đơn nháp chưa xác nhận đặt hàng.</p>
+            </div>
+            <p className="bd-modal-note">{replenishmentReason(detail)}</p>
             {overdueOrders(detail).map((po) => (
               <div className="bd-notice warning" key={`${po.poCode}-${po.arrivalDate}`} role="status">
                 Đơn {po.poCode}: còn {fmt(po.qty, 0)} sản phẩm, dự kiến giao {displayDate(po.arrivalDate)} (đã quá hạn).
@@ -238,26 +267,28 @@ export function ReplenishmentPage() {
               <>
                 <Chart detail={forecast} />
                 <p className="bd-modal-note">Đường xanh: số bán POS trước trừ trả mỗi ngày. Đường cam: dự báo bình quân trong từng giai đoạn.
-                  14 ngày tới dự báo bán {fmt(forecast.forecast.totals.d14)} sản phẩm. Chưa có khoảng dự báo được hiệu chuẩn; mức tin cậy chỉ là phân loại theo backtest.</p>
+                  14 ngày tới ước lượng khoảng {fmt(forecast.forecast.totals.d14)} sản phẩm. Chưa có khoảng dự báo được hiệu chuẩn; mức hỗ trợ chỉ là phân loại tham khảo từ backtest gần đây.</p>
               </>
             )}
             {forecast?.status === "INSUFFICIENT_DATA" && <p className="bd-modal-note">Sản phẩm chưa đủ dữ liệu bán để dự báo đáng tin.</p>}
             <div className="bd-detail-grid">
               <DetailLine label="Tồn có thể bán" value={fmt(detailNum(detail, "sellableStock"), 0)} />
               <DetailLine label="Đang đặt, chưa về" value={fmt(detailNum(detail, "onOrder"), 0)} />
+              <DetailLine label="Vị thế tồn (tồn bán được + đang về)" value={fmt(detailNum(detail, "position"))} />
+              <DetailLine label="Điểm đặt lại (nhu cầu trong thời gian giao + tồn an toàn)" value={fmt(detailNum(detail, "reorderPoint"))} />
               <DetailLine label="Thời gian nhà cung cấp giao" value={`${fmt(detailNum(detail, "leadTimeDays"), 0)} ngày (${LEAD_SOURCES[String(detail.details.leadTimeSource)] ?? "—"})`} />
               <DetailLine label="Chu kỳ đặt hàng" value={`${fmt(detailNum(detail, "reviewPeriodDays"), 0)} ngày`} />
               <DetailLine label="Tồn an toàn" value={fmt(detailNum(detail, "safetyStock"))} />
               <DetailLine label="Mức tồn mục tiêu" value={fmt(detailNum(detail, "target"))} />
-              <DetailLine label="Số lượng thiếu" value={fmt(detailNum(detail, "rawNeed"))} />
+              <DetailLine label="Nhu cầu ước lượng còn thiếu trước khi làm tròn" value={fmt(detailNum(detail, "rawNeed"))} />
               <DetailLine label="Quy cách nhập" value={`Tối thiểu ${fmt(detailNum(detail, "minOrderQty"), 0)}, bội số ${fmt(detailNum(detail, "orderMultiple"), 0)}`} />
               <DetailLine label="Phương pháp dự báo" value={MODEL_LABELS[String(detail.details.model)] ?? "—"} />
               <DetailLine label="Sai số dự báo gần đây" value={detail.details.wape === null || detail.details.wape === undefined ? "Chưa đo được" : `${fmt(Number(detail.details.wape) * 100)}%`} />
             </div>
-            <p className="bd-modal-note">Cách tính: {String(detail.details.formula ?? "")}</p>
+            <p className="bd-modal-note">Cách tính: nhu cầu dự báo trong thời gian giao hàng và chu kỳ đặt, cộng tồn an toàn, rồi trừ vị thế tồn. Số lượng gợi ý được làm tròn theo mức đặt tối thiểu và quy cách nhà cung cấp; kiểm tra lại các chương trình bán hàng hoặc thay đổi nhu cầu sắp tới trước khi quyết định.</p>
             <details className="ai-details">
               <summary>Lịch sử dự báo và đối chiếu</summary>
-              <p className="bd-modal-note">So với số bán POS trước trừ trả, theo ngày trọn vẹn. Nếu dự báo được tạo sau khi ngày đầu bắt đầu, chênh lệch chỉ để tham khảo, không dùng làm điểm đánh giá đáng tin cậy. Hết hàng hoặc thiếu ledger cũng làm kết quả không thể đánh giá nhu cầu đầy đủ.</p>
+              <p className="bd-modal-note">So với số bán POS trước trừ trả, theo ngày trọn vẹn. Nếu phân tích hoàn tất sau khi kỳ bắt đầu, chênh lệch chỉ để tham khảo. Hết hàng hoặc thiếu ledger cũng làm kết quả không thể đánh giá nhu cầu đầy đủ; tồn cuối ngày không chứng minh còn hàng cả ngày.</p>
               {forecastHistory && forecastHistory.items.length === 0 && <p className="bd-modal-note">Chưa có lịch sử dự báo được lưu.</p>}
               {forecastHistory?.items.map((entry) => (
                 <div key={entry.id}>
@@ -268,6 +299,26 @@ export function ReplenishmentPage() {
                       <tr key={evaluation.days}><td>{evaluation.days} ngày</td><td>{fmt(evaluation.predicted)}</td><td>{fmt(evaluation.actual)}</td><td>{fmt(evaluation.absoluteError)}</td><td>{EVALUATION_LABELS[evaluation.status]}{evaluation.partialStart && evaluation.status !== "PARTIAL_START" ? "; ngày đầu đã trôi qua một phần" : ""}</td></tr>
                     ))}</tbody>
                   </table></div>
+                  {entry.segmentEvaluations ? <>
+                  <p className="bd-modal-note">Đối chiếu riêng các đoạn sau ngày đầu: ngày 8–14 và 15–28 tính từ dữ liệu đến hết ngày trên. Đây không phải kỳ 7/14 ngày bắt đầu ngay sau lúc dự báo.</p>
+                  <div className="bd-table-wrap"><table className="bd-table">
+                    <thead><tr><th>Đoạn dự báo</th><th>Dự báo</th><th>Đã bán</th><th>Chênh lệch tuyệt đối</th><th>Điều kiện</th></tr></thead>
+                    <tbody>{entry.segmentEvaluations.map((evaluation) => (
+                      <tr key={evaluation.start}><td>{displayDate(evaluation.start)} – {displayDate(evaluation.end)} ({evaluation.days} ngày)</td><td>{fmt(evaluation.predicted)}</td><td>{fmt(evaluation.actual)}</td><td>{fmt(evaluation.absoluteError)}</td><td>{EVALUATION_LABELS[evaluation.status]}{evaluation.partialStart && evaluation.status !== "PARTIAL_START" ? "; ngày đầu đã trôi qua một phần" : ""}</td></tr>
+                    ))}</tbody>
+                  </table></div>
+                  </> : <p className="bd-modal-note">Chưa có đối chiếu các đoạn sau ngày đầu; hãy cập nhật backend.</p>}
+                  <p className="bd-modal-note">Dự báo ngày đầy đủ: kỳ 7/14/28 ngày bắt đầu từ ngày thứ hai sau mốc dữ liệu; không thay thế dự báo dùng cho nhập hàng. So sánh chỉ có ý nghĩa khi phân tích hoàn tất trước kỳ và dữ liệu kho đủ điều kiện.</p>
+                  {entry.nextDayEvaluation?.status === "OK" ? (
+                    <div className="bd-table-wrap"><table className="bd-table">
+                      <thead><tr><th>Kỳ</th><th>Dự báo</th><th>Đã bán</th><th>Chênh lệch tuyệt đối</th><th>Điều kiện</th></tr></thead>
+                      <tbody>{entry.nextDayEvaluation.evaluations.map((evaluation) => (
+                        <tr key={evaluation.days}><td>{displayDate(evaluation.start)} – {displayDate(evaluation.end)} ({evaluation.days} ngày)</td><td>{fmt(evaluation.predicted)}</td><td>{fmt(evaluation.actual)}</td><td>{fmt(evaluation.absoluteError)}</td><td>{EVALUATION_LABELS[evaluation.status]}{evaluation.partialStart && evaluation.status !== "PARTIAL_START" ? "; ngày đầu đã trôi qua một phần" : ""}</td></tr>
+                      ))}</tbody>
+                    </table></div>
+                  ) : <p className="bd-modal-note">{entry.nextDayEvaluation?.status === "UNAVAILABLE"
+                    ? NEXT_DAY_UNAVAILABLE[entry.nextDayEvaluation.reason]
+                    : "Chưa có đối chiếu ngày đầy đủ; hãy cập nhật backend."}</p>}
                 </div>
               ))}
             </details>

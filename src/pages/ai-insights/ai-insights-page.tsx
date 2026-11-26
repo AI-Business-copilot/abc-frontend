@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Pagination } from "@/components/ui/pagination";
 import { usePermissions } from "@/hooks/use-permissions";
+import { SyntheticDemoNotice } from "@/pages/ai-insights/synthetic-demo-notice";
 import { DetailLine, PaginationSize, displayDate } from "@/pages/business-data/shared";
 import { ErrorBox, money, useAction, useLoad } from "@/pages/purchases/shared";
 import "@/pages/purchases/purchases.css";
@@ -298,6 +299,7 @@ export function AiInsightsPage() {
         </header>
 
         <ErrorBox error={action.error || summary.error || list.error} />
+        <SyntheticDemoNotice items={list.data?.items ?? []} />
         {notice && <div role="status" className="bd-notice success">{notice}</div>}
         {data?.stale && <div role="status" className="bd-notice warning">Dữ liệu phân tích đã cũ hoặc chưa có. {canManage ? "Hãy bấm “Phân tích lại”." : "Liên hệ chủ cửa hàng để cập nhật."}</div>}
         {run?.status === "FAILED" && <div role="alert" className="bd-notice warning">Lần phân tích gần nhất thất bại: {run.error ?? "không rõ nguyên nhân"}</div>}

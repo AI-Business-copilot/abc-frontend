@@ -131,25 +131,32 @@ export type ForecastDetail = {
   history: Array<{ day: string; units: number }>;
 };
 
+type ForecastEvaluation = {
+  days: 7 | 14 | 28;
+  start: string;
+  end: string;
+  predicted: number;
+  actual: number | null;
+  absoluteError: number | null;
+  status: "PENDING" | "OUTSIDE_HISTORY" | "UNKNOWN_STOCK" | "STOCKOUT" | "PARTIAL_START" | "PUBLICATION_UNKNOWN" | "COMPARABLE";
+  partialStart: boolean;
+  stockoutDays: number | null;
+  unknownDays: number | null;
+};
+
 export type ForecastHistory = {
   items: Array<{
     id: string;
     asOf: string;
     issuedAt: string;
+    finishedAt: string | null;
     model: string | null;
     modelVersion: string | null;
-    evaluations: Array<{
-      days: 7 | 14 | 28;
-      start: string;
-      end: string;
-      predicted: number;
-      actual: number | null;
-      absoluteError: number | null;
-      status: "PENDING" | "OUTSIDE_HISTORY" | "UNKNOWN_STOCK" | "STOCKOUT" | "PARTIAL_START" | "COMPARABLE";
-      partialStart: boolean;
-      stockoutDays: number | null;
-      unknownDays: number | null;
-    }>;
+    evaluations: ForecastEvaluation[];
+    segmentEvaluations?: ForecastEvaluation[];
+    nextDayEvaluation?:
+      | { status: "OK"; evaluations: ForecastEvaluation[] }
+      | { status: "UNAVAILABLE"; reason: "MODEL_NOT_CONFIGURED" | "SERVICE_NOT_SUPPORTED" | "NOT_RECORDED" };
   }>;
 };
 
