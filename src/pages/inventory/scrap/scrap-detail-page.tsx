@@ -11,6 +11,7 @@ import { PermissionGate } from "@/components/common/permission-gate";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { CatalogHeader } from "@/pages/products/catalog-header";
+import { DisposalDossierPreviewModal } from "./components/dossier-preview-modal";
 import { OwnerReviewPanel } from "./components/owner-review-panel";
 import { ScrapGallery } from "./components/scrap-gallery";
 import {
@@ -20,6 +21,12 @@ import {
   formatMoney,
   rejectionReasonLabel,
 } from "./components/scrap-ui";
+import {
+  SCRAP_CAUSE_CODES,
+  disposalMethodLabel,
+  scrapCauseCodeLabel,
+  type ScrapCauseCode,
+} from "@/types/scrap";
 import { useScrapOrder } from "./hooks/use-scrap-order";
 
 export function ScrapDetailPage() {
@@ -33,8 +40,9 @@ export function ScrapDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [editQty, setEditQty] = useState("");
-  const [editReason, setEditReason] = useState("");
+  const [editCauseCode, setEditCauseCode] = useState<ScrapCauseCode | "">("");
   const [saving, setSaving] = useState(false);
+  const [showDossier, setShowDossier] = useState(false);
 
   const pending = order?.status === "PENDING";
   // Same rule as the server: only the staff member who created a PENDING order can change it.
@@ -45,7 +53,7 @@ export function ScrapDetailPage() {
   const startEdit = () => {
     if (!order) return;
     setEditQty(String(order.scrapQty));
-    setEditReason(order.scrapReason);
+    setEditCauseCode(order.causeCode ?? "");
     setActionError(null);
     setEditing(true);
   };
@@ -57,14 +65,14 @@ export function ScrapDetailPage() {
       setActionError("Số lượng phải là số nguyên lớn hơn 0.");
       return;
     }
-    if (!editReason.trim()) {
-      setActionError("Vui lòng nhập lý do hủy hàng.");
+    if (!editCauseCode) {
+      setActionError("Vui lòng chọn nguyên nhân hủy hàng.");
       return;
     }
     setSaving(true);
     setActionError(null);
     try {
-      await scrapApi.updateScrapOrder(order.id, { scrapQty: qty, scrapReason: editReason.trim() });
+      await scrapApi.updateScrapOrder(order.id, { scrapQty: qty, causeCode: editCauseCode });
       setEditing(false);
       setMessage("Đã cập nhật phiếu hủy.");
       await refetch();
@@ -111,7 +119,15 @@ export function ScrapDetailPage() {
                     Tạo bởi {order.createdByUser?.fullName ?? "—"} · {formatDateTime(order.createdAt)}
                   </p>
                 </div>
-                <ScrapStatusBadge status={order.status} />
+                <div className="flex items-center gap-3">
+                  {/* The dossier can only be written for an approved order. */}
+                  {order.status === "COMPLETED" && (
+                    <Button onClick={() => setShowDossier(true)} size="sm" variant="outline">
+                      Xem & tải hồ sơ tiêu hủy
+                    </Button>
+                  )}
+                  <ScrapStatusBadge status={order.status} />
+                </div>
               </div>
 
               {message && <Alert variant="success">{message}</Alert>}
@@ -148,8 +164,19 @@ export function ScrapDetailPage() {
                         <Input id="edit-qty" min={1} onChange={(e) => setEditQty(e.target.value)} type="number" value={editQty} />
                       </div>
                       <div>
-                        <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="edit-reason">Lý do hủy</label>
-                        <Input id="edit-reason" maxLength={255} onChange={(e) => setEditReason(e.target.value)} value={editReason} />
+                        <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="edit-cause">Nguyên nhân hủy hàng</label>
+                        <select
+                          className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#0f4c3a] focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={saving}
+                          id="edit-cause"
+                          onChange={(e) => setEditCauseCode(e.target.value as ScrapCauseCode | "")}
+                          value={editCauseCode}
+                        >
+                          <option value="">— Chọn nguyên nhân —</option>
+                          {SCRAP_CAUSE_CODES.map((code) => (
+                            <option key={code} value={code}>{scrapCauseCodeLabel[code]}</option>
+                          ))}
+                        </select>
                       </div>
                       <div className="flex gap-2 sm:col-span-2">
                         <Button disabled={saving} onClick={() => void saveEdit()} type="button">
@@ -166,16 +193,15 @@ export function ScrapDetailPage() {
                         // from the quantity that was quarantined on the variant itself.
                         ...(order.lotItemId
                           ? [
-                              ["Số lô", order.lotItem?.lot.lotNumber ?? "—"],
-                              ...(order.business?.industryType === "COSMETICS"
-                                ? [["Hạn sử dụng", formatDate(order.lotItem?.expirationDate)]]
-                                : []),
-                            ]
+                            ["Số lô", order.lotItem?.lot.lotNumber ?? "—"],
+                            ...(order.business?.industryType === "COSMETICS"
+                              ? [["Hạn sử dụng", formatDate(order.lotItem?.expirationDate)]]
+                              : []),
+                          ]
                           : [["Cách ly", "Sản phẩm không có lô — hủy từ số lượng đã cách ly"]]),
                         ["Số lượng hủy", String(order.scrapQty)],
-                        ["Nguồn tồn kho", order.scrapSource === "DAMAGED_STOCK" ? "Hàng hư hỏng" : "Hàng có thể bán"],
+
                         ["Giá vốn / sản phẩm", formatMoney(order.unitCost)],
-                        ["Lý do hủy", order.scrapReason],
                       ].map(([label, value]) => (
                         <div key={label}>
                           <dt className="text-slate-500">{label}</dt>
@@ -190,6 +216,29 @@ export function ScrapDetailPage() {
                       <Button disabled={saving} onClick={() => void removeOrder()} size="sm" variant="destructive">Xóa phiếu</Button>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Hồ sơ tiêu hủy</CardTitle></CardHeader>
+                <CardContent>
+                  <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+                    {[
+                      ["Nguyên nhân", order.causeCode ? scrapCauseCodeLabel[order.causeCode] : "Chưa ghi nhận"],
+                      [
+                        "Phương thức tiêu hủy",
+                        order.disposalMethod ? disposalMethodLabel[order.disposalMethod] : "Chưa ghi nhận",
+                      ],
+                      ["Địa điểm tiêu hủy", order.disposalLocation ?? "Chưa ghi nhận"],
+                      // The council is written when the Owner approves the order.
+                      ["Thành viên hội đồng", order.witnessNames ?? "Chưa ghi nhận"],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <dt className="text-slate-500">{label}</dt>
+                        <dd className="font-semibold text-slate-900">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
                 </CardContent>
               </Card>
 
@@ -212,6 +261,10 @@ export function ScrapDetailPage() {
                   onReload={refreshQuietly}
                   order={order}
                 />
+              )}
+
+              {showDossier && (
+                <DisposalDossierPreviewModal onClose={() => setShowDossier(false)} orderId={order.id} />
               )}
             </>
           )}

@@ -225,6 +225,13 @@ export function AuditDetailPage() {
           </div>
         </div>
 
+        {audit.note && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Ghi chú kiểm kê</p>
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-800">{audit.note}</p>
+          </div>
+        )}
+
         {itemsError && (
           <Alert className="bg-red-50 border-red-200 text-red-700">
             {itemsError}

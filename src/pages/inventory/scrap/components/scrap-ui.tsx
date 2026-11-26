@@ -1,14 +1,14 @@
 import { useEffect, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { scrapStatusLabel, type LotStatus, type ScrapStatus } from "@/types/scrap";
+import { lotStatusLabel, scrapStatusLabel, type LotStatus, type ScrapStatus } from "@/types/scrap";
 
 const lotStatusStyle: Record<LotStatus, { label: string; className: string }> = {
-  HEALTHY: { label: "Bình thường", className: "bg-emerald-100 text-emerald-800" },
-  WARNING: { label: "Sắp hết hạn", className: "bg-amber-100 text-amber-800" },
-  UNUSABLE: { label: "Không dùng được", className: "bg-rose-100 text-rose-800" },
-  QUARANTINED: { label: "Đang cách ly", className: "bg-amber-100 text-amber-900 border border-amber-200" },
-  SCRAPPED: { label: "Đã hủy", className: "bg-slate-200 text-slate-700" },
+  HEALTHY: { label: lotStatusLabel.HEALTHY, className: "bg-emerald-100 text-emerald-800" },
+  WARNING: { label: lotStatusLabel.WARNING, className: "bg-amber-100 text-amber-800" },
+  UNUSABLE: { label: lotStatusLabel.UNUSABLE, className: "bg-rose-100 text-rose-800" },
+  QUARANTINED: { label: lotStatusLabel.QUARANTINED, className: "bg-amber-100 text-amber-900 border border-amber-200" },
+  SCRAPPED: { label: lotStatusLabel.SCRAPPED, className: "bg-slate-200 text-slate-700" },
 };
 
 const scrapStatusStyle: Record<ScrapStatus, { label: string; className: string }> = {

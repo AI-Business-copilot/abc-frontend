@@ -9,8 +9,11 @@ import {
   ALLOWED_SCRAP_IMAGE_TYPES,
   MAX_SCRAP_IMAGES,
   MAX_SCRAP_IMAGE_BYTES,
+  type DisposalMethod,
+  type ScrapCauseCode,
   type VariantQuarantine,
 } from "@/types/scrap";
+import { DisposalFields, validateDisposalFields } from "./disposal-fields";
 import { Modal } from "./scrap-ui";
 
 /** The products a variant-level quarantine can act on: the SKU and how much stock it has. */
@@ -116,7 +119,9 @@ export function CreateVariantScrapDialog({
 }) {
   const max = quarantine.quarantineQty;
   const [quantity, setQuantity] = useState(String(max));
-  const [reason, setReason] = useState("");
+  const [causeCode, setCauseCode] = useState<ScrapCauseCode | "">("");
+  const [disposalMethod, setDisposalMethod] = useState<DisposalMethod | "">("");
+  const [disposalLocation, setDisposalLocation] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,8 +156,9 @@ export function CreateVariantScrapDialog({
       setError(`Số lượng phải là số nguyên từ 1 đến ${max}.`);
       return;
     }
-    if (!reason.trim()) {
-      setError("Vui lòng nhập lý do hủy hàng.");
+    const disposal = validateDisposalFields(causeCode, disposalMethod, disposalLocation);
+    if (!disposal.ok) {
+      setError(disposal.error);
       return;
     }
     if (files.length === 0) {
@@ -165,7 +171,9 @@ export function CreateVariantScrapDialog({
       const order = await scrapApi.createScrapOrder({
         variantId: target.variantId,
         scrapQty: qty,
-        scrapReason: reason.trim(),
+        causeCode: disposal.causeCode,
+        disposalMethod: disposal.disposalMethod,
+        disposalLocation: disposal.disposalLocation,
         images: files,
       });
       onCreated(order.id);
@@ -194,16 +202,14 @@ export function CreateVariantScrapDialog({
         type="number"
         value={quantity}
       />
-      <label className="mb-1 mt-3 block text-sm font-medium text-slate-700" htmlFor="variant-scrap-reason">
-        Lý do hủy
-      </label>
-      <Input
+      <DisposalFields
+        causeCode={causeCode}
         disabled={submitting}
-        id="variant-scrap-reason"
-        maxLength={255}
-        onChange={(event) => setReason(event.target.value)}
-        placeholder="Ví dụ: hư hỏng, bao bì xé, không bán được"
-        value={reason}
+        disposalLocation={disposalLocation}
+        disposalMethod={disposalMethod}
+        onCauseCodeChange={setCauseCode}
+        onDisposalLocationChange={setDisposalLocation}
+        onDisposalMethodChange={setDisposalMethod}
       />
 
       <div className="mt-3">

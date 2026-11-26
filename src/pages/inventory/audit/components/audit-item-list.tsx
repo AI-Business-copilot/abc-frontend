@@ -1,5 +1,6 @@
 
 import { Button } from '../../../../components/ui/button';
+import { formatAuditDiff, resolveAuditDiff } from '../audit-diff';
 import type { AuditStatus, CountAgreement, StockAuditItem, AuditItemStatus } from '../../../../types/audit';
 
 interface AuditItemListProps {
@@ -118,7 +119,10 @@ export function AuditItemList({
   return (
     <div className="space-y-2">
       {items.map((item) => {
-        const hasDiscrepancy = item.diffQty !== 0;
+        // A row nobody has counted yet has no number to compare with the snapshot, so it shows a
+        // dash instead of a difference that was never measured.
+        const diff = resolveAuditDiff(item);
+        const hasDiscrepancy = diff !== null && diff !== 0;
         const wasRejected = item.itemStatus === 'IN_PROGRESS' && Boolean(item.rejectionReason);
         // The broken goods are counted separately from the usable quantity; the total is derived.
         const brokenQty = item.countedDamagedQty ?? 0;
@@ -273,11 +277,10 @@ export function AuditItemList({
                   <div>
                     <p className="text-xs text-gray-500">Chênh lệch</p>
                     <p
-                      className={`text-lg font-semibold ${hasDiscrepancy ? 'text-red-600' : 'text-green-600'
+                      className={`text-lg font-semibold ${diff === null ? 'text-gray-400' : hasDiscrepancy ? 'text-red-600' : 'text-green-600'
                         }`}
                     >
-                      {item.diffQty >= 0 ? '+' : ''}
-                      {item.diffQty}
+                      {formatAuditDiff(diff)}
                     </p>
                   </div>
                 </div>

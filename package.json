@@ -12,11 +12,13 @@
     "test:unit": "vitest run",
     "test:watch": "vitest",
     "test:legacy": "node --test tests/*.test.cjs tests/*.test.mjs",
-    "test:types": "tsc -p tsconfig.test.json --noEmit"
+    "test:types": "tsc -p tsconfig.test.json --noEmit",
+    "check:dossier": "esbuild scripts/render-dossier-check.mjs --bundle --platform=node --format=esm --jsx=automatic --loader:.tsx=tsx --loader:.ts=ts --alias:@=./src --outfile=scripts/.dossier-check.bundle.mjs --external:@react-pdf/renderer && node scripts/.dossier-check.bundle.mjs"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.17",
     "@radix-ui/react-slot": "^1.2.3",
+    "@react-pdf/renderer": "^4.9.1",
     "@supabase/supabase-js": "^2.57.4",
     "@types/jsbarcode": "^3.11.4",
     "@zxing/library": "^0.23.0",

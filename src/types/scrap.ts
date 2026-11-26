@@ -19,6 +19,24 @@ export function scrapStatusText(status: string | null | undefined): string {
   return scrapStatusLabel[status as ScrapStatus] ?? status;
 }
 
+/** Vietnamese labels for the lot statuses, so the raw code never reaches the user. */
+export const lotStatusLabel: Record<LotStatus, string> = {
+  HEALTHY: "Bình thường",
+  WARNING: "Sắp hết hạn",
+  UNUSABLE: "Không dùng được",
+  QUARANTINED: "Đang cách ly",
+  SCRAPPED: "Đã hủy",
+};
+
+/**
+ * Safe label for a lot status that may be unknown to this build, or missing when the order is
+ * for a product that has no lot item.
+ */
+export function lotStatusText(status: string | null | undefined): string {
+  if (!status || status === "UNRECORDED") return "Chưa ghi nhận";
+  return lotStatusLabel[status as LotStatus] ?? status;
+}
+
 /**
  * True when the newest scrap order of a lot still blocks a new one. Only a PENDING order does:
  * a rejected or cancelled order is settled, so the lot stays quarantined and any staff member
@@ -142,6 +160,10 @@ export interface ScrapOrder {
   scrapQty: number;
   unitCost: string;
   scrapSource: ScrapSource;
+  /**
+   * The plain-text reason of the loss. The server writes it from the cause code, so it always
+   * matches the cause; staff never state it themselves.
+   */
   scrapReason: string;
   status: ScrapStatus;
   totalLossValue: string | null;
@@ -153,6 +175,17 @@ export interface ScrapOrder {
   rejectionNote: string | null;
   cancelledAt: string | null;
   cancelledNote: string | null;
+  /** The cause of the loss, as recorded in the disposal dossier. */
+  causeCode: ScrapCauseCode | null;
+  /** How the goods are destroyed, as recorded in the disposal dossier. */
+  disposalMethod: DisposalMethod | null;
+  /** Where the goods are destroyed. Required by the backend when the method is CONTRACTOR. */
+  disposalLocation: string | null;
+  /**
+   * The members of the disposal council, separated by commas. The server writes them when the
+   * Owner approves the order: the approver leads the council and the creator writes the minutes.
+   */
+  witnessNames: string | null;
   variant: { id: string; sku: string; costPrice: string; template: { name: string } };
   lotItem: {
     id: string;
@@ -201,6 +234,75 @@ export interface ScrapStatistics {
   cancelledCount: number;
   totalLossValue: number;
   bySource: { DAMAGED_STOCK: number; SELLABLE_STOCK: number };
+}
+
+/** The cause of the loss as stated in the disposal dossier. */
+export const SCRAP_CAUSE_CODES = ["EXPIRED", "DAMAGED_TRANSIT", "QUALITY_FAIL", "OLD_STOCK"] as const;
+export type ScrapCauseCode = (typeof SCRAP_CAUSE_CODES)[number];
+
+/** How the goods are destroyed. */
+export const DISPOSAL_METHODS = ["INCINERATION", "BURIAL", "CHEMICAL", "CONTRACTOR"] as const;
+export type DisposalMethod = (typeof DISPOSAL_METHODS)[number];
+
+export const scrapCauseCodeLabel: Record<ScrapCauseCode, string> = {
+  EXPIRED: "Hết hạn sử dụng",
+  DAMAGED_TRANSIT: "Hư hỏng trong vận chuyển",
+  QUALITY_FAIL: "Không đạt chất lượng",
+  OLD_STOCK: "Tồn kho lâu ngày",
+};
+
+export const disposalMethodLabel: Record<DisposalMethod, string> = {
+  INCINERATION: "Đốt cháy",
+  BURIAL: "Chôn lập",
+  CHEMICAL: "Hóa chất",
+  CONTRACTOR: "Thuê đơn vị tiêu hủy",
+};
+
+/** One row of the bảng kê xuất nhập tồn the tax dossier must carry. */
+export interface DossierLedgerLine {
+  date: string;
+  transactionType: string;
+  quantity: number;
+  unitCost: number;
+  totalValue: number;
+  note: string;
+}
+
+/** The dossier as the backend assembles it. */
+export interface DisposalDossierReport {
+  scrapCode: string;
+  businessName: string;
+  businessAddress: string | null;
+  step1_council: { leader: string; accountant: string | null; createdDate: string | null };
+  step2_inspection: {
+    productName: string;
+    sku: string;
+    lotNumber: string | null;
+    expiryDate: string | null;
+    quantity: number;
+    unitCost: number;
+    totalValue: number;
+    /** The condition of the goods (the lot status). The cause of the loss is stated in step 3. */
+    condition: string;
+    createdDate: string | null;
+  };
+  step3_decision: {
+    causeCode: ScrapCauseCode | null;
+    disposalMethod: DisposalMethod | null;
+    disposalLocation: string | null;
+    approvedBy: string | null;
+    approvedDate: string | null;
+    witnesses: string[];
+  };
+  step4_execution: { status: string };
+  step5_disposal: { actualDate: string | null; confirmedBy: string | null };
+  step6_archive_bangke: { bangKeXuatNhapTon: DossierLedgerLine[] };
+  tax_fields: {
+    totalLossValue: number;
+    compensatedAmount: number;
+    deductibleLoss: number;
+    taxLegislation: string;
+  };
 }
 
 export interface ApproveScrapResult {

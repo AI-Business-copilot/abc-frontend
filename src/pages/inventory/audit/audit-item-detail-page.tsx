@@ -9,6 +9,7 @@ import { PermissionGate } from '../../../components/common/permission-gate';
 import { AuditItemStatusBadge, CountAgreementBadge } from './components/audit-item-list';
 import { AuditCountGallery } from './components/audit-count-gallery';
 import { AuditHistoryGallery } from './components/audit-history-gallery';
+import { formatAuditDiff, resolveAuditDiff } from './audit-diff';
 import { useAudit } from './hooks/use-audit';
 import { useStaffMembers } from './audit-rows';
 import { CatalogHeader } from '../../products/catalog-header';
@@ -272,8 +273,10 @@ export function AuditItemDetailPage() {
     );
   }
 
-  const diff = item.countedQty - item.snapshotQty;
-  const hasDiff = diff !== 0;
+  // A row nobody has counted yet has no number to compare with the snapshot, so it shows a dash
+  // instead of a difference that was never measured.
+  const diff = resolveAuditDiff(item);
+  const hasDiff = diff !== null && diff !== 0;
   // The broken goods are counted separately from the usable quantity; the total is derived.
   const brokenQty = item.countedDamagedQty ?? 0;
   const totalQty = item.countedQty + brokenQty;
@@ -374,9 +377,8 @@ export function AuditItemDetailPage() {
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide">Chênh lệch</p>
-            <p className={`text-2xl font-semibold ${hasDiff ? 'text-red-600' : 'text-green-600'}`}>
-              {diff > 0 ? '+' : ''}
-              {diff}
+            <p className={`text-2xl font-semibold ${diff === null ? 'text-gray-400' : hasDiff ? 'text-red-600' : 'text-green-600'}`}>
+              {formatAuditDiff(diff)}
             </p>
           </div>
         </div>
@@ -421,19 +423,6 @@ export function AuditItemDetailPage() {
 
                 {/* The reasons are written freely, so they get their own full-width block instead
                     of a table column that would squeeze the numbers. */}
-                {counterRows(item)
-                  .filter((row) => row.discrepancyReason)
-                  .map((row) => (
-                    <div key={row.id} className="rounded-md border border-gray-200 p-3">
-                      <p className="text-xs font-semibold text-gray-700">
-                        Lý do chênh lệch của {row.name}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-800">
-                        {row.discrepancyReason}
-                      </p>
-                    </div>
-                  ))}
-
                 {/* The photos each counter took of the broken goods, so the owner can judge the row. */}
                 {(item.counts ?? []).some((count) => (count.images?.length ?? 0) > 0) && (
                   <div className="space-y-4 rounded-md border border-gray-200 p-3">
@@ -471,22 +460,18 @@ export function AuditItemDetailPage() {
             broken goods come from counterDetails, so every counter is shown here. */}
         <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-900">
-            {hasDiff ? `Lý do chênh lệch ${diff > 0 ? '+' : ''}${diff}` : 'Lý do kiểm kê'}
+            {hasDiff ? `Lý do chênh lệch ${formatAuditDiff(diff)}` : 'Lý do chênh lệch'}
           </p>
           {(item.counterDetails ?? []).map((detail) => (
-            <div key={detail.counterUserId} className="mt-2">
-              <p className="text-sm font-semibold text-amber-900">
-                {detail.counter?.name ?? 'Người kiểm kê'}
-                {detail.countedDamagedQty > 0 && (
-                  <span className="ml-1 font-normal">
-                    · Hàng hỏng: {detail.countedDamagedQty} sản phẩm hư hỏng
-                  </span>
-                )}
-              </p>
-              <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-amber-800">
+            <p
+              key={detail.counterUserId}
+              className="mt-2 whitespace-pre-wrap break-words text-sm text-amber-900"
+            >
+              <span className="font-semibold">{detail.counter?.name ?? 'Người kiểm kê'}: </span>
+              <span className="text-amber-800">
                 {detail.discrepancyReason || 'Không có lý do nào được nhập.'}
-              </p>
-            </div>
+              </span>
+            </p>
           ))}
         </div>
 
