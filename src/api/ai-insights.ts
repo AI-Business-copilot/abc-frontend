@@ -30,6 +30,31 @@ export type InsightPage = { page: number; pageSize: number; total: number; items
 
 export type InsightWarning = { code: string; message: string; count?: number };
 
+type InventorySource = { dataAsOf: string | null; finishedAt: string | null };
+export type InventorySignal = InventorySource & {
+  id: string; type: InsightType; severity: InsightSeverity; status: "OPEN" | "ACKNOWLEDGED";
+  reasonCode: string; suggestedAction: string; metrics: Record<string, string | number | boolean | null>;
+  lotNumber: string | null; expirationDate: string | null; lastDetectedAt: string; current: boolean;
+};
+export type InventorySuggestion = InventorySource & {
+  id: string; status: "PENDING" | "ORDERED"; urgency: InsightSeverity; confidence: string | null;
+  suggestedQty: number; orderByDate: string | null; stockoutDate: string | null;
+  supplierName: string | null; poCode: string | null; poStatus: string | null;
+  details: Record<string, string | number | boolean | null>; updatedAt: string; current: boolean;
+};
+export type InventoryOutlookItem = {
+  variantId: string; sku: string; productName: string; category: string | null;
+  priority: InsightSeverity | null; signals: InventorySignal[]; replenishment: InventorySuggestion | null;
+};
+type InventoryRun = { status: string; dataAsOf: string | null; startedAt: string; finishedAt: string | null };
+export type InventoryOutlook = {
+  page: number; pageSize: number; latestRun: InventoryRun | null;
+} & (
+  | { state: "NOT_RUN" | "RUNNING" | "FAILED" | "INCOMPLETE"; total: null; summary: null; items: null }
+  | { state: "READY"; total: number; summary: { totalSku: number; byPriority: Record<InsightSeverity, number>; withoutCurrentPriority: number };
+      ruleFresh: boolean; forecastReady: boolean; warnings: InsightWarning[] | null; hasSyntheticSku: boolean | null; items: InventoryOutlookItem[] }
+);
+
 export type CapitalSummary = {
   totalCapital: number;
   slowMovingCapital: number;
@@ -171,6 +196,8 @@ const json = (method: string, body: unknown): RequestInit => ({
 
 export const aiInsightsApi = {
   summary: () => request<InsightSummary>("/summary"),
+  inventoryOutlook: (query: { search: string; type: string; priority: string; page: number; pageSize: number }) =>
+    request<InventoryOutlook>(`/inventory-outlook?${new URLSearchParams(Object.entries(query).map(([key, value]) => [key, String(value)])).toString()}`),
   list: (query: InsightListQuery) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));

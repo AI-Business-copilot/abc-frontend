@@ -256,3 +256,14 @@
 .ai-chart { width: 100%; max-height: 170px; background: #f8fafc; border-radius: 8px; }
 .ai-qty { width: 76px; padding: 4px 6px; text-align: right; }
 .ai-money small, .ai-problem small { display: block; color: #64748b; font-weight: 400; }
+
+.inventory-priority-card { cursor: default; }
+.inventory-outlook-page { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.inventory-outlook-page .bd-data-workspace { min-width: 0; }
+.inventory-outlook-page .ai-header-main { min-width: 0; }
+.inventory-signals { margin: 0; padding-left: 1.1rem; }
+.inventory-signals li + li { margin-top: 0.3rem; }
+.inventory-detail-card { border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1rem; }
+.inventory-detail-card h3 { margin-top: 0; }
+.inventory-detail-status { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.inventory-stale { border-radius: 0.5rem; background: #fffbeb; color: #92400e; padding: 0.6rem; }

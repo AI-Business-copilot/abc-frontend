@@ -1,0 +1,65 @@
+.bm-workspace,
+.bm-section {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.bm-section h3,
+.bm-group h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.bm-section p,
+.bm-group p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.bm-lead {
+  border-radius: 0.75rem;
+  background: #eff6ff;
+  padding: 0.9rem;
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.bm-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+}
+
+.bm-group {
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.8rem;
+  padding: 1rem;
+}
+
+.bm-group ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.8rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bm-group li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #334155;
+  font-size: 0.85rem;
+}
+
+.bm-group li span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

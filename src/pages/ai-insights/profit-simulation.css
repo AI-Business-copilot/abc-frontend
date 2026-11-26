@@ -1,0 +1,140 @@
+.ps-workspace,
+.ps-section,
+.ps-form {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.ps-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  padding: 1.25rem;
+}
+
+.ps-section h2,
+.ps-card h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.05rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ps-section p,
+.ps-card p,
+.ps-fields small {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.ps-kicker {
+  color: #2563eb;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+}
+
+.ps-picker-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.ps-picker-header > div { min-width: 0; overflow-wrap: anywhere; }
+.ps-picker-header strong { color: #0f172a; }
+
+.ps-form {
+  border: 0;
+  padding: 0;
+}
+
+.ps-form > button,
+.ps-section > button {
+  justify-self: start;
+  max-width: 100%;
+  min-height: 2.5rem;
+  height: auto;
+  white-space: normal;
+}
+
+.ps-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+}
+
+.ps-card {
+  min-width: 0;
+  border: 1px solid #dbe3ee;
+  border-radius: 0.8rem;
+  padding: 1rem;
+}
+
+.ps-fields,
+.ps-picker {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.ps-picker {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.ps-pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  border: 1px solid #dbe3ee;
+  border-radius: 0.7rem;
+  background: #fff;
+  padding: 0.7rem;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.ps-pick > span { display: grid; gap: 0.2rem; min-width: 0; }
+.ps-pick strong { color: #1e293b; font-size: 0.82rem; }
+.ps-pick small { color: #64748b; font-size: 0.75rem; }
+.ps-pick b { color: #2563eb; font-size: 0.75rem; }
+.ps-pick:hover { border-color: #93c5fd; background: #f8fbff; }
+.ps-pick:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.ps-pick.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.ps-picker-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; color: #64748b; font-size: 0.8rem; }
+.ps-picker-pagination > div { display: flex; gap: 0.5rem; }
+.ps-confirm { display: flex; align-items: start; gap: 0.5rem; color: #334155; font-size: 0.85rem; }
+
+.ps-results { scroll-margin-top: 1rem; }
+.ps-result-highlight { display: flex; gap: 0.85rem; min-width: 0; border: 1px solid #bfdbfe; border-radius: 0.85rem; background: #eff6ff; padding: 1rem; }
+.ps-result-highlight.increase { border-color: #a7f3d0; background: #ecfdf5; }
+.ps-result-highlight.decrease { border-color: #fecaca; background: #fef2f2; }
+.ps-result-highlight.loss { border-color: #fed7aa; background: #fff7ed; }
+.ps-result-highlight > div { min-width: 0; overflow-wrap: anywhere; }
+.ps-result-highlight span { color: #475569; font-size: 0.75rem; font-weight: 650; }
+.ps-result-highlight h3 { margin: 0.25rem 0; color: #0f172a; font-size: clamp(1.05rem, 2vw, 1.35rem); font-weight: 750; }
+.ps-result-icon { display: grid; flex: 0 0 2.25rem; height: 2.25rem; place-items: center; border-radius: 0.65rem; background: white; color: #1d4ed8; }
+.ps-result-highlight.increase .ps-result-icon { color: #047857; }
+.ps-result-highlight.decrease .ps-result-icon { color: #b91c1c; }
+.ps-result-highlight.loss .ps-result-icon { color: #c2410c; }
+.ps-result-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0.7rem; }
+.ps-result-cards > div { display: grid; gap: 0.3rem; min-width: 0; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.85rem; overflow-wrap: anywhere; }
+.ps-result-cards span, .ps-result-cards small { color: #64748b; font-size: 0.75rem; }
+.ps-result-cards strong { color: #0f172a; font-size: 1rem; }
+.ps-details { min-width: 0; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.8rem; }
+.ps-details summary { color: #1d4ed8; font-size: 0.85rem; font-weight: 650; cursor: pointer; }
+.ps-details > div, .ps-details > p { margin-top: 0.75rem; }
+.ps-caveat { color: #64748b; font-size: 0.8rem; line-height: 1.5; }
