@@ -266,9 +266,6 @@ a { color: inherit; text-decoration: none; }
 .side-link:hover { color: #0f4c3a; background: #ecfdf5; }
 .side-link.active { color: #fff; background: linear-gradient(95deg, #0f4c3a, #165b4c); box-shadow: 0 6px 14px rgba(15, 76, 58, 0.25); }
 .side-link.active>svg { color: #fff; }
-.side-link.disabled { color: #a8adba; cursor: default; }
-.side-link.disabled>svg { color: #a8adba; }
-.coming-soon { margin-left: auto; color: #a1a6b3; font-size: 8px; font-weight: 500; }
 .sidebar-bottom { flex-shrink: 0; border-top: 1px solid #f0f1f5; padding: 10px 0 8px; }
 .support-link { display: flex; height: 32px; align-items: center; gap: 8px; color: #7d8495; padding: 0 8px; font-size: 10px; }
 .support-link svg:last-child { margin-left: auto; }
@@ -539,7 +536,7 @@ a { color: inherit; text-decoration: none; }
   .sidebar-brand { width: 100%; justify-content: center; padding: 0; }
   .sidebar-brand .brand-wordmark,.sidebar-collapse,.branch-chip .branch-name,.branch-chip>svg,.branch-select .side-caption,.nav-group .side-caption,.side-link:not(.active)::after,.side-link { font-size: 0; }
   .sidebar-brand .brand-lockup { gap: 0; }
-  .sidebar-brand .brand-wordmark,.sidebar-collapse,.branch-chip .branch-name,.branch-chip>svg,.branch-select .side-caption,.nav-group .side-caption,.coming-soon,.support-link:not(svg),.profile-label,.profile-logout { display: none; }
+  .sidebar-brand .brand-wordmark,.sidebar-collapse,.branch-chip .branch-name,.branch-chip>svg,.branch-select .side-caption,.nav-group .side-caption,.support-link:not(svg),.profile-label,.profile-logout { display: none; }
   .branch-select { width: 100%; padding: 14px 0 9px; }
   .branch-chip { justify-content: center; padding: 5px; }
   .branch-icon { width: 31px; height: 31px; }
@@ -719,7 +716,6 @@ body { font-size: 15px; }
 .nav-group .side-caption { margin-bottom: 8px; }
 .side-link { min-height: 40px; gap: 11px; font-size: 13px; }
 .side-link>svg { width: 18px; height: 18px; }
-.coming-soon { font-size: 10px; }
 .support-link { height: 38px; font-size: 12px; }
 .avatar { width: 36px; height: 36px; font-size: 13px; }
 .avatar.small { width: 32px; height: 32px; font-size: 12px; }

@@ -4,15 +4,14 @@ import {
   BarChart3,
   Boxes,
   BriefcaseBusiness,
+  CircleDollarSign,
   CircleHelp,
   Command,
   CreditCard,
-  FileSpreadsheet,
   LayoutDashboard,
   KeyRound,
   LogOut,
   Wallet,
-  PackageSearch,
   PackagePlus,
   RotateCcw,
   Settings2,
@@ -38,7 +37,6 @@ interface NavigationItem {
   end?: boolean;
   permission?: string;
   permissionGroups?: string[][];
-  disabled?: boolean;
 }
 
 interface NavigationGroup {
@@ -74,22 +72,14 @@ const navigation: NavigationGroup[] = [
     ],
   },
   {
-    label: "BÁO CÁO BỔ SUNG",
-    items: [
-      {
-        to: "/online-reports/shopee",
-        label: "Báo cáo Shopee",
-        icon: FileSpreadsheet,
-        permissionGroups: [["business_data.manage", "finance.read"], ["analytics.read", "finance.read"]],
-      },
-    ],
-  },
-  {
     label: "TRỢ LÝ KINH DOANH",
     items: [
       { to: "/app/insights", label: "Cảnh báo tồn kho", icon: Sparkles, permission: "analytics.read" },
+      { to: "/app/inventory-outlook", label: "Nhận định tồn kho", icon: Boxes, permission: "analytics.read" },
       { to: "/app/replenishment", label: "Gợi ý nhập hàng", icon: PackagePlus, permission: "analytics.read" },
-      { to: "/app/forecast", label: "Dự báo hàng hóa", icon: PackageSearch, disabled: true },
+      { to: "/app/product-performance", label: "Hiệu quả sản phẩm", icon: BarChart3, permissionGroups: [["analytics.read", "finance.read"]] },
+      { to: "/app/business-movement", label: "Giải thích biến động", icon: Activity, permissionGroups: [["analytics.read", "finance.read"]] },
+      { to: "/app/profit-simulation", label: "Mô phỏng lợi nhuận", icon: CircleDollarSign, permissionGroups: [["analytics.read", "finance.read"]] },
     ],
   },
 ];
@@ -152,17 +142,11 @@ export function AppLayout({ children, contentClassName }: { children?: ReactNode
             return (
               <div className="nav-group" key={group.label}>
                 <span className="side-caption">{group.label}</span>
-                {visibleItems.map(({ to, label, icon: Icon, disabled, end }) =>
-                  disabled ? (
-                    <span aria-label={`${label}, sắp ra mắt`} className="side-link disabled" key={to} title={`${label} — sắp ra mắt`}>
-                      <Icon size={16} />{label}<span className="coming-soon">Sắp ra mắt</span>
-                    </span>
-                  ) : (
-                    <NavLink aria-label={label} className={({ isActive }) => `side-link${isActive ? " active" : ""}`} end={end} key={to} title={label} to={to}>
-                      <Icon size={16} />{label}
-                    </NavLink>
-                  ),
-                )}
+                {visibleItems.map(({ to, label, icon: Icon, end }) => (
+                  <NavLink aria-label={label} className={({ isActive }) => `side-link${isActive ? " active" : ""}`} end={end} key={to} title={label} to={to}>
+                    <Icon size={16} />{label}
+                  </NavLink>
+                ))}
               </div>
             );
           })}
