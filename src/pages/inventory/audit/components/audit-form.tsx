@@ -5,6 +5,9 @@ import { Card } from '../../../../components/ui/card';
 import { Spinner } from '../../../../components/ui/spinner';
 import type { CreateAuditRequest } from '../../../../types/audit';
 
+/** The limit the server enforces on the audit note. */
+const MAX_NOTE_LENGTH = 1000;
+
 interface AuditFormProps {
   onSubmit: (data: CreateAuditRequest) => Promise<void>;
   loading?: boolean;
@@ -54,9 +57,13 @@ export function AuditForm({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             disabled={loading}
+            maxLength={MAX_NOTE_LENGTH}
             rows={3}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-[#0f4c3a] focus:outline-none focus:ring-1 focus:ring-[#0f4c3a] disabled:bg-gray-100 resize-none"
           />
+          <p className="mt-1 text-right text-xs text-gray-500">
+            {note.length} / {MAX_NOTE_LENGTH}
+          </p>
         </div>
 
         <Button

@@ -11,8 +11,11 @@ import {
   MAX_SCRAP_IMAGE_BYTES,
   scrapOrderBlocksNew,
   scrapStatusText,
+  type DisposalMethod,
   type ExpiringLot,
+  type ScrapCauseCode,
 } from "@/types/scrap";
+import { DisposalFields, validateDisposalFields } from "./disposal-fields";
 import { Modal } from "./scrap-ui";
 
 export function lotStock(lot: ExpiringLot) {
@@ -109,7 +112,9 @@ export function CreateScrapDialog({
 }) {
   const max = lot.quarantineQty ?? lotStock(lot);
   const [quantity, setQuantity] = useState(String(max));
-  const [reason, setReason] = useState("");
+  const [causeCode, setCauseCode] = useState<ScrapCauseCode | "">("");
+  const [disposalMethod, setDisposalMethod] = useState<DisposalMethod | "">("");
+  const [disposalLocation, setDisposalLocation] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,8 +161,9 @@ export function CreateScrapDialog({
       setError(`Số lượng phải là số nguyên từ 1 đến ${max}.`);
       return;
     }
-    if (!reason.trim()) {
-      setError("Vui lòng nhập lý do hủy hàng.");
+    const disposal = validateDisposalFields(causeCode, disposalMethod, disposalLocation);
+    if (!disposal.ok) {
+      setError(disposal.error);
       return;
     }
     if (files.length === 0) {
@@ -170,7 +176,9 @@ export function CreateScrapDialog({
       const order = await scrapApi.createScrapOrder({
         lotItemId: lot.id,
         scrapQty: qty,
-        scrapReason: reason.trim(),
+        causeCode: disposal.causeCode,
+        disposalMethod: disposal.disposalMethod,
+        disposalLocation: disposal.disposalLocation,
         images: files,
       });
       onCreated(order.id);
@@ -211,16 +219,14 @@ export function CreateScrapDialog({
         type="number"
         value={quantity}
       />
-      <label className="mb-1 mt-3 block text-sm font-medium text-slate-700" htmlFor="scrap-reason">
-        Lý do hủy
-      </label>
-      <Input
+      <DisposalFields
+        causeCode={causeCode}
         disabled={submitting}
-        id="scrap-reason"
-        maxLength={255}
-        onChange={(event) => setReason(event.target.value)}
-        placeholder="Ví dụ: hết hạn sử dụng, bao bì hư hỏng"
-        value={reason}
+        disposalLocation={disposalLocation}
+        disposalMethod={disposalMethod}
+        onCauseCodeChange={setCauseCode}
+        onDisposalLocationChange={setDisposalLocation}
+        onDisposalMethodChange={setDisposalMethod}
       />
 
       <div className="mt-3">

@@ -152,7 +152,11 @@ export interface StockAuditItem {
   countedQty: number;
   /** The broken goods the employee counted. The total is derived: countedQty + countedDamagedQty. */
   countedDamagedQty: number;
-  diffQty: number;
+  /**
+   * The difference the server reports. It is null on a row nobody counted, so the client derives
+   * the number it shows with `resolveAuditDiff` instead of reading this field.
+   */
+  diffQty: number | null;
   discrepancyReason?: string | null;
   itemStatus: AuditItemStatus;
   assignedTo?: UserRef | null;
