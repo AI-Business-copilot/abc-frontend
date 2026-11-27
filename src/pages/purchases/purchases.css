@@ -49,6 +49,7 @@
 .supplier-section-heading p, .supplier-note-hint { margin: 4px 0 0; color: #667085; font-size: 12px; line-height: 1.6; }
 .supplier-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .supplier-field-wide { grid-column: 1 / -1; }
+.supplier-profile-dialog .supplier-tax-lookup { margin-top: 12px; }
 .supplier-profile-dialog .purchase-field { gap: 6px; color: #344054; }
 .purchases .supplier-profile-dialog :is(input, select, textarea) { width: 100%; min-width: 0; min-height: 42px; border: 1px solid #d0d5dd; background: #fff; border-radius: 8px; padding: 10px 12px; color: #101828; font: inherit; font-size: 13px; line-height: 1.5; box-shadow: 0 1px 2px #10182805; transition: border-color .15s, box-shadow .15s; }
 .supplier-profile-dialog textarea { display: block; resize: vertical; }
@@ -82,6 +83,8 @@
 .purchase-filters .purchase-field:first-child { flex: 1 1 220px; }
 .purchase-filters a, .purchase-back { font-size: 13px; color: #0f4c3a; }
 .purchase-back { display: inline-block; padding: 4px 0; }
+.supplier-products-back { display: inline-flex; align-items: center; gap: 8px; }
+.supplier-products-back svg { flex-shrink: 0; }
 .purchase-panel { background: white; padding: 22px; border: 0; border-radius: 12px; margin: 20px 0; }
 .purchase-panel > .purchase-heading:first-child { margin-top: 0; }
 .purchase-table { overflow-x: auto; background: white; border: 0; border-radius: 12px; }
