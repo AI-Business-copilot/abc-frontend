@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { PermissionGate } from "@/components/common/permission-gate";
+import { useConfirm } from "@/components/common/confirm-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { CatalogHeader } from "@/pages/products/catalog-header";
@@ -43,6 +44,7 @@ export function ScrapDetailPage() {
   const [editCauseCode, setEditCauseCode] = useState<ScrapCauseCode | "">("");
   const [saving, setSaving] = useState(false);
   const [showDossier, setShowDossier] = useState(false);
+  const confirm = useConfirm();
 
   const pending = order?.status === "PENDING";
   // Same rule as the server: only the staff member who created a PENDING order can change it.
@@ -85,16 +87,23 @@ export function ScrapDetailPage() {
 
   const removeOrder = async () => {
     if (!order) return;
-    if (!window.confirm("Xóa phiếu hủy này cùng toàn bộ ảnh? Lô hàng vẫn được giữ ở trạng thái cách ly.")) return;
-    setSaving(true);
-    setActionError(null);
-    try {
-      await scrapApi.deleteScrapOrder(order.id);
-      navigate("/inventory/scrap", { replace: true });
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Không thể xóa phiếu hủy.");
-      setSaving(false);
-    }
+    await confirm({
+      title: "Xoá phiếu hủy",
+      message: "Xóa phiếu hủy này cùng toàn bộ ảnh? Lô hàng vẫn được giữ ở trạng thái cách ly.",
+      confirmLabel: "Xoá phiếu",
+      variant: "destructive",
+      onConfirm: async () => {
+        setSaving(true);
+        setActionError(null);
+        try {
+          await scrapApi.deleteScrapOrder(order.id);
+          navigate("/inventory/scrap", { replace: true });
+        } catch (err) {
+          setActionError(err instanceof Error ? err.message : "Không thể xóa phiếu hủy.");
+          setSaving(false);
+        }
+      },
+    });
   };
 
   return (

@@ -187,7 +187,7 @@ export function AuditForm({
               <option value="">-- Chọn ô kệ --</option>
               {shelves.flatMap((shelf) =>
                 shelf.cells
-                  // A retired position holds no goods, so it cannot be audited.
+                  // A deleted position holds no goods, so it cannot be audited.
                   .filter((cell) => cell.isActive)
                   .map((cell) => (
                     <option key={cell.id} value={cell.id}>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { REJECTION_REASON_CODES, type RejectionReasonCode, type ScrapOrderDetail } from "@/types/scrap";
 import { Modal, formatMoney, rejectionReasonLabel } from "./scrap-ui";
+import { useConfirm } from "@/components/common/confirm-provider";
 
 /**
  * Owner-only approve and reject controls. Approve sends the ids of the photos currently on screen;
@@ -30,28 +31,34 @@ export function OwnerReviewPanel({
   const [note, setNote] = useState("");
   const [cancelling, setCancelling] = useState(false);
   const [cancelNote, setCancelNote] = useState("");
+  const confirm = useConfirm();
 
   const noPhotos = order.images.length === 0;
   const loss = Number(order.unitCost) * order.scrapQty;
 
   const approve = async () => {
-    const message =
-      `Duyệt hủy ${order.scrapQty} sản phẩm? Tồn kho sẽ giảm và tổn thất ${formatMoney(loss)} sẽ được ghi nhận. ` +
-      `Thao tác này không thể hoàn tác.`;
-    if (!window.confirm(message)) return;
-
-    setBusy(true);
-    setError(null);
-    try {
-      await scrapApi.approveScrapOrder(order.id, order.images.map((image) => image.id));
-      onFinished("Đã duyệt phiếu hủy. Tồn kho đã được cập nhật.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể duyệt phiếu hủy.");
-      // A 409 usually means the photos changed; reload so the next approval uses what is really there.
-      await onReload();
-    } finally {
-      setBusy(false);
-    }
+    await confirm({
+      title: "Duyệt hủy hàng",
+      message:
+        `Duyệt hủy ${order.scrapQty} sản phẩm? Tồn kho sẽ giảm và tổn thất ${formatMoney(loss)} sẽ được ghi nhận. ` +
+        `Thao tác này không thể hoàn tác.`,
+      confirmLabel: "Duyệt hủy hàng",
+      variant: "destructive",
+      onConfirm: async () => {
+        setBusy(true);
+        setError(null);
+        try {
+          await scrapApi.approveScrapOrder(order.id, order.images.map((image) => image.id));
+          onFinished("Đã duyệt phiếu hủy. Tồn kho đã được cập nhật.");
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Không thể duyệt phiếu hủy.");
+          // A 409 usually means the photos changed; reload so the next approval uses what is really there.
+          await onReload();
+        } finally {
+          setBusy(false);
+        }
+      },
+    });
   };
 
   const reject = async () => {
