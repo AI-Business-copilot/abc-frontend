@@ -5,6 +5,7 @@ import type {
   DisposalMethod,
   ExpiringBatchesResponse,
   ExpiringLotsResponse,
+  ExpiringProductsResponse,
   LotStatus,
   RejectionReasonCode,
   ScrapCauseCode,
@@ -37,6 +38,13 @@ export const scrapApi = {
   getExpiringBatches(params: { status?: LotStatus; skip?: number; take?: number } = {}) {
     return apiRequest<ExpiringBatchesResponse>(
       `${base}/lots/expiring${query({ ...params, groupBy: "lot" })}`,
+    );
+  },
+
+  /** Same list, but paged over products: one entry per product with its SKUs and their lots. */
+  getExpiringProducts(params: { status?: LotStatus; skip?: number; take?: number } = {}) {
+    return apiRequest<ExpiringProductsResponse>(
+      `${base}/lots/expiring${query({ ...params, groupBy: "product" })}`,
     );
   },
 

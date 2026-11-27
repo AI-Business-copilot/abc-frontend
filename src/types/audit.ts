@@ -3,6 +3,8 @@
  * Used for F07 - Stock Audit feature
  */
 
+import type { ShelfCellLocation } from "./shelf";
+
 /**
  * The lifecycle of an audit.
  *   DRAFT         - the owner is still preparing it; nothing is locked and it can be deleted
@@ -126,6 +128,10 @@ export interface StockAudit {
   businessId?: string;
   note?: string;
   industryType?: string | null;
+  /** The name of the category the audit covers. Only set when scopeType is CATEGORY. */
+  categoryName?: string | null;
+  /** The shelf position the audit covers, as the staff read it. Only set when scopeType is SHELF. */
+  shelfLabel?: string | null;
 }
 
 export interface StockAuditItem {
@@ -191,6 +197,8 @@ export interface StockAuditItem {
   lotManufacturingDate?: string | Date | null;
   /** True when the employee changed an existing lot's dates. The lot is updated when the audit is applied. */
   datesCorrected?: boolean;
+  /** Where the lot physically sits: "Ke A2 - Tang 3 - O 04". Null when the lot has no position yet. */
+  shelfCell?: ShelfCellLocation | null;
   industryType?: string | null;
 }
 
@@ -282,6 +290,12 @@ export interface CreateAuditRequest {
   note?: string;
   /** Optional. Items are normally added from the audit detail page after the audit is created. */
   items?: AuditItemAssignment[];
+  /** What the audit covers. The scope decides which rows the audit gets. */
+  scopeType?: AuditScopeType;
+  /** The category the audit covers. Only used when scopeType is CATEGORY. */
+  categoryId?: string;
+  /** The shelf position the audit covers. Only used when scopeType is SHELF. */
+  shelfCellId?: string;
 }
 
 export interface CreateAuditItemRequest {

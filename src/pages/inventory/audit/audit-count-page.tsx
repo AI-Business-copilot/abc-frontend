@@ -12,6 +12,7 @@ import { CatalogHeader } from '../../products/catalog-header';
 import { auditApi } from '../../../api/audit';
 import { usePermissions } from '../../../hooks/use-permissions';
 import type { StockAuditItem } from '../../../types/audit';
+import { shelfLocationText } from '../../../types/shelf';
 
 /** Counts one audit item. Opened from the "Count" button on an item in the audit detail page. */
 export function AuditCountPage() {
@@ -176,6 +177,12 @@ export function AuditCountPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{item.productName}</h2>
             <p className="text-gray-600">SKU: {item.sku}</p>
             {item.attributeText && <p className="text-gray-600">{item.attributeText}</p>}
+            {/* Where the goods sit, so the counter knows which shelf to walk to. */}
+            {item.shelfCell && (
+              <p className="mt-1 text-sm font-medium text-slate-700">
+                Vị trí: {shelfLocationText(item.shelfCell)}
+              </p>
+            )}
           </div>
 
           {editable && item.rejectionReason && (

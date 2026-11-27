@@ -135,6 +135,18 @@ export function AuditListPage() {
                   </div>
                   <div className="text-sm text-gray-600 space-x-3">
                     <span>Phạm vi: {SCOPE_LABELS[audit.scopeType]}</span>
+                    {audit.categoryName && (
+                      <>
+                        <span>•</span>
+                        <span>Danh mục: {audit.categoryName}</span>
+                      </>
+                    )}
+                    {audit.shelfLabel && (
+                      <>
+                        <span>•</span>
+                        <span>{audit.shelfLabel}</span>
+                      </>
+                    )}
                     <span>•</span>
                     <span>Số dòng: {audit.itemCount}</span>
                     <span>•</span>

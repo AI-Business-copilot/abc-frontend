@@ -36,6 +36,7 @@ import { AuditDetailPage } from "@/pages/inventory/audit/audit-detail-page";
 import { AuditCountPage } from "@/pages/inventory/audit/audit-count-page";
 import { AuditItemDetailPage } from "@/pages/inventory/audit/audit-item-detail-page";
 import { LotsPage } from "@/pages/inventory/scrap/lots-page";
+import { ShelvesPage } from "@/pages/inventory/shelves-page";
 import { ScrapListPage } from "@/pages/inventory/scrap/scrap-list-page";
 import { ScrapDetailPage } from "@/pages/inventory/scrap/scrap-detail-page";
 import { CashShiftsPage } from "@/pages/cash-shifts/cash-shifts-page";
@@ -252,6 +253,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireBusiness>
             <LotsPage />
+          </RequireBusiness>
+        ),
+      },
+      {
+        path: "/inventory/shelves",
+        element: (
+          <RequireBusiness>
+            <ShelvesPage />
           </RequireBusiness>
         ),
       },

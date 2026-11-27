@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Alert } from "@/components/ui/alert";
@@ -6,22 +6,31 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PermissionGate } from "@/components/common/permission-gate";
 import { usePermissions } from "@/hooks/use-permissions";
+import { getPrimaryImage } from "@/lib/image-utils";
 import { CatalogHeader } from "@/pages/products/catalog-header";
-import { scrapStatusText, type ExpiringLot, type LotBatch, type LotStatus } from "@/types/scrap";
+import {
+  scrapStatusText,
+  type ExpiringLot,
+  type LotStatus,
+  type ProductLotGroup,
+  type ProductSkuLots,
+} from "@/types/scrap";
 import { CreateScrapDialog, QuarantineDialog, lotStock } from "./components/lot-dialogs";
+import { AssignShelfDialog } from "./components/assign-shelf-dialog";
 import { LotStatusBadge, formatDate, formatDaysLeft } from "./components/scrap-ui";
+import { shelfLocationText } from "@/types/shelf";
 import { useExpiringLots } from "./hooks/use-expiring-lots";
 
 const filters: { value: LotStatus | undefined; label: string }[] = [
+  { value: "HEALTHY", label: "Bình thường" },
   { value: undefined, label: "Cần xử lý" },
   { value: "WARNING", label: "Sắp hết hạn" },
   { value: "UNUSABLE", label: "Không dùng được" },
   { value: "QUARANTINED", label: "Đang cách ly" },
-  { value: "HEALTHY", label: "Bình thường" },
   { value: "SCRAPPED", label: "Đã hủy" },
 ];
 
-/** Order of concern for the batch header badge. SCRAPPED is terminal, so it is the least urgent. */
+/** Order of concern for a badge. SCRAPPED is terminal, so it is the least urgent. */
 const severity: LotStatus[] = ["SCRAPPED", "HEALTHY", "WARNING", "QUARANTINED", "UNUSABLE"];
 
 function worstStatus(items: ExpiringLot[]): LotStatus {
@@ -32,8 +41,19 @@ function worstStatus(items: ExpiringLot[]): LotStatus {
   return severity[worst];
 }
 
-function soonestExpiry(items: ExpiringLot[]) {
-  return items.reduce((min, item) => (item.expirationDate < min ? item.expirationDate : min), items[0].expirationDate);
+/** The SKU key is unique across products, because a SKU belongs to one product. */
+function skuKey(product: ProductLotGroup, sku: ProductSkuLots) {
+  return `${product.id}:${sku.id}`;
+}
+
+/** A product matches when its name, one of its SKUs or one of its lot numbers matches. */
+function matches(product: ProductLotGroup, needle: string): boolean {
+  if (product.name.toLowerCase().includes(needle)) return true;
+  return product.skus.some(
+    (sku) =>
+      sku.sku.toLowerCase().includes(needle) ||
+      sku.lots.some((lot) => lot.lotNumber.toLowerCase().includes(needle)),
+  );
 }
 
 export function LotsPage() {
@@ -42,8 +62,9 @@ export function LotsPage() {
   const [keyword, setKeyword] = useState("");
   const [quarantineLot, setQuarantineLot] = useState<ExpiringLot | null>(null);
   const [scrapLot, setScrapLot] = useState<ExpiringLot | null>(null);
+  const [shelfLot, setShelfLot] = useState<ExpiringLot | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  // Batches default to expanded only when they hold a single variant; this records explicit toggles.
+  // The tree opens on the SKU level; this records the explicit toggles.
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const {
     lots, total, summary, status, page, totalPages,
@@ -54,21 +75,15 @@ export function LotsPage() {
   const canAct = isStaff && can("inventory.scrap.create");
   const needle = keyword.trim().toLowerCase();
 
-  // Matching narrows the variants inside each batch; batches with no match are dropped.
-  const visible = needle
-    ? lots
-        .map((batch) => ({
-          ...batch,
-          items: batch.items.filter((item) =>
-            `${item.variant.template.name} ${item.variant.sku} ${item.lotNumber}`.toLowerCase().includes(needle)),
-        }))
-        .filter((batch) => batch.items.length > 0)
-    : lots;
+  // Matching drops the products that hold no match; the SKUs inside a match stay whole.
+  const visible = needle ? lots.filter((product) => matches(product, needle)) : lots;
 
-  const isExpanded = (batch: LotBatch) => expanded[batch.id] ?? batch.items.length <= 1;
+  const isExpanded = (key: string) => expanded[key] ?? true;
   const setAllExpanded = (open: boolean) => {
     const next: Record<string, boolean> = {};
-    for (const batch of visible) next[batch.id] = open;
+    for (const product of visible) {
+      for (const sku of product.skus) next[skuKey(product, sku)] = open;
+    }
     setExpanded(next);
   };
 
@@ -88,7 +103,7 @@ export function LotsPage() {
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Theo dõi lô hàng & hạn sử dụng</h1>
             <p className="mt-1 text-slate-600">
-              Các lô cần xử lý, sắp xếp theo hạn sử dụng gần nhất. Mỗi lô gồm nhiều SKU.
+              Theo mặt hàng, rồi tới SKU và từng lô, sắp xếp theo hạn sử dụng gần nhất.
             </p>
           </div>
 
@@ -121,125 +136,171 @@ export function LotsPage() {
             </div>
           </div>
 
-          <Card className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[#eef3ff] text-slate-500">
-                <tr>
-                  {["Lô hàng", "Số SKU", "Hạn gần nhất", "Tồn trong lô", "Trạng thái", "Thao tác"].map((head) => (
-                    <th className="px-4 py-3 font-semibold" key={head}>{head}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td className="px-4 py-8 text-center text-slate-500" colSpan={6}>Đang tải…</td></tr>
-                ) : visible.length === 0 ? (
-                  <tr><td className="px-4 py-8 text-center text-slate-500" colSpan={6}>Không có lô hàng nào.</td></tr>
-                ) : (
-                  visible.map((batch) => {
-                    const open = isExpanded(batch);
-                    const batchQty = batch.items.reduce((sum, item) => sum + lotStock(item), 0);
-                    const expiry = soonestExpiry(batch.items);
-                    return (
-                      <Fragment key={batch.id}>
-                        <tr className="border-t border-slate-200 bg-slate-50/70">
-                          <td className="px-4 py-3">
-                            <Button
-                              aria-expanded={open}
-                              className="w-full justify-start gap-2 font-semibold"
-                              onClick={() => setExpanded((current) => ({ ...current, [batch.id]: !open }))}
-                              size="sm"
-                              type="button"
-                              variant="ghost"
-                            >
-                              <span className="w-3 text-slate-500">{open ? "▾" : "▸"}</span>
-                              <span className="font-mono">{batch.lotNumber}</span>
-                            </Button>
-                          </td>
-                          <td className="px-4 py-3 text-slate-600">{batch.items.length} SKU</td>
-                          <td className="px-4 py-3">{formatDate(expiry)}</td>
-                          <td className="px-4 py-3 font-semibold">{batchQty}</td>
-                          <td className="px-4 py-3"><LotStatusBadge status={worstStatus(batch.items)} /></td>
-                          <td className="px-4 py-3 text-slate-400">—</td>
-                        </tr>
-                        {open && batch.items.map((lot) => {
-                          const scrapOrder = lot.scrapOrder;
-                          const blocked = lot.effectiveStatus === "SCRAPPED";
-                          // A settled order (rejected or cancelled) does not block a new one, so the
-                          // staff can file a fresh order while the previous one stays as the trail.
-                          const settledOrder =
-                            scrapOrder?.status === "REJECTED" || scrapOrder?.status === "CANCELLED";
-                          const canCreateNew =
-                            settledOrder && canAct && !blocked && lot.effectiveStatus === "QUARANTINED";
+          {loading ? (
+            <Card className="p-8 text-center text-slate-500">Đang tải…</Card>
+          ) : visible.length === 0 ? (
+            <Card className="p-8 text-center text-slate-500">Không có lô hàng nào.</Card>
+          ) : (
+            <div className="space-y-4">
+              {visible.map((product) => {
+                const productLots = product.skus.flatMap((sku) => sku.lots);
+                const productQty = productLots.reduce((sum, lot) => sum + lotStock(lot), 0);
+                const image = getPrimaryImage(product.imageUrl);
+                return (
+                  <Card className="p-4" key={product.id}>
+                    <div className="flex gap-4">
+                      {image ? (
+                        <img
+                          alt={product.name}
+                          className="h-28 w-28 shrink-0 rounded-lg border border-slate-200 object-cover"
+                          loading="lazy"
+                          src={image}
+                        />
+                      ) : (
+                        <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">
+                          Chưa có ảnh
+                        </div>
+                      )}
+
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-lg font-bold text-slate-900">{product.name}</h2>
+                          <LotStatusBadge status={worstStatus(productLots)} />
+                          <span className="text-sm text-slate-500">
+                            {product.skus.length} SKU · {productLots.length} lô · tồn {productQty}
+                          </span>
+                        </div>
+
+                        {product.skus.map((sku) => {
+                          const key = skuKey(product, sku);
+                          const open = isExpanded(key);
                           return (
-                            <tr className="border-t border-slate-100" key={lot.id}>
-                              <td className="px-4 py-3 pl-12">
-                                <div className="font-semibold">{lot.variant.template.name}</div>
-                                <div className="font-mono text-xs text-slate-500">{lot.variant.sku}</div>
-                              </td>
-                              <td className="px-4 py-3 text-slate-400">—</td>
-                              <td className="px-4 py-3">
-                                <div>{formatDate(lot.expirationDate)}</div>
-                                <div className={lot.daysUntilExpiry < 0 ? "text-xs text-rose-600" : "text-xs text-slate-500"}>
-                                  {formatDaysLeft(lot.daysUntilExpiry)}
+                            <div className="rounded-lg border border-slate-200" key={key}>
+                              <button
+                                aria-expanded={open}
+                                className="flex w-full items-center gap-2 bg-slate-50 px-3 py-2 text-left"
+                                onClick={() => setExpanded((current) => ({ ...current, [key]: !open }))}
+                                type="button"
+                              >
+                                <span className="w-3 text-slate-500">{open ? "▾" : "▸"}</span>
+                                <span className="font-mono text-sm font-semibold">{sku.sku}</span>
+                                <span className="text-xs text-slate-500">{sku.lots.length} lô</span>
+                                <span className="ml-auto">
+                                  <LotStatusBadge status={worstStatus(sku.lots)} />
+                                </span>
+                              </button>
+
+                              {open && (
+                                <div className="divide-y divide-slate-100">
+                                  {sku.lots.map((lot) => {
+                                    const scrapOrder = lot.scrapOrder;
+                                    const blocked = lot.effectiveStatus === "SCRAPPED";
+                                    // A settled order (rejected or cancelled) does not block a new one,
+                                    // so the staff can file a fresh order while the previous one stays
+                                    // as the trail.
+                                    const settledOrder =
+                                      scrapOrder?.status === "REJECTED" || scrapOrder?.status === "CANCELLED";
+                                    const canCreateNew =
+                                      settledOrder && canAct && !blocked && lot.effectiveStatus === "QUARANTINED";
+                                    return (
+                                      <div
+                                        className="flex flex-wrap items-center gap-3 px-3 py-2 text-sm"
+                                        key={lot.id}
+                                      >
+                                        <span className="font-mono font-semibold text-slate-700">
+                                          Lô {lot.lotNumber}
+                                        </span>
+                                        <span className="text-slate-600">{formatDate(lot.expirationDate)}</span>
+                                        <span
+                                          className={
+                                            lot.daysUntilExpiry < 0
+                                              ? "text-xs text-rose-600"
+                                              : "text-xs text-slate-500"
+                                          }
+                                        >
+                                          {formatDaysLeft(lot.daysUntilExpiry)}
+                                        </span>
+                                        <span className="font-semibold">{lotStock(lot)}</span>
+                                        <span
+                                          className={
+                                            lot.shelfCell
+                                              ? "text-xs text-slate-500"
+                                              : "text-xs text-amber-700"
+                                          }
+                                        >
+                                          {shelfLocationText(lot.shelfCell)}
+                                        </span>
+                                        {lot.effectiveStatus === "QUARANTINED" && lot.quarantineQty ? (
+                                          <span className="text-xs text-amber-700">Cách ly: {lot.quarantineQty}</span>
+                                        ) : null}
+                                        <LotStatusBadge status={lot.effectiveStatus} />
+
+                                        <span className="ml-auto flex items-center gap-2">
+                                          {canAct && !blocked && (
+                                            <Button
+                                              onClick={() => setShelfLot(lot)}
+                                              size="sm"
+                                              variant="outline"
+                                            >
+                                              {lot.shelfCell ? "Đổi vị trí" : "Gán vị trí"}
+                                            </Button>
+                                          )}
+                                          {scrapOrder ? (
+                                            <div className="flex items-center gap-2">
+                                              {canCreateNew && (
+                                                <Button onClick={() => setScrapLot(lot)} size="sm">
+                                                  Tạo phiếu hủy hàng
+                                                </Button>
+                                              )}
+                                              <Link
+                                                className="font-semibold text-[#0f4c3a] hover:underline"
+                                                to={`/inventory/scrap/${scrapOrder.id}`}
+                                              >
+                                                Xem phiếu {scrapOrder.scrapCode}
+                                              </Link>
+                                              <span className="text-xs text-slate-500">
+                                                {scrapOrder.status === "PENDING"
+                                                  ? "Đang chờ duyệt"
+                                                  : `Trạng thái: ${scrapStatusText(scrapOrder.status)}`}
+                                              </span>
+                                            </div>
+                                          ) : canAct && !blocked ? (
+                                            lot.effectiveStatus === "QUARANTINED" ? (
+                                              <Button onClick={() => setScrapLot(lot)} size="sm">
+                                                Tạo phiếu hủy hàng
+                                              </Button>
+                                            ) : (
+                                              <Button
+                                                onClick={() => setQuarantineLot(lot)}
+                                                size="sm"
+                                                variant="outline"
+                                              >
+                                                Cách ly
+                                              </Button>
+                                            )
+                                          ) : (
+                                            <span className="text-slate-400">—</span>
+                                          )}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                {lotStock(lot)}
-                                {lot.effectiveStatus === "QUARANTINED" && lot.quarantineQty ? (
-                                  <div className="text-xs text-amber-700">Cách ly: {lot.quarantineQty}</div>
-                                ) : null}
-                              </td>
-                              <td className="px-4 py-3"><LotStatusBadge status={lot.effectiveStatus} /></td>
-                              <td className="px-4 py-3">
-                                {scrapOrder ? (
-                                  // A settled order (rejected or cancelled) does not block a new one, so
-                                  // the staff can file a fresh order while the previous one stays as the
-                                  // trail. The create button comes first, before the details link.
-                                  <div className="space-y-1">
-                                    {canCreateNew && (
-                                      <Button onClick={() => setScrapLot(lot)} size="sm">
-                                        Tạo phiếu hủy hàng
-                                      </Button>
-                                    )}
-                                    <Link
-                                      className="block font-semibold text-[#0f4c3a] hover:underline"
-                                      to={`/inventory/scrap/${scrapOrder.id}`}
-                                    >
-                                      Xem phiếu {scrapOrder.scrapCode}
-                                    </Link>
-                                    <div className="text-xs text-slate-500">
-                                      {scrapOrder.status === "PENDING"
-                                        ? "Đang chờ duyệt"
-                                        : `Trạng thái: ${scrapStatusText(scrapOrder.status)}`}
-                                    </div>
-                                  </div>
-                                ) : canAct && !blocked ? (
-                                  <div className="flex gap-2">
-                                    {lot.effectiveStatus === "QUARANTINED" ? (
-                                      <Button onClick={() => setScrapLot(lot)} size="sm">Tạo phiếu hủy hàng</Button>
-                                    ) : (
-                                      <Button onClick={() => setQuarantineLot(lot)} size="sm" variant="outline">Cách ly</Button>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-400">—</span>
-                                )}
-                              </td>
-                            </tr>
+                              )}
+                            </div>
                           );
                         })}
-                      </Fragment>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </Card>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">{total} lô · trang {page}/{totalPages}</span>
+              <span className="text-sm text-slate-500">{total} sản phẩm · trang {page}/{totalPages}</span>
               <div className="flex gap-2">
                 <Button disabled={page <= 1} onClick={() => goToPage(page - 1)} size="sm" variant="outline">Trước</Button>
                 <Button disabled={page >= totalPages} onClick={() => goToPage(page + 1)} size="sm" variant="outline">Sau</Button>
@@ -265,6 +326,17 @@ export function LotsPage() {
           lot={scrapLot}
           onClose={() => setScrapLot(null)}
           onCreated={(orderId) => navigate(`/inventory/scrap/${orderId}`)}
+        />
+      )}
+      {shelfLot && (
+        <AssignShelfDialog
+          lot={shelfLot}
+          onClose={() => setShelfLot(null)}
+          onDone={() => {
+            setShelfLot(null);
+            setMessage("Đã gán vị trí cho lô hàng.");
+            void refetch();
+          }}
         />
       )}
     </div>

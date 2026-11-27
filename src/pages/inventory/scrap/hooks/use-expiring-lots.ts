@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { scrapApi } from "@/api/scrap";
-import type { ExpiringLotsSummary, LotBatch, LotStatus } from "@/types/scrap";
+import type { ExpiringLotsSummary, LotStatus, ProductLotGroup } from "@/types/scrap";
 
-const PAGE_SIZE = 20;
+/** Products shown per page. The server pages over products, so this is the page size. */
+const PAGE_SIZE = 12;
 
 const emptySummary: ExpiringLotsSummary = {
   healthy: 0,
@@ -15,15 +16,16 @@ const emptySummary: ExpiringLotsSummary = {
 };
 
 /**
- * Batches that need attention (WARNING, UNUSABLE, QUARANTINED by default), soonest expiry first.
- * One entry per lot number, each holding the variant items that matched the filter.
- * Each item carries the scrap order it already has, so the page can point at it instead of
+ * Products of one status, soonest expiry first. The page opens on HEALTHY; the "Cần xử lý" tab
+ * leaves the status unset, which asks the server for WARNING, UNUSABLE and QUARANTINED.
+ * One entry per product, each holding its SKUs and the lot items of each SKU.
+ * Each lot item carries the scrap order it already has, so the page can point at it instead of
  * offering to create a second one.
  */
 export function useExpiringLots() {
-  const [status, setStatus] = useState<LotStatus | undefined>(undefined);
+  const [status, setStatus] = useState<LotStatus | undefined>("HEALTHY");
   const [page, setPage] = useState(1);
-  const [lots, setLots] = useState<LotBatch[]>([]);
+  const [lots, setLots] = useState<ProductLotGroup[]>([]);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<ExpiringLotsSummary>(emptySummary);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ export function useExpiringLots() {
     setLoading(true);
     setError(null);
     try {
-      const lotResult = await scrapApi.getExpiringBatches({
+      const lotResult = await scrapApi.getExpiringProducts({
         status,
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE,
