@@ -36,6 +36,6 @@ export interface ShelfCellLocation {
 
 /** The location of a lot, as the staff read it: "Ke A2 - Tang 3 - O 04". */
 export function shelfLocationText(location: ShelfCellLocation | null | undefined): string {
-  if (!location) return "Chưa gán vị trí";
+  if (!location) return "Chưa gán ô kệ";
   return `Kệ ${location.shelf.code} - Tầng ${location.level} - Ô ${location.slot}`;
 }

@@ -284,7 +284,7 @@ export function LotsPage() {
                                               size="sm"
                                               variant="outline"
                                             >
-                                              {lot.shelfCell ? "Đổi vị trí" : "Gán vị trí"}
+                                              {lot.shelfCell ? "Đổi ô kệ" : "Gán ô kệ"}
                                             </Button>
                                           )}
                                           {scrapOrder ? (
@@ -376,7 +376,7 @@ export function LotsPage() {
           onClose={() => setShelfLot(null)}
           onDone={() => {
             setShelfLot(null);
-            setMessage("Đã gán vị trí cho lô hàng.");
+            setMessage("Đã gán ô kệ cho lô hàng.");
             void refetch();
           }}
         />

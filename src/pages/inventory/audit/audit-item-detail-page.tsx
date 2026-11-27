@@ -359,7 +359,7 @@ export function AuditItemDetailPage() {
           <Field label="Giao cho">{item.assignedTo?.name ?? '—'}</Field>
           <Field label="Người kiểm kê thứ hai">{item.secondCounter?.name ?? '—'}</Field>
           {/* Where the goods sit, so the counters know which shelf to walk to. */}
-          <Field label="Vị trí kho">
+          <Field label="Ô kệ">
             {item.shelfCell ? shelfLocationText(item.shelfCell) : <span className="text-amber-700">Chưa gán</span>}
           </Field>
         </div>
