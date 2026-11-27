@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/button';
 import { Alert } from '../../../components/ui/alert';
 import { Spinner } from '../../../components/ui/spinner';
 import { PermissionGate } from '../../../components/common/permission-gate';
+import { useConfirm } from '../../../components/common/confirm-provider';
 import { AuditStatusBadge, AUDIT_STATUS_LABELS } from './components/audit-status-badge';
 import { AuditItemList } from './components/audit-item-list';
 import { AssignStaffModal } from './components/assign-staff-modal';
@@ -46,6 +47,7 @@ export function AuditDetailPage() {
   const [acting, setActing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const { startAudit, cancelAudit, deleteAudit, deleteAuditItem } = useAuditActions();
+  const confirm = useConfirm();
 
   /** Owner: start the counting. The SKUs are locked from this moment on. */
   const handleStart = async () => {
@@ -68,45 +70,69 @@ export function AuditDetailPage() {
   /** Owner: cancel a running audit. The locked SKUs are freed again. */
   const handleCancelAudit = async () => {
     if (!auditId) return;
-    try {
-      setActing(true);
-      setActionError(null);
-      await cancelAudit(auditId);
-      setActionMessage('Đợt kiểm kê đã được huỷ. Các SKU đã được mở khoá.');
-      setTimeout(() => setActionMessage(null), 4000);
-      refetchAudit();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Không huỷ được đợt kiểm kê');
-    } finally {
-      setActing(false);
-    }
+    await confirm({
+      title: "Huỷ đợt kiểm kê",
+      message: `Huỷ đợt kiểm kê ${audit?.auditCode}? Các SKU đang bị khoá sẽ được mở lại.`,
+      confirmLabel: "Huỷ kiểm kê",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          setActing(true);
+          setActionError(null);
+          await cancelAudit(auditId);
+          setActionMessage('Đợt kiểm kê đã được huỷ. Các SKU đã được mở khoá.');
+          setTimeout(() => setActionMessage(null), 4000);
+          refetchAudit();
+        } catch (err) {
+          setActionError(err instanceof Error ? err.message : 'Không huỷ được đợt kiểm kê');
+        } finally {
+          setActing(false);
+        }
+      },
+    });
   };
 
   /** Owner: delete a draft and go back to the list. */
   const handleDeleteAudit = async () => {
     if (!auditId) return;
-    try {
-      setActing(true);
-      setActionError(null);
-      await deleteAudit(auditId);
-      navigate('/inventory/audit');
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Không xoá được đợt kiểm kê');
-      setActing(false);
-    }
+    await confirm({
+      title: "Xoá đợt kiểm kê",
+      message: `Xoá đợt kiểm kê ${audit?.auditCode}? Toàn bộ dòng đã giao sẽ bị xoá.`,
+      confirmLabel: "Xoá",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          setActing(true);
+          setActionError(null);
+          await deleteAudit(auditId);
+          navigate('/inventory/audit');
+        } catch (err) {
+          setActionError(err instanceof Error ? err.message : 'Không xoá được đợt kiểm kê');
+          setActing(false);
+        }
+      },
+    });
   };
 
   /** Owner: remove one row from a draft. */
-  const handleDeleteItem = async (itemId: string) => {
+  const handleDeleteItem = async (itemId: string, productName?: string) => {
     if (!auditId) return;
-    try {
-      setActionError(null);
-      await deleteAuditItem(auditId, itemId);
-      refetchItems();
-      refetchAudit();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Không xoá được dòng kiểm kê');
-    }
+    await confirm({
+      title: "Xoá dòng kiểm kê",
+      message: `Xoá dòng ${productName ?? "kiểm kê"}?`,
+      confirmLabel: "Xoá",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          setActionError(null);
+          await deleteAuditItem(auditId, itemId);
+          refetchItems();
+          refetchAudit();
+        } catch (err) {
+          setActionError(err instanceof Error ? err.message : 'Không xoá được dòng kiểm kê');
+        }
+      },
+    });
   };
 
   if (auditLoading) {
@@ -191,16 +217,7 @@ export function AuditDetailPage() {
                 </Button>
                 <Button
                   disabled={acting}
-                  onClick={() => {
-                    if (
-                      !window.confirm(
-                        `Xoá đợt kiểm kê ${audit.auditCode}? Toàn bộ dòng đã giao sẽ bị xoá.`,
-                      )
-                    ) {
-                      return;
-                    }
-                    void handleDeleteAudit();
-                  }}
+                  onClick={() => void handleDeleteAudit()}
                   variant="outline"
                 >
                   Xoá đợt kiểm kê
@@ -210,16 +227,7 @@ export function AuditDetailPage() {
             {audit.status === 'IN_PROGRESS' && can('inventory.audit.create') && (
               <Button
                 disabled={acting}
-                onClick={() => {
-                  if (
-                    !window.confirm(
-                      `Huỷ đợt kiểm kê ${audit.auditCode}? Các SKU đang bị khoá sẽ được mở lại.`,
-                    )
-                  ) {
-                    return;
-                  }
-                  void handleCancelAudit();
-                }}
+                onClick={() => void handleCancelAudit()}
                 variant="outline"
               >
                 Huỷ đợt kiểm kê
@@ -375,10 +383,7 @@ export function AuditDetailPage() {
                   }
                   onDeleteItem={
                     audit.status === 'DRAFT' && can('inventory.audit.create')
-                      ? (item) => {
-                          if (!window.confirm(`Xoá dòng ${item.productName}?`)) return;
-                          void handleDeleteItem(item.id);
-                        }
+                      ? (item) => void handleDeleteItem(item.id, item.productName)
                       : undefined
                   }
                 />

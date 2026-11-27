@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { useConfirm, usePrompt } from "@/components/common/confirm-provider";
 import { usePermissions } from "@/hooks/use-permissions";
 import { CatalogHeader } from "@/pages/products/catalog-header";
 import type { Shelf, ShelfCell } from "@/types/shelf";
@@ -40,6 +41,8 @@ export function ShelvesPage() {
 
   const { can } = usePermissions();
   const canManage = can("inventory.shelf.manage");
+  const confirm = useConfirm();
+  const prompt = usePrompt();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,7 +81,13 @@ export function ShelvesPage() {
   };
 
   const renameShelf = async (shelf: Shelf) => {
-    const next = window.prompt("Tên kệ (để trống để xóa tên):", shelf.name ?? "");
+    const next = await prompt({
+      title: "Đổi tên kệ",
+      message: "Để trống để xoá tên kệ.",
+      label: "Tên kệ",
+      initialValue: shelf.name ?? "",
+      confirmLabel: "Lưu",
+    });
     if (next === null) return;
     try {
       await shelfApi.update(shelf.id, { name: next.trim() });
@@ -89,15 +98,22 @@ export function ShelvesPage() {
     }
   };
 
-  const retireShelf = async (shelf: Shelf) => {
-    if (!window.confirm(`Retire kệ ${shelf.code}? Các lô đang ở kệ này vẫn giữ vị trí.`)) return;
-    try {
-      await shelfApi.remove(shelf.id);
-      setMessage("Đã retire kệ.");
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không retire được kệ.");
-    }
+  const deleteShelf = async (shelf: Shelf) => {
+    await confirm({
+      title: "Xoá kệ",
+      message: `Xoá kệ ${shelf.code}? Các lô đang ở kệ này vẫn giữ vị trí.`,
+      confirmLabel: "Xoá",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await shelfApi.remove(shelf.id);
+          setMessage("Đã xoá kệ.");
+          await load();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Không xoá được kệ.");
+        }
+      },
+    });
   };
 
   /**
@@ -146,16 +162,23 @@ export function ShelvesPage() {
     setCellError(null);
   };
 
-  /** Retire a position. The lots on it keep their location. */
-  const retireCell = async (cell: ShelfCell) => {
-    if (!window.confirm(`Retire ô kệ Tầng ${cell.level} - Ô ${cell.slot}?`)) return;
-    try {
-      await shelfApi.removeCell(cell.id);
-      setMessage("Đã retire ô kệ.");
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không retire được ô kệ.");
-    }
+  /** Delete a position. The lots on it keep their location. */
+  const deleteCell = async (cell: ShelfCell) => {
+    await confirm({
+      title: "Xoá ô kệ",
+      message: `Xoá ô kệ Tầng ${cell.level} - Ô ${cell.slot}?`,
+      confirmLabel: "Xoá",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await shelfApi.removeCell(cell.id);
+          setMessage("Đã xoá ô kệ.");
+          await load();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Không xoá được ô kệ.");
+        }
+      },
+    });
   };
 
   const needle = keyword.trim().toLowerCase();
@@ -244,7 +267,7 @@ export function ShelvesPage() {
                   </span>
                   {!shelf.isActive && (
                     <span className="rounded bg-slate-200 px-2 py-0.5 text-xs text-slate-700">
-                      Đã retire
+                      Đã xoá
                     </span>
                   )}
                   {canManage && shelf.isActive && (
@@ -252,8 +275,8 @@ export function ShelvesPage() {
                       <Button onClick={() => void renameShelf(shelf)} size="sm" variant="outline">
                         Sửa tên
                       </Button>
-                      <Button onClick={() => void retireShelf(shelf)} size="sm" variant="outline">
-                        Retire
+                      <Button onClick={() => void deleteShelf(shelf)} size="sm" variant="outline">
+                        Xoá
                       </Button>
                     </span>
                   )}
@@ -284,8 +307,8 @@ export function ShelvesPage() {
                             </button>
                             <button
                               className="rounded px-1 text-slate-500 hover:bg-white hover:text-red-600"
-                              onClick={() => void retireCell(cell)}
-                              title="Retire ô kệ"
+                              onClick={() => void deleteCell(cell)}
+                              title="Xoá ô kệ"
                               type="button"
                             >
                               ✕

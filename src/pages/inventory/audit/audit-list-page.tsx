@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Alert } from '../../../components/ui/alert';
 import { PermissionGate } from '../../../components/common/permission-gate';
+import { useAlert, useConfirm } from '../../../components/common/confirm-provider';
 import { AuditStatusBadge } from './components/audit-status-badge';
 import { useAudits } from './hooks/use-audits';
 import { useAuditActions } from './hooks/use-audit-actions';
@@ -17,6 +18,8 @@ export function AuditListPage() {
   const [statusFilter, setStatusFilter] = useState<AuditStatus | undefined>(undefined);
   const { can } = usePermissions();
   const { deleteAudit } = useAuditActions();
+  const confirm = useConfirm();
+  const showAlert = useAlert();
   const SCOPE_LABELS: Record<AuditScopeType, string> = {
     FULL_STORE: 'Toàn cửa hàng',
     CATEGORY: 'Theo danh mục',
@@ -36,13 +39,33 @@ export function AuditListPage() {
     navigate(`/inventory/audit/${auditId}`);
   };
 
-  /** Owner: a draft can be deleted. The list is reloaded so the row disappears. */
-  const handleDelete = async (auditId: string) => {
-    try {
-      await deleteAudit(auditId);
-      await refetch();
-    } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'Không xoá được đợt kiểm kê.');
+  /**
+   * Owner: a draft can be deleted. The list is reloaded so the row disappears.
+   *
+   * The failure is kept aside while the confirm modal is still open, so the error modal only
+   * opens once that one is closed.
+   */
+  const handleDelete = async (auditId: string, auditCode: string) => {
+    let failure: string | null = null;
+    await confirm({
+      title: "Xoá đợt kiểm kê",
+      message: `Xoá đợt kiểm kê ${auditCode}? Toàn bộ dòng đã giao sẽ bị xoá.`,
+      confirmLabel: "Xoá",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await deleteAudit(auditId);
+          await refetch();
+        } catch (err) {
+          failure = err instanceof Error ? err.message : 'Không xoá được đợt kiểm kê.';
+        }
+      },
+    });
+    if (failure) {
+      await showAlert({
+        title: "Không xoá được đợt kiểm kê",
+        message: failure,
+      });
     }
   };
 
@@ -164,16 +187,7 @@ export function AuditListPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (
-                          !window.confirm(
-                            `Xoá đợt kiểm kê ${audit.auditCode}? Toàn bộ dòng đã giao sẽ bị xoá.`,
-                          )
-                        ) {
-                          return;
-                        }
-                        void handleDelete(audit.id);
-                      }}
+                      onClick={() => void handleDelete(audit.id, audit.auditCode)}
                     >
                       Xoá
                     </Button>

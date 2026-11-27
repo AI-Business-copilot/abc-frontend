@@ -35,46 +35,46 @@ export function AuditCreatePage() {
     <div className="min-h-screen bg-[#f5f6fa] text-[#101828]">
       <CatalogHeader active="stock-audit" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1580px] space-y-6 px-5 py-5">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          onClick={() => navigate('/inventory/audit')}
-        >
-          ← Quay lại danh sách
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tạo đợt kiểm kê mới</h1>
-          <p className="text-gray-600 mt-1">Bắt đầu một đợt kiểm kê tồn kho</p>
-        </div>
-      </div>
-
-      {error && (
-        <Alert className="bg-red-50 border-red-200 text-red-700">
-          <button
-            onClick={clearError}
-            className="absolute right-4 top-4 text-red-600 hover:text-red-800"
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/inventory/audit')}
           >
-            ×
-          </button>
-          {error}
-        </Alert>
-      )}
+            ← Quay lại danh sách
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Tạo đợt kiểm kê mới</h1>
+            <p className="text-gray-600 mt-1">Bắt đầu một đợt kiểm kê tồn kho</p>
+          </div>
+        </div>
 
-      <AuditForm
-        onSubmit={handleSubmit}
-        loading={loading}
-        error={error}
-        submitLabel={loading ? 'Đang tạo...' : 'Tạo đợt kiểm kê'}
-      />
+        {error && (
+          <Alert className="bg-red-50 border-red-200 text-red-700">
+            <button
+              onClick={clearError}
+              className="absolute right-4 top-4 text-red-600 hover:text-red-800"
+            >
+              ×
+            </button>
+            {error}
+          </Alert>
+        )}
 
-      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
-        <p className="font-semibold mb-2">Trước khi tạo đợt kiểm kê:</p>
-        <ul className="list-disc list-inside space-y-1 text-xs">
-          <li>Tạo đợt kiểm kê trước, sau đó thêm dòng ở trang chi tiết</li>
-          <li>Mỗi dòng kiểm kê dùng một lô có sẵn do bạn chọn khi thêm dòng</li>
-          <li>Nhân viên giữ nguyên lô đó nhưng vẫn có thể sửa ngày của lô và nhập số đếm</li>
-        </ul>
-      </div>
+        <AuditForm
+          onSubmit={handleSubmit}
+          loading={loading}
+          error={error}
+          submitLabel={loading ? 'Đang tạo...' : 'Tạo đợt kiểm kê'}
+        />
+
+        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
+          <p className="font-semibold mb-2">Trước khi tạo đợt kiểm kê:</p>
+          <ul className="list-disc list-inside space-y-1 text-xs">
+            <li>Tạo đợt kiểm kê trước, sau đó thêm dòng ở trang chi tiết</li>
+            <li>Mỗi dòng kiểm kê dùng một lô có sẵn do bạn chọn khi thêm dòng</li>
+            <li>Nhân viên giữ nguyên lô đó nhưng vẫn có thể sửa ngày của lô và nhập số đếm</li>
+          </ul>
+        </div>
       </main>
     </div>
   );

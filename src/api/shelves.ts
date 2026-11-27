@@ -17,7 +17,7 @@ export const shelfApi = {
     return apiRequest<Shelf>(`${base}/${id}`, { method: "PATCH", body: JSON.stringify(body) });
   },
 
-  /** Retire a shelf. The shelf is not deleted, so the lots on it keep their location. */
+  /** Delete a shelf. The shelf is not deleted, so the lots on it keep their location. */
   remove(id: string) {
     return apiRequest<void>(`${base}/${id}`, { method: "DELETE" });
   },
@@ -32,7 +32,7 @@ export const shelfApi = {
     return apiRequest<ShelfCell>(`${base}/cells/${cellId}`, { method: "PATCH", body: JSON.stringify(body) });
   },
 
-  /** Retire a position. The lot items on it keep their location. */
+  /** Delete a position. The lot items on it keep their location. */
   removeCell(cellId: string) {
     return apiRequest<void>(`${base}/cells/${cellId}`, { method: "DELETE" });
   },
