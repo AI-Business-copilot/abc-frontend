@@ -15,6 +15,7 @@ import { useStaffMembers } from './audit-rows';
 import { CatalogHeader } from '../../products/catalog-header';
 import { auditApi } from '../../../api/audit';
 import type { AuditItemHistory, StockAuditItem } from '../../../types/audit';
+import { shelfLocationText } from '../../../types/shelf';
 
 const MAX_REJECT_REASON = 1000;
 
@@ -357,6 +358,10 @@ export function AuditItemDetailPage() {
           </Field>
           <Field label="Giao cho">{item.assignedTo?.name ?? '—'}</Field>
           <Field label="Người kiểm kê thứ hai">{item.secondCounter?.name ?? '—'}</Field>
+          {/* Where the goods sit, so the counters know which shelf to walk to. */}
+          <Field label="Vị trí kho">
+            {item.shelfCell ? shelfLocationText(item.shelfCell) : <span className="text-amber-700">Chưa gán</span>}
+          </Field>
         </div>
 
         <div className="grid gap-4 rounded-lg bg-gray-50 p-4 text-center grid-cols-5">

@@ -2,6 +2,7 @@
 import { Button } from '../../../../components/ui/button';
 import { formatAuditDiff, resolveAuditDiff } from '../audit-diff';
 import type { AuditStatus, CountAgreement, StockAuditItem, AuditItemStatus } from '../../../../types/audit';
+import { shelfLocationText } from '../../../../types/shelf';
 
 interface AuditItemListProps {
   items: StockAuditItem[];
@@ -189,6 +190,15 @@ export function AuditItemList({
                       </span>
                     </>
                   )}
+                  {/* Where the goods sit, so the counters know which shelf to walk to. */}
+                  {item.shelfCell && (
+                    <>
+                      <span className="mx-2">•</span>
+                      <span className="font-medium text-slate-700">
+                        {shelfLocationText(item.shelfCell)}
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {(item.assignedTo || item.createdBy || item.secondCounter) && (
@@ -202,6 +212,16 @@ export function AuditItemList({
                     )}
                     {item.assignedTo && item.createdBy && <span className="mx-2">•</span>}
                     {item.createdBy && <span>Người tạo: {item.createdBy.name}</span>}
+                  </div>
+                )}
+
+                {/* A row the scope generated has no counters yet. The owner assigns them here,
+                    and the counting cannot start until every row has its two people. */}
+                {(!item.assignedTo || !item.secondCounter) && (
+                  <div className="mb-2 text-xs">
+                    <span className="inline-block rounded bg-amber-50 px-2 py-1 font-medium text-amber-800">
+                      Chưa gán nhân viên
+                    </span>
                   </div>
                 )}
 

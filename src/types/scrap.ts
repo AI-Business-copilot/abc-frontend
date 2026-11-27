@@ -1,6 +1,8 @@
 // Types for the F08 lot tracking and scrap management endpoints.
 // Dates arrive as ISO strings and Prisma Decimal values arrive as strings.
 
+import type { ShelfCellLocation } from "@/types/shelf";
+
 export type LotStatus = "HEALTHY" | "WARNING" | "UNUSABLE" | "QUARANTINED" | "SCRAPPED";
 export type ScrapStatus = "PENDING" | "COMPLETED" | "REJECTED" | "CANCELLED";
 export type ScrapSource = "DAMAGED_STOCK" | "SELLABLE_STOCK";
@@ -65,7 +67,7 @@ export const ALLOWED_SCRAP_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp
 export interface LotVariant {
   id: string;
   sku: string;
-  template: { name: string };
+  template: { id: string; name: string; imageUrl: string | null };
 }
 
 /**
@@ -100,6 +102,8 @@ export interface ExpiringLot {
   quarantineQty: number | null;
   quarantinedAt: string | null;
   variant: LotVariant;
+  /** Where the lot physically sits, or null when it has no location yet. */
+  shelfCell?: ShelfCellLocation | null;
   /** Whole units still sellable in this lot item. */
   onHand: number;
   /** Units already marked damaged. */
@@ -140,6 +144,27 @@ export interface ExpiringLotsResponse {
 
 export interface ExpiringBatchesResponse {
   lots: LotBatch[];
+  total: number;
+  summary: ExpiringLotsSummary;
+}
+
+/** One SKU of a product, with the lot items it holds. */
+export interface ProductSkuLots {
+  id: string;
+  sku: string;
+  lots: ExpiringLot[];
+}
+
+/** One product, with its SKUs and their lots. The tree reads product > SKU > lot. */
+export interface ProductLotGroup {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  skus: ProductSkuLots[];
+}
+
+export interface ExpiringProductsResponse {
+  lots: ProductLotGroup[];
   total: number;
   summary: ExpiringLotsSummary;
 }

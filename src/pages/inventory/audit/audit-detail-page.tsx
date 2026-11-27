@@ -179,6 +179,9 @@ export function AuditDetailPage() {
             {(audit.status === 'DRAFT' || audit.status === 'IN_PROGRESS') && (
               <PermissionGate permission="inventory.audit.create" fallback={null}>
                 <Button onClick={() => setShowAssignModal(true)}>Thêm dòng</Button>
+                <Button onClick={() => setShowReassignModal(true)} variant="outline">
+                  Gán nhân viên cho dòng
+                </Button>
               </PermissionGate>
             )}
             {audit.status === 'DRAFT' && can('inventory.audit.create') && (
