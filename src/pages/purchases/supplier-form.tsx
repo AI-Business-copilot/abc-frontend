@@ -68,11 +68,11 @@ export function SupplierForm({ supplier, onSaved, onClose }: { supplier?: Suppli
           <section className="supplier-form-section" aria-labelledby={`${formId}-general`}>
             <div className="supplier-section-heading"><span className="supplier-section-icon"><Building2 size={18} aria-hidden="true" /></span><div><h3 id={`${formId}-general`}>Thông tin nhà cung cấp</h3><p>Thông tin dùng trên hồ sơ và chứng từ mua hàng.</p></div></div>
             <div className="supplier-form-grid">
-              <div className="supplier-field-wide"><Field label="Tên nhà cung cấp *"><input required maxLength={255} value={data.name ?? ""} onChange={e => update("name", e.target.value)} placeholder="Nhập tên công ty hoặc nhà cung cấp" autoComplete="organization" /></Field></div>
               <div className="supplier-field-wide"><Field label="Mã số thuế"><input maxLength={30} value={data.taxCode ?? ""} onChange={e => update("taxCode", e.target.value)} placeholder="Nhập mã số thuế để tự lấy tên và địa chỉ" /></Field>
-                <button type="button" disabled={lookingUp || !/^(\d{10}|\d{12}|\d{13}|\d{10}-\d{3})$/.test(taxCode)} onClick={() => setRetryLookup(current => current + 1)}>{lookingUp ? "Đang tra cứu…" : "Lấy lại thông tin"}</button>
+                <button type="button" className="supplier-tax-lookup" disabled={lookingUp || !/^(\d{10}|\d{12}|\d{13}|\d{10}-\d{3})$/.test(taxCode)} onClick={() => setRetryLookup(current => current + 1)}>{lookingUp ? "Đang tra cứu…" : "Lấy lại thông tin"}</button>
                 <p className="purchase-hint" role="status">{lookingUp ? "Đang lấy thông tin nhà cung cấp…" : lookupMessage || "Nhập đủ mã số thuế để tự điền tên và địa chỉ. Thông tin liên hệ bổ sung bên dưới."}</p>
               </div>
+              <div className="supplier-field-wide"><Field label="Tên nhà cung cấp *"><input required maxLength={255} value={data.name ?? ""} onChange={e => update("name", e.target.value)} placeholder="Nhập tên công ty hoặc nhà cung cấp" autoComplete="organization" /></Field></div>
               <div className="supplier-field-wide"><Field label="Địa chỉ"><textarea rows={2} maxLength={5000} value={data.address ?? ""} onChange={e => update("address", e.target.value)} placeholder="Số nhà, tên đường, phường/xã, tỉnh/thành phố" autoComplete="street-address" /></Field></div>
             </div>
           </section>

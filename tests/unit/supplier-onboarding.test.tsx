@@ -38,6 +38,27 @@ it("does not allow importing a preview containing errors", async () => {
   expect(screen.getByRole("button", { name: "Nhập 1 sản phẩm" })).toBeDisabled();
   expect(mocks.confirm).not.toHaveBeenCalled();
 });
+it("shows the current import stage and disables repeat submission while saving", async () => {
+  let resolvePreview!: (value: typeof preview) => void;
+  let resolveConfirm!: (value: { created: number; linked: number; updated: number; total: number }) => void;
+  mocks.preview.mockImplementationOnce(() => new Promise(resolve => { resolvePreview = resolve; }));
+  mocks.confirm.mockImplementationOnce(() => new Promise(resolve => { resolveConfirm = resolve; }));
+  const onSaved = vi.fn();
+  render(<SupplierImport supplier={supplier} onClose={vi.fn()} onSaved={onSaved} />);
+  fireEvent.change(screen.getByLabelText("File danh sách sản phẩm"), { target: { files: [new File(["SKU,Name,Price\n001,Milk,12500"], "products.csv")] } });
+  expect(screen.getByRole("status")).toHaveTextContent("Đang đọc file và kiểm tra sản phẩm");
+  expect(screen.getByRole("button", { name: "Đang kiểm tra…" })).toBeDisabled();
+  await act(async () => { resolvePreview(preview); });
+  fireEvent.click(screen.getByRole("button", { name: "Nhập 1 sản phẩm" }));
+  expect(screen.getByRole("status")).toHaveTextContent("Đang lưu 1 sản phẩm");
+  const saving = screen.getByRole("button", { name: "Đang nhập 1 sản phẩm…" });
+  expect(saving).toBeDisabled();
+  fireEvent.click(saving);
+  expect(mocks.confirm).toHaveBeenCalledTimes(1);
+  expect(screen.getByLabelText("File danh sách sản phẩm")).toBeDisabled();
+  await act(async () => { resolveConfirm({ created: 1, linked: 0, updated: 0, total: 1 }); });
+  expect(onSaved).toHaveBeenCalledWith(expect.stringContaining("1 mới"));
+});
 it("debounces tax lookup and discards a response for a previous tax code", async () => {
   vi.useFakeTimers();
   let resolveFirst!: (value: unknown) => void;

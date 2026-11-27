@@ -1,4 +1,4 @@
-import { Check, LockKeyhole, Star } from "lucide-react";
+import { ArrowLeft, Check, LockKeyhole, Star } from "lucide-react";
 import { toast } from "react-toastify";
 import { PurchaseDialog } from "./purchase-dialog";
 import { PurchaseForm } from "./purchase-form";
@@ -48,7 +48,7 @@ export function SupplierProducts({ supplier, onClose }: { supplier: Supplier; on
   };
 
   return <>
-    <button type="button" className="purchase-back" onClick={onClose}>← Danh sách nhà cung cấp</button>
+    <button type="button" className="purchase-back supplier-products-back" onClick={onClose}><ArrowLeft size={18} strokeWidth={2} aria-hidden="true" /><span>Danh sách nhà cung cấp</span></button>
     <Heading title={supplier.name} description="Quản lý SKU nhà cung cấp đang bán và tham khảo các lần nhập trước.">
       {writable && can("products.manage") && <button onClick={() => setImporting(true)}>Nhập Excel / CSV</button>}
       {writable && <button className="purchase-primary" onClick={() => { setAdding(true); setCandidate(null); setSkuSearch(""); setSkuTerm(""); setPrice(""); setConditions({}); }}> + Thêm sản phẩm NCC</button>}
