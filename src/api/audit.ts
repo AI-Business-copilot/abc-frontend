@@ -265,6 +265,37 @@ export const auditApi = {
   },
 
   /**
+   * Owner: put the same two people on many rows at once.
+   *
+   * A full store audit generates a row for every lot of the shop, so assigning the counters one
+   * row per request would mean hundreds of requests. This does the same thing in one.
+   */
+  async reassignItems(
+    auditId: string,
+    itemIds: string[],
+    assignedToUserId: string,
+    secondCounterUserId: string
+  ): Promise<{ assigned: number }> {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${BASE_URL}/${auditId}/items/assign`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ itemIds, assignedToUserId, secondCounterUserId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Failed to reassign items (${response.status})`);
+      }
+
+      return response.json();
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+
+  /**
    * Get paginated audit items. Pass mine=true to get only items assigned to the caller.
    */
   async getAuditItems(

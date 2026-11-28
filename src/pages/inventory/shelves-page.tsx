@@ -101,7 +101,7 @@ export function ShelvesPage() {
   const deleteShelf = async (shelf: Shelf) => {
     await confirm({
       title: "Xoá kệ",
-      message: `Xoá kệ ${shelf.code}? Các lô đang ở kệ này vẫn giữ vị trí.`,
+      message: `Xoá kệ ${shelf.code}? Các lô đang ở kệ này vẫn giữ ô kệ.`,
       confirmLabel: "Xoá",
       variant: "destructive",
       onConfirm: async () => {
@@ -195,10 +195,10 @@ export function ShelvesPage() {
       <CatalogHeader active="shelves" mode="inventory" keyword={keyword} onKeywordChange={setKeyword} />
       <main className="mx-auto max-w-[1580px] space-y-6 px-5 py-5">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quản lý kệ & vị trí kho</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Quản lý kệ, tầng & ô</h1>
           <p className="mt-1 text-gray-600">
-            Mỗi lô hàng nằm ở một vị trí gồm mã kệ, tầng và ô (ví dụ: Kệ A2 - Tầng 3 - Ô 04). Ô kệ
-            được tạo tự động khi gán hàng.
+            Mỗi lô hàng nằm ở một ô kệ, gồm mã kệ, tầng và ô (ví dụ: Kệ A2 - Tầng 3 - Ô 04).
+            Tạo sẵn các ô kệ để khi gán hàng, nhân viên chỉ cần chọn trong danh sách.
           </p>
         </div>
 
@@ -265,6 +265,9 @@ export function ShelvesPage() {
                   <span className="text-xs text-gray-500">
                     {shelf.cells.length} ô · {shelf.itemCount} lô hàng
                   </span>
+                  {shelf.isActive && shelf.cells.length === 0 && (
+                    <span className="text-xs text-amber-700">Chưa có ô nào — thêm ô để gán hàng</span>
+                  )}
                   {!shelf.isActive && (
                     <span className="rounded bg-slate-200 px-2 py-0.5 text-xs text-slate-700">
                       Đã xoá
@@ -300,7 +303,7 @@ export function ShelvesPage() {
                             <button
                               className="rounded px-1 text-slate-500 hover:bg-white hover:text-slate-900"
                               onClick={() => void startEditCell(shelf, cell)}
-                              title="Sửa vị trí"
+                              title="Sửa ô kệ"
                               type="button"
                             >
                               ✎
@@ -325,7 +328,7 @@ export function ShelvesPage() {
                     {cellShelfId === shelf.id ? (
                       <div className="space-y-2">
                         <p className="text-xs font-medium text-slate-700">
-                          {editingCellId ? "Sửa vị trí ô kệ" : "Thêm ô kệ"}
+                          {editingCellId ? "Sửa ô kệ" : "Thêm ô kệ"}
                         </p>
                         <div className="flex flex-wrap items-end gap-2">
                           <div className="w-28">

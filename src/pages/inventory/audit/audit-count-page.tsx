@@ -180,7 +180,7 @@ export function AuditCountPage() {
             {/* Where the goods sit, so the counter knows which shelf to walk to. */}
             {item.shelfCell && (
               <p className="mt-1 text-sm font-medium text-slate-700">
-                Vị trí: {shelfLocationText(item.shelfCell)}
+                Ô kệ: {shelfLocationText(item.shelfCell)}
               </p>
             )}
           </div>

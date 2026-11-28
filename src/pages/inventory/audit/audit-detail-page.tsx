@@ -37,13 +37,14 @@ export function AuditDetailPage() {
     refetch: refetchItems,
   } = useAuditItems(auditId, { mine: onlyMine });
 
-  // Right after an audit is created, the create page sends the owner here with openAddItems set
+  // Right after an audit is created, the create page sends the owner here. The rows are already
+  // there, so the dialog that assigns the counters is the one the owner needs.
   const location = useLocation();
   const navState = location.state as { message?: string; openAddItems?: boolean } | null;
 
   const [actionMessage, setActionMessage] = useState<string | null>(navState?.message ?? null);
   const [showAssignModal, setShowAssignModal] = useState(Boolean(navState?.openAddItems));
-  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [showReassignModal, setShowReassignModal] = useState(Boolean(navState?.message));
   const [acting, setActing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const { startAudit, cancelAudit, deleteAudit, deleteAuditItem } = useAuditActions();
@@ -295,7 +296,7 @@ export function AuditDetailPage() {
             onClose={() => setShowReassignModal(false)}
             onReassigned={(count) => {
               setShowReassignModal(false);
-              setActionMessage(`Đã chuyển ${count} dòng sang người phụ trách mới`);
+              setActionMessage(`Đã gán ${count} dòng cho nhân viên mới`);
               setTimeout(() => setActionMessage(null), 3000);
               refetchItems();
               refetchAudit();

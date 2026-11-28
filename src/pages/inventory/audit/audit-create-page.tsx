@@ -15,15 +15,13 @@ export function AuditCreatePage() {
   const handleSubmit = async (data: CreateAuditRequest) => {
     try {
       const newAudit = await createAudit(data);
-      // A scoped audit already has its rows, so the owner assigns the counters instead of adding
-      // rows by hand.
-      const scoped = data.scopeType && data.scopeType !== 'FULL_STORE';
+      // Every scope gets its rows from the stock, so the owner assigns the counters instead of
+      // adding rows by hand.
       navigate(`/inventory/audit/${newAudit.id}`, {
         state: {
-          message: scoped
-            ? 'Đã tạo đợt kiểm kê và sinh dòng từ phạm vi. Hãy gán 2 người kiểm kê cho từng dòng.'
-            : 'Đã tạo đợt kiểm kê. Hãy thêm dòng để bắt đầu đếm.',
-          openAddItems: !scoped,
+          message:
+            'Đã tạo đợt kiểm kê và sinh dòng từ phạm vi. Hãy gán 2 người kiểm kê cho từng dòng.',
+          openAddItems: false,
         },
       });
     } catch (err) {

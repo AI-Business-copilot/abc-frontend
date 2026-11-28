@@ -9,8 +9,10 @@ import { useStaffMembers } from '../audit-rows';
 
 /** The backend caps pageSize at 200, so a large audit needs a few requests. */
 const PAGE_SIZE = 200;
-/** Filter value for rows that have no assignee left (for example a deleted account). */
+/** Filter value for the rows nobody has been put on yet (a row the scope generated). */
 const NO_ASSIGNEE = '__none__';
+/** How many rows one assignment request carries. The server accepts up to 500. */
+const BATCH_SIZE = 200;
 
 interface ReassignItemsModalProps {
   auditId: string;
@@ -30,8 +32,16 @@ async function loadInProgressItems(auditId: string): Promise<StockAuditItem[]> {
 }
 
 /**
- * Owner dialog: move rows that are still being counted from one employee to another.
- * Used when the assignee quit or is off work.
+ * Owner dialog: put an employee on the rows of the audit.
+ *
+ * It does two jobs at once, and that is why the dialog looks the way it does:
+ *   - phân công mới: a row the scope generated has no employee yet, so someone has to be put
+ *     on it before the counting can start;
+ *   - phân công lại: a row already sits with an employee who quit or is off work, so the row
+ *     has to move to someone else.
+ *
+ * The dialog only ever rewrites the two counters of a row. Which employee the row sat with
+ * before only decides which rows are shown, never what is written to them.
  */
 export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignItemsModalProps) {
   const { members, loading: membersLoading, error: membersError } = useStaffMembers();
@@ -50,7 +60,13 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
     try {
       setLoading(true);
       setLoadError(null);
-      setItems(await loadInProgressItems(auditId));
+      const loaded = await loadInProgressItems(auditId);
+      setItems(loaded);
+      // The rows a scope generated have nobody on them yet, so the dialog opens on them: that is
+      // the job the owner came here for.
+      setSourceUserId((current) =>
+        current === '' && loaded.some((item) => !item.assignedTo) ? NO_ASSIGNEE : current,
+      );
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Không tải được danh sách dòng kiểm kê');
     } finally {
@@ -63,7 +79,8 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auditId]);
 
-  // The employees that currently hold at least one row still being counted
+  // The employees that currently hold at least one row still being counted. A row the scope
+  // generated has none, so it never shows up here and is reached through the "chưa gán người" filter.
   const assignees = useMemo(() => {
     const seen = new Map<string, string>();
     for (const item of items) {
@@ -76,6 +93,8 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
   const activeIds = useMemo(() => new Set(members.map((member) => member.user.id)), [members]);
   const hasUnassigned = items.some((item) => !item.assignedTo);
 
+  // The filter only narrows the list of rows. It never decides what is written to them: a row
+  // without anyone and a row that sits with someone else are both given the two chosen people.
   const visible = useMemo(() => {
     if (!sourceUserId) return items;
     if (sourceUserId === NO_ASSIGNEE) return items.filter((item) => !item.assignedTo);
@@ -131,16 +150,18 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
       setSubmitting(true);
       setError(null);
       setProgress(0);
-      for (const itemId of ids) {
-        await auditApi.reassignItem(auditId, itemId, targetUserId, secondCounterUserId);
-        moved += 1;
+      // The rows are assigned in one request, in chunks the server accepts. A full store audit
+      // can hold hundreds of rows, so one request per row would be far too slow.
+      for (let index = 0; index < ids.length; index += BATCH_SIZE) {
+        const chunk = ids.slice(index, index + BATCH_SIZE);
+        await auditApi.reassignItems(auditId, chunk, targetUserId, secondCounterUserId);
+        moved += chunk.length;
         setProgress(moved);
       }
       onReassigned(moved);
     } catch (err) {
       setError(
-        `${moved > 0 ? `Đã chuyển ${moved}/${ids.length} dòng. ` : ''}${
-          err instanceof Error ? err.message : 'Không đổi được người phụ trách'
+        `${moved > 0 ? `Đã gán ${moved}/${ids.length} dòng. ` : ''}${err instanceof Error ? err.message : 'Không gán được nhân viên cho dòng kiểm kê'
         }`
       );
       // Rows moved before the failure are saved on the server, so refresh the list to match it
@@ -152,20 +173,24 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
 
   const busy = loading || membersLoading;
   const submitLabel = submitting
-    ? `Đang chuyển ${progress}/${selected.size}…`
+    ? `Đang gán ${progress}/${selected.size}…`
     : selected.size > 0
-      ? `Chuyển ${selected.size} dòng`
-      : 'Chuyển dòng';
+      ? `Gán ${selected.size} dòng`
+      : 'Gán dòng';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-lg">
         <div className="space-y-5">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Phân công lại dòng kiểm kê</h2>
+            <h2 className="text-xl font-bold text-gray-900">Gán nhân viên cho dòng kiểm kê</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Chuyển các dòng còn đang đếm sang nhân viên khác khi người phụ trách đã nghỉ việc hoặc
-              không có mặt hôm nay. Chỉ các dòng đang đếm mới chuyển được.
+              Dùng cho cả hai việc: gán người cho dòng chưa có ai (dòng mới sinh ra từ phạm vi
+              kiểm kê), và chuyển dòng sang nhân viên khác khi người phụ trách đã nghỉ việc hoặc
+              không có mặt hôm nay.
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Chỉ các dòng đang đếm mới gán lại được. Mỗi dòng cần hai người đếm độc lập.
             </p>
           </div>
 
@@ -181,7 +206,7 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
             </div>
           ) : items.length === 0 ? (
             <p className="text-sm text-gray-500 py-4 text-center">
-              Không còn dòng nào đang đếm để phân công lại
+              Không còn dòng nào đang đếm để gán nhân viên
             </p>
           ) : members.length === 0 ? (
             <p className="text-sm text-gray-500 py-4 text-center">
@@ -192,7 +217,7 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="text-xs font-medium text-gray-700" htmlFor="reassign-source">
-                    Từ nhân viên
+                    Lọc theo người đang giữ
                   </label>
                   <select
                     id="reassign-source"
@@ -201,20 +226,29 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
                     onChange={(e) => changeSource(e.target.value)}
                     className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                   >
-                    <option value="">Tất cả nhân viên</option>
+                    <option value="">Tất cả dòng ({items.length})</option>
+                    {hasUnassigned && (
+                      <option value={NO_ASSIGNEE}>
+                        Dòng chưa gán người ({items.filter((item) => !item.assignedTo).length})
+                      </option>
+                    )}
                     {assignees.map((assignee) => (
                       <option key={assignee.id} value={assignee.id}>
                         {assignee.name}
                         {activeIds.has(assignee.id) ? '' : ' (không còn hoạt động)'}
                       </option>
                     ))}
-                    {hasUnassigned && <option value={NO_ASSIGNEE}>Chưa có người phụ trách</option>}
+
                   </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Ô này chỉ lọc danh sách dòng bên dưới. Dòng chưa gán ai và dòng đang giao cho
+                    nhân viên khác đều được gán lại giống nhau.
+                  </p>
                 </div>
 
                 <div>
                   <label className="text-xs font-medium text-gray-700" htmlFor="reassign-target">
-                    Giao cho
+                    Giao cho <span className="text-red-600">*</span>
                   </label>
                   <select
                     id="reassign-target"
@@ -264,6 +298,12 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
                     lại hay không.
                   </p>
                 </div>
+                <div className="flex items-end">
+                  <p className="rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-800">
+                    Cả hai người đều được đặt lại cho dòng được chọn, nên số đếm cũ (nếu có) không
+                    còn dùng được.
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-2 border-t pt-4">
@@ -283,7 +323,7 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
 
                 {visible.length === 0 ? (
                   <p className="text-sm text-gray-500 py-4 text-center">
-                    Nhân viên này không có dòng nào đang đếm
+                    Không có dòng nào đang đếm trong nhóm đã chọn
                   </p>
                 ) : (
                   <div className="max-h-64 space-y-2 overflow-y-auto">
@@ -308,7 +348,18 @@ export function ReassignItemsModal({ auditId, onClose, onReassigned }: ReassignI
                             {item.lotNumber ? ` • Lô ${item.lotNumber}` : ''}
                           </span>
                           <span className="block text-xs text-gray-500">
-                            Hiện giao cho: {item.assignedTo?.name ?? '—'}
+                            {item.assignedTo ? (
+                              <>
+                                Đang giao cho: {item.assignedTo.name}
+                                {item.secondCounter
+                                  ? ` • Kiểm kê thứ hai: ${item.secondCounter.name}`
+                                  : ''}
+                              </>
+                            ) : (
+                              <span className="font-medium text-amber-700">
+                                Dòng mới — chưa gán ai
+                              </span>
+                            )}
                           </span>
                         </span>
                       </label>

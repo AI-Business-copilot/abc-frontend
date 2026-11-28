@@ -43,7 +43,7 @@ const inventoryTabs = [
   { key: "stock-audit", label: "Kiểm kê tồn kho", to: "/inventory/audit" },
   { key: "stock-log", label: "Nhật ký biến động kho", to: "/inventory/stock-log" },
   { key: "lots", label: "Lô hàng & hạn sử dụng", to: "/inventory/lots" },
-  { key: "shelves", label: "Kệ & vị trí kho", to: "/inventory/shelves" },
+  { key: "shelves", label: "Kệ, tầng & ô", to: "/inventory/shelves" },
   { key: "scrap", label: "Phiếu hủy hàng", to: "/inventory/scrap" },
 ] as const;
 

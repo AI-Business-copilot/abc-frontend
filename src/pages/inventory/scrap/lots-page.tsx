@@ -56,6 +56,17 @@ function matches(product: ProductLotGroup, needle: string): boolean {
   );
 }
 
+/**
+ * True when the SKU itself matches the search, by its SKU code or by one of its lot numbers.
+ *
+ * The tree opens closed, so a search that only matches a lot number would find the product but
+ * hide the lot that matched. Such a product is opened automatically when the staff searches.
+ */
+function skuMatches(sku: ProductSkuLots, needle: string): boolean {
+  if (sku.sku.toLowerCase().includes(needle)) return true;
+  return sku.lots.some((lot) => lot.lotNumber.toLowerCase().includes(needle));
+}
+
 export function LotsPage() {
   const navigate = useNavigate();
   const { can, isStaff } = usePermissions();
@@ -64,7 +75,8 @@ export function LotsPage() {
   const [scrapLot, setScrapLot] = useState<ExpiringLot | null>(null);
   const [shelfLot, setShelfLot] = useState<ExpiringLot | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  // The tree opens on the SKU level; this records the explicit toggles.
+  // The tree opens closed: the staff sees the products, then opens the one they need. This
+  // records the explicit toggles, per product and per SKU.
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const {
     lots, total, summary, status, page, totalPages,
@@ -78,10 +90,28 @@ export function LotsPage() {
   // Matching drops the products that hold no match; the SKUs inside a match stay whole.
   const visible = needle ? lots.filter((product) => matches(product, needle)) : lots;
 
-  const isExpanded = (key: string) => expanded[key] ?? true;
+  // The tree opens closed, so a product shows only itself. Clicking it reveals the SKUs, and
+  // clicking a SKU reveals its lots. An explicit toggle always wins over the search auto-open.
+  const toggle = (key: string, open: boolean) =>
+    setExpanded((current) => ({ ...current, [key]: !open }));
+
+  /**
+   * Whether a product shows its SKUs.
+   *
+   * A search opens the products that match, because the tree is closed by default and the
+   * matching lot would otherwise stay hidden.
+   */
+  const productOpen = (product: ProductLotGroup) =>
+    expanded[product.id] ?? (needle !== "" && matches(product, needle));
+
+  /** Whether a SKU shows its lots. Same rule: a search opens the SKU that matched. */
+  const skuOpen = (product: ProductLotGroup, sku: ProductSkuLots) =>
+    expanded[skuKey(product, sku)] ?? (needle !== "" && skuMatches(sku, needle));
+
   const setAllExpanded = (open: boolean) => {
     const next: Record<string, boolean> = {};
     for (const product of visible) {
+      next[product.id] = open;
       for (const sku of product.skus) next[skuKey(product, sku)] = open;
     }
     setExpanded(next);
@@ -146,9 +176,16 @@ export function LotsPage() {
                 const productLots = product.skus.flatMap((sku) => sku.lots);
                 const productQty = productLots.reduce((sum, lot) => sum + lotStock(lot), 0);
                 const image = getPrimaryImage(product.imageUrl);
+                const open = productOpen(product);
                 return (
-                  <Card className="p-4" key={product.id}>
-                    <div className="flex gap-4">
+                  <Card className="overflow-hidden" key={product.id}>
+                    {/* The whole box opens the product: the staff clicks the picture or the name. */}
+                    <button
+                      aria-expanded={open}
+                      className="flex w-full gap-4 p-4 text-left transition hover:bg-slate-50"
+                      onClick={() => toggle(product.id, open)}
+                      type="button"
+                    >
                       {image ? (
                         <img
                           alt={product.name}
@@ -162,27 +199,32 @@ export function LotsPage() {
                         </div>
                       )}
 
-                      <div className="min-w-0 flex-1 space-y-3">
+                      <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
+                          <span className="w-3 text-slate-500">{open ? "▾" : "▸"}</span>
                           <h2 className="text-lg font-bold text-slate-900">{product.name}</h2>
                           <LotStatusBadge status={worstStatus(productLots)} />
                           <span className="text-sm text-slate-500">
                             {product.skus.length} SKU · {productLots.length} lô · tồn {productQty}
                           </span>
                         </div>
+                      </div>
+                    </button>
 
+                    {open && (
+                      <div className="space-y-3 px-4 pb-4">
                         {product.skus.map((sku) => {
                           const key = skuKey(product, sku);
-                          const open = isExpanded(key);
+                          const skuExpanded = skuOpen(product, sku);
                           return (
                             <div className="rounded-lg border border-slate-200" key={key}>
                               <button
-                                aria-expanded={open}
+                                aria-expanded={skuExpanded}
                                 className="flex w-full items-center gap-2 bg-slate-50 px-3 py-2 text-left"
-                                onClick={() => setExpanded((current) => ({ ...current, [key]: !open }))}
+                                onClick={() => toggle(key, skuExpanded)}
                                 type="button"
                               >
-                                <span className="w-3 text-slate-500">{open ? "▾" : "▸"}</span>
+                                <span className="w-3 text-slate-500">{skuExpanded ? "▾" : "▸"}</span>
                                 <span className="font-mono text-sm font-semibold">{sku.sku}</span>
                                 <span className="text-xs text-slate-500">{sku.lots.length} lô</span>
                                 <span className="ml-auto">
@@ -190,7 +232,7 @@ export function LotsPage() {
                                 </span>
                               </button>
 
-                              {open && (
+                              {skuExpanded && (
                                 <div className="divide-y divide-slate-100">
                                   {sku.lots.map((lot) => {
                                     const scrapOrder = lot.scrapOrder;
@@ -242,7 +284,7 @@ export function LotsPage() {
                                               size="sm"
                                               variant="outline"
                                             >
-                                              {lot.shelfCell ? "Đổi vị trí" : "Gán vị trí"}
+                                              {lot.shelfCell ? "Đổi ô kệ" : "Gán ô kệ"}
                                             </Button>
                                           )}
                                           {scrapOrder ? (
@@ -291,7 +333,7 @@ export function LotsPage() {
                           );
                         })}
                       </div>
-                    </div>
+                    )}
                   </Card>
                 );
               })}
@@ -334,7 +376,7 @@ export function LotsPage() {
           onClose={() => setShelfLot(null)}
           onDone={() => {
             setShelfLot(null);
-            setMessage("Đã gán vị trí cho lô hàng.");
+            setMessage("Đã gán ô kệ cho lô hàng.");
             void refetch();
           }}
         />

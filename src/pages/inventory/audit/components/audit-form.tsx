@@ -33,7 +33,7 @@ function flattenCategories(
 const SCOPE_OPTIONS: { value: AuditScopeType; label: string; hint: string }[] = [  {
     value: 'FULL_STORE',
     label: 'Toàn cửa hàng',
-    hint: 'Chủ tự thêm từng dòng kiểm kê.',
+    hint: 'Tự sinh dòng cho mọi lô hàng còn tồn kho và còn hạn (không gom SKU không có lô).',
   },
   {
     value: 'CATEGORY',
