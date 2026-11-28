@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { expect, it, vi } from "vitest";
 import { InventoryOutlookPage } from "@/pages/ai-insights/inventory-outlook-page";
@@ -25,24 +25,83 @@ it("shows conflicting signals, source dates, and a draft as context, not incomin
   mocks.allowed = true;
   mocks.get.mockResolvedValue({
     state: "READY", latestRun: { status: "SUCCEEDED", startedAt: source.finishedAt, ...source }, ruleFresh: true,
-    forecastReady: false, warnings: [{ code: "FORECAST_INSUFFICIENT_DATA", message: "Thiếu lịch sử dự báo." }],
+    forecastReady: false, warnings: [
+      { code: "FORECAST_INSUFFICIENT_DATA", message: "Thiếu lịch sử dự báo." },
+      { code: "FORECAST_SYNTHETIC_MODEL", message: "Mô hình giả lập." },
+      { code: "FORECAST_UNAVAILABLE", message: "Dịch vụ dự báo không khả dụng." },
+    ],
     hasSyntheticSku: true, summary: { totalSku: 1, byPriority: { CRITICAL: 0, HIGH: 1, MEDIUM: 0, LOW: 0 }, withoutCurrentPriority: 0 },
     page: 1, pageSize: 20, total: 1, items: [item],
   });
   render(<MemoryRouter><InventoryOutlookPage /></MemoryRouter>);
-  expect(await screen.findByText(/dữ liệu giả lập/)).toBeInTheDocument();
+  expect(await screen.findByText(/Mã hàng trong danh sách/)).toBeInTheDocument();
+  expect(screen.queryByText(/Tồn kho và lô là số liệu tại lần phân tích/)).not.toBeInTheDocument();
+  expect(screen.getByText(/Chọn một mức để lọc mặt hàng/)).toBeInTheDocument();
+  expect(screen.queryByText(/giả lập/)).not.toBeInTheDocument();
   expect(screen.getByText(/Dự báo chưa sẵn sàng/)).toBeInTheDocument();
+  expect(screen.getByText(/Có 1 lưu ý về dữ liệu/)).toBeInTheDocument();
   expect(screen.getByText("Thiếu lịch sử dự báo.")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Xem chi tiết Sản phẩm DEMO-1" }));
   const dialog = within(screen.getByRole("dialog"));
   expect(dialog.getByText(/Nguy cơ hết hạn · Lô L1/)).toBeInTheDocument();
-  expect(dialog.getByText(/Đang xử lý/)).toBeInTheDocument();
-  expect(dialog.getByText(/Thông tin cũ hoặc dự báo chưa sẵn sàng/)).toBeInTheDocument();
+  expect(dialog.getByText(/Đang được xử lý/)).toBeInTheDocument();
+  expect(dialog.getByText(/Thông tin này có thể đã thay đổi/)).toBeInTheDocument();
   expect(dialog.getByText(/Tồn có thể bán khi phân tích: 4 sản phẩm/)).toBeInTheDocument();
-  expect(dialog.getByText(/không tính là hàng đang về hoặc đề xuất mới/)).toBeInTheDocument();
+  expect(dialog.getByText(/chưa tính số hàng này là hàng đang về/)).toBeInTheDocument();
+  expect(dialog.getByText(/Dưới đây là những vấn đề được ghi nhận/)).toBeInTheDocument();
+  expect(dialog.getAllByText(/Xem các số liệu làm căn cứ/)).toHaveLength(3);
   expect(dialog.getByText("Trung bình 30 ngày")).toBeInTheDocument();
-  expect(dialog.getAllByText(/Số bán tại quầy tính đến hết ngày/)).toHaveLength(3);
+  expect(dialog.getAllByText(/Dữ liệu bán được tính đến hết/)).toHaveLength(3);
   expect(dialog.queryByText(/Giá vốn|Thành tiền/)).not.toBeInTheDocument();
+});
+
+it("summarizes the most urgent current issues while keeping every lot in the details", async () => {
+  mocks.allowed = true;
+  mocks.get.mockResolvedValue({
+    state: "READY", latestRun: { status: "SUCCEEDED", startedAt: source.finishedAt, ...source }, ruleFresh: true,
+    forecastReady: true, warnings: [], hasSyntheticSku: true,
+    summary: { totalSku: 1, byPriority: { CRITICAL: 0, HIGH: 1, MEDIUM: 0, LOW: 0 }, withoutCurrentPriority: 0 },
+    page: 1, pageSize: 20, total: 1, items: [{ ...item, replenishment: null, signals: [
+      { ...signal, id: "stale", type: "EXPIRATION_RISK", severity: "CRITICAL", current: false, lotNumber: "L1" },
+      { ...signal, id: "medium", type: "EXPIRATION_RISK", severity: "MEDIUM", lotNumber: "L2" },
+      { ...signal, id: "high", type: "LOW_STOCK", severity: "HIGH", metrics: { stockAvailable: 4, model: "LIGHTGBM", modelVersion: "internal-version", datasetKind: "synthetic" } },
+      { ...signal, id: "low", type: "EXPIRATION_RISK", severity: "LOW", lotNumber: "L3" },
+    ] }],
+  });
+  render(<MemoryRouter><InventoryOutlookPage /></MemoryRouter>);
+  const button = await screen.findByRole("button", { name: "Xem chi tiết Sản phẩm DEMO-1" });
+  const row = within(button.closest("tr")!);
+  expect(row.getByText("Sắp hết hàng")).toBeInTheDocument();
+  expect(row.getByText(/Lô L2/)).toBeInTheDocument();
+  expect(row.getByText("+2 vấn đề khác trong chi tiết")).toBeInTheDocument();
+  expect(row.queryByText(/Lô L1|Lô L3/)).not.toBeInTheDocument();
+  fireEvent.click(button);
+  const dialog = within(screen.getByRole("dialog"));
+  expect(dialog.getByRole("heading", { name: /Lô L1/ })).toBeInTheDocument();
+  expect(dialog.getByRole("heading", { name: /Lô L2/ })).toBeInTheDocument();
+  expect(dialog.getByRole("heading", { name: /Lô L3/ })).toBeInTheDocument();
+  expect(dialog.getByText(/Thông tin này có thể đã thay đổi/).closest("section")).toHaveTextContent("Chưa được xử lý");
+  expect(dialog.queryByText(/LIGHTGBM|internal-version|synthetic|mô hình/i)).not.toBeInTheDocument();
+  expect(dialog.getAllByText("Hàng có thể bán lúc phân tích")).toHaveLength(4);
+});
+
+it("filters by priority when a card is selected and clears it when selected again", async () => {
+  mocks.allowed = true;
+  mocks.get.mockClear();
+  mocks.get.mockResolvedValue({
+    state: "READY", latestRun: { status: "SUCCEEDED", startedAt: source.finishedAt, ...source }, ruleFresh: true,
+    forecastReady: true, warnings: [], hasSyntheticSku: false,
+    summary: { totalSku: 1, byPriority: { CRITICAL: 0, HIGH: 1, MEDIUM: 0, LOW: 0 }, withoutCurrentPriority: 0 },
+    page: 1, pageSize: 20, total: 1, items: [item],
+  });
+  render(<MemoryRouter><InventoryOutlookPage /></MemoryRouter>);
+  const card = await screen.findByRole("button", { name: /Cao.*Cần chú ý sớm/ });
+  fireEvent.click(card);
+  await waitFor(() => expect(mocks.get).toHaveBeenLastCalledWith(expect.objectContaining({ priority: "HIGH", page: 1 })));
+  const activeCard = await screen.findByRole("button", { name: /Cao.*Cần chú ý sớm/, pressed: true });
+  fireEvent.click(activeCard);
+  await waitFor(() => expect(mocks.get).toHaveBeenLastCalledWith(expect.objectContaining({ priority: "", page: 1 })));
+  expect(await screen.findByRole("button", { name: /Cao.*Cần chú ý sớm/, pressed: false })).toBeInTheDocument();
 });
 
 it("explains forecast and lot risks without confusing lead time with an order", async () => {

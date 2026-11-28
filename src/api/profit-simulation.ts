@@ -1,6 +1,7 @@
 import { apiRequest } from "@/services/api.service";
 
 export type SimulationVariant = { id: string; sku: string; name: string; isActive: boolean | null };
+export type SimulationCategory = { id: string; name: string; parentName: string | null; isActive: boolean | null };
 export type SimulationForecast =
   | { status: "UNAVAILABLE"; reason: string }
   | { status: "READY"; start: string; dataAsOf: string; finishedAt: string; model: string | null; confidence: string | null;
@@ -25,9 +26,17 @@ export type SimulationResult = {
   changes: { revenue: Change; cogs: Change; grossProfit: Change; afterExpense: Change | null };
 };
 
-export function searchSimulationVariants(search: string, page: number) {
+export function searchSimulationCategories(search: string, page: number) {
+  return apiRequest<{ items: SimulationCategory[]; page: number; pageSize: number; hasMore: boolean }>(
+    `/business-data/profit-simulation/categories?${new URLSearchParams({ search, page: String(page), pageSize: "8" })}`,
+  );
+}
+
+export function searchSimulationVariants(search: string, page: number, categoryId: string) {
+  const params = new URLSearchParams({ search, page: String(page), pageSize: "8" });
+  if (categoryId) params.set("categoryId", categoryId);
   return apiRequest<{ items: SimulationVariant[]; page: number; pageSize: number; hasMore: boolean }>(
-    `/business-data/profit-simulation/variants?${new URLSearchParams({ search, page: String(page), pageSize: "8" })}`,
+    `/business-data/profit-simulation/variants?${params}`,
   );
 }
 

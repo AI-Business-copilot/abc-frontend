@@ -50,6 +50,27 @@
 .ps-picker-header > div { min-width: 0; overflow-wrap: anywhere; }
 .ps-picker-header strong { color: #0f172a; }
 
+.ps-category,
+.ps-category-options {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.ps-category {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.8rem;
+}
+
+.ps-category-special { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ps-category-special button { max-width: 100%; height: auto; white-space: normal; }
+.ps-category-special button[aria-pressed="true"] { border-color: #2563eb; background: #eff6ff; }
+.ps-category-list { display: grid; gap: 0.35rem; }
+.ps-category-item { display: flex; justify-content: space-between; gap: 0.5rem; min-width: 0; border: 1px solid #e2e8f0; border-radius: 0.5rem; background: #fff; padding: 0.6rem; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.ps-category-item[aria-pressed="true"] { border-color: #2563eb; background: #eff6ff; }
+.ps-category-item:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+
 .ps-form {
   border: 0;
   padding: 0;
@@ -84,6 +105,27 @@
   margin-top: 0.8rem;
 }
 
+.ps-fields small.ps-input-warning { color: #b45309; font-weight: 600; }
+
+.ps-period,
+.ps-forecast {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.75rem;
+  background: #eff6ff;
+  padding: 0.85rem 1rem;
+  overflow-wrap: anywhere;
+}
+
+.ps-period span,
+.ps-forecast span { color: #334155; font-size: 0.8rem; font-weight: 600; }
+.ps-period strong,
+.ps-forecast strong { color: #0f172a; font-size: 1.1rem; }
+.ps-forecast.warning { border-color: #fed7aa; background: #fff7ed; }
+.ps-forecast > button { justify-self: start; max-width: 100%; height: auto; white-space: normal; }
+
 .ps-picker {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
 }
@@ -106,7 +148,7 @@
 .ps-pick > span { display: grid; gap: 0.2rem; min-width: 0; }
 .ps-pick strong { color: #1e293b; font-size: 0.82rem; }
 .ps-pick small { color: #64748b; font-size: 0.75rem; }
-.ps-pick b { color: #2563eb; font-size: 0.75rem; }
+.ps-pick svg { flex: 0 0 auto; color: #2563eb; }
 .ps-pick:hover { border-color: #93c5fd; background: #f8fbff; }
 .ps-pick:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
 .ps-pick.selected {

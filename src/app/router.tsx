@@ -5,6 +5,7 @@ import { LoadingScreen } from "@/components/common/loading-screen";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { AdminPage } from "@/pages/admin/admin-page";
 import { BusinessPage } from "@/pages/business/business-page";
 import { TeamPage } from "@/pages/business/team-page";
@@ -48,6 +49,8 @@ const AiInsightsPage = lazy(() => import("@/pages/ai-insights/ai-insights-page")
 const ReplenishmentPage = lazy(() => import("@/pages/ai-insights/replenishment-page").then((module) => ({ default: module.ReplenishmentPage })));
 const ProductPerformancePage = lazy(() => import("@/pages/ai-insights/product-performance-page").then((module) => ({ default: module.ProductPerformancePage })));
 const BusinessMovementPage = lazy(() => import("@/pages/ai-insights/business-movement-page").then((module) => ({ default: module.BusinessMovementPage })));
+const AssistantPage = lazy(() => import("@/pages/ai-insights/assistant-page").then((module) => ({ default: module.AssistantPage })));
+const AssistantWidget = lazy(() => import("@/pages/ai-insights/assistant-widget").then((module) => ({ default: module.AssistantWidget })));
 const ProfitSimulationPage = lazy(() => import("@/pages/ai-insights/profit-simulation-page").then((module) => ({ default: module.ProfitSimulationPage })));
 const InventoryOutlookPage = lazy(() => import("@/pages/ai-insights/inventory-outlook-page").then((module) => ({ default: module.InventoryOutlookPage })));
 const ReturnsPage = lazy(() => import("@/pages/returns/returns-page").then((module) => ({ default: module.ReturnsPage })));
@@ -72,6 +75,7 @@ function LegacyPurchaseRedirect() {
 
 function RequireProfile() {
   const { session, profile, loading, profileError, refreshProfile, logout } = useAuth();
+  const { can, isOwner } = usePermissions();
   const location = useLocation();
   if (loading) return <LoadingScreen />;
   if (!session) return <Navigate replace state={{ from: location.pathname }} to="/login" />;
@@ -89,7 +93,10 @@ function RequireProfile() {
     );
   }
   if (!profile) return <LoadingScreen label="Đang đồng bộ hồ sơ tài khoản…" />;
-  return <Outlet />;
+  const business = profile.business;
+  const canUseAssistant = !profile.onboardingRequired && business?.status === "ACTIVE" && business.membershipStatus === "ACTIVE"
+    && can("analytics.read") && can("finance.read");
+  return <><Outlet />{canUseAssistant && <Suspense fallback={null}><AssistantWidget key={`${profile.user.id}:${business.id}`} isOwner={isOwner} /></Suspense>}</>;
 }
 
 function RequireOnboarding() {
@@ -250,6 +257,7 @@ export const router = createBrowserRouter([
       { path: "/app/replenishment", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><ReplenishmentPage /></Suspense></RequireBusiness> },
       { path: "/app/product-performance", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><ProductPerformancePage /></Suspense></RequireBusiness> },
       { path: "/app/business-movement", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><BusinessMovementPage /></Suspense></RequireBusiness> },
+      { path: "/app/assistant", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><AssistantPage /></Suspense></RequireBusiness> },
       { path: "/app/profit-simulation", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><ProfitSimulationPage /></Suspense></RequireBusiness> },
       { path: "/app/inventory-outlook", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><InventoryOutlookPage /></Suspense></RequireBusiness> },
       { path: "/returns/*", element: <RequireBusiness><Suspense fallback={<LoadingScreen />}><ReturnsPage /></Suspense></RequireBusiness> },

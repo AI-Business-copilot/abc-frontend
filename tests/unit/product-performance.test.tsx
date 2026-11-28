@@ -24,19 +24,83 @@ it("shows warnings, unavailable comparisons and variant financial details", asyn
     items: [{ id: "p1", name: "Áo", ...comparison, variants: [{ id: "v1", sku: "DEMO-1", ...comparison }] }],
   });
   render(<ProductPerformancePage />);
-  expect(await screen.findByText(/dữ liệu giả lập phục vụ trình diễn/)).toBeInTheDocument();
-  expect(screen.getByText(/thiếu liên kết đơn hợp lệ/)).toBeInTheDocument();
-  expect(screen.getAllByText(/không có tỷ lệ so sánh/).length).toBeGreaterThan(0);
+  expect(await screen.findByText(/chưa liên kết được với đơn bán hợp lệ/)).toBeInTheDocument();
+  expect(screen.queryByText(/giả lập/)).not.toBeInTheDocument();
+  expect(screen.getAllByText(/Không tính tỷ lệ vì kỳ trước bằng 0 hoặc âm/).length).toBeGreaterThan(0);
   const search = screen.getByRole("textbox", { name: "Tìm sản phẩm hoặc SKU" });
   fireEvent.change(search, { target: { value: "DEMO-1" } });
   expect(mocks.get).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole("button", { name: "Tìm" }));
   expect(mocks.get).toHaveBeenCalledTimes(1);
   fireEvent.click(await screen.findByRole("button", { name: "Xem chi tiết Áo" }));
-  expect(screen.getByText("SKU DEMO-1")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /Mã hàng DEMO-1/ }));
   const tables = screen.getAllByRole("table");
-  expect(within(tables[2]).getByText("Giá vốn thuần")).toBeInTheDocument();
-  expect(within(tables[2]).getByText("Không khả dụng")).toBeInTheDocument();
+  expect(within(tables[2]).getByText("Giá vốn sau hàng trả đủ điều kiện")).toBeInTheDocument();
+  expect(within(tables[2]).getByText("Chưa tính được")).toBeInTheDocument();
+});
+
+it("describes increases, decreases and missing percentages without hiding negative profit", async () => {
+  mocks.permissions = ["analytics.read", "finance.read"];
+  mocks.get.mockResolvedValue({
+    ranges: { current: { from: "2026-04-20", to: "2026-04-26", dayCount: 7 }, previous: { from: "2026-04-13", to: "2026-04-19", dayCount: 7 } },
+    asOf: "2026-04-27T00:00:00Z",
+    totals: { ...comparison, changes: {
+      ...comparison.changes, netRevenue: { difference: "-70.00", percent: "-10.00" },
+      grossProfit: { difference: "30.00", percent: null }, unitsSold: { difference: "0.00", percent: "0.00" },
+    } },
+    warnings: { excludedSaleItems: 2, excludedReturnItems: 1, missingReturnCostLinks: 0 },
+    hasSyntheticSku: false, items: [{
+      id: "p", name: "Áo", ...comparison, current: { ...current, grossProfit: "-30.00", marginPercent: null },
+      changes: { ...comparison.changes, netRevenue: { difference: "-70.00", percent: "-10.00" } }, variants: [],
+    }],
+    pagination: { page: 1, pageSize: 1, total: 1, totalPages: 1 },
+  });
+  render(<ProductPerformancePage />);
+  expect(await screen.findByText(/Đã bỏ qua 2 dòng bán và 1 dòng trả/)).toBeInTheDocument();
+  const row = within(screen.getByRole("table")).getAllByRole("row")[1];
+  expect(row).toHaveTextContent(/Giảm 70.*₫.*10,00%/);
+  expect(row).not.toHaveTextContent(/Giảm -70/);
+  expect(row).toHaveTextContent(/-30.*₫/);
+  expect(row).toHaveTextContent("Chưa tính được biên lợi nhuận");
+  expect(screen.getAllByText(/Tăng 30.*Không tính tỷ lệ vì kỳ trước bằng 0 hoặc âm/).length).toBeGreaterThan(0);
+  expect(screen.getByText(/Không đổi · 0,00%/)).toBeInTheDocument();
+});
+
+it("marks incomplete periods based on the data snapshot in the business timezone", async () => {
+  mocks.permissions = ["analytics.read", "finance.read"];
+  mocks.get.mockResolvedValue({
+    ranges: { current: { from: "2026-04-21", to: "2026-04-27", dayCount: 7 }, previous: { from: "2026-04-14", to: "2026-04-20", dayCount: 7 } },
+    asOf: "2026-04-26T17:30:00Z", totals: comparison,
+    warnings: { excludedSaleItems: 0, excludedReturnItems: 0, missingReturnCostLinks: 0 },
+    hasSyntheticSku: false, items: [], pagination: { page: 1, pageSize: 0, total: 0, totalPages: 1 },
+  });
+  render(<ProductPerformancePage />);
+  expect(await screen.findByText(/ngày chưa kết thúc hoặc chưa tới tại thời điểm tải dữ liệu/)).toBeInTheDocument();
+  expect(screen.getByText(/không phải lãi ròng/)).toBeInTheDocument();
+});
+
+it("finds and expands an individual SKU without reloading the product snapshot", async () => {
+  mocks.permissions = ["analytics.read", "finance.read"];
+  mocks.get.mockClear();
+  mocks.get.mockResolvedValue({
+    ranges: { current: { from: "2026-04-20", to: "2026-04-26", dayCount: 7 }, previous: { from: "2026-04-13", to: "2026-04-19", dayCount: 7 } },
+    asOf: "2026-04-27T00:00:00Z", totals: comparison,
+    warnings: { excludedSaleItems: 0, excludedReturnItems: 0, missingReturnCostLinks: 0 },
+    hasSyntheticSku: false, pagination: { page: 1, pageSize: 1, total: 1, totalPages: 1 },
+    items: [{ id: "p", name: "Áo", ...comparison, variants: [
+      { id: "v1", sku: "A-001", ...comparison }, { id: "v2", sku: "A-002", ...comparison },
+    ] }],
+  });
+  render(<ProductPerformancePage />);
+  fireEvent.click(await screen.findByRole("button", { name: "Xem chi tiết Áo" }));
+  expect(screen.getByRole("button", { name: /Mã hàng A-001/ })).toHaveAttribute("aria-expanded", "false");
+  fireEvent.change(screen.getByRole("textbox", { name: "Tìm mã hàng trong chi tiết" }), { target: { value: "002" } });
+  expect(screen.queryByRole("button", { name: /Mã hàng A-001/ })).not.toBeInTheDocument();
+  const variant = screen.getByRole("button", { name: /Mã hàng A-002/ });
+  fireEvent.click(variant);
+  expect(variant).toHaveAttribute("aria-expanded", "true");
+  expect(within(variant.closest("section")!).getByRole("table")).toBeInTheDocument();
+  expect(mocks.get).toHaveBeenCalledTimes(1);
 });
 
 it("filters, sorts and paginates the entire snapshot without loading POS again", async () => {

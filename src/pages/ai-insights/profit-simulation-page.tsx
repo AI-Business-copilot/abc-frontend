@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, CircleDollarSign, Search } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, CircleDollarSign, Search } from "lucide-react";
 
 import {
-  calculateProfitSimulation, getSimulationBasis, searchSimulationVariants,
+  calculateProfitSimulation, getSimulationBasis, searchSimulationCategories, searchSimulationVariants,
   type SimulationBasis, type SimulationInputs, type SimulationResult, type SimulationVariant,
 } from "@/api/profit-simulation";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -43,6 +43,15 @@ function formatQuantity(value: string) {
   return `${BigInt(whole).toLocaleString("vi-VN")}${decimal ? `,${decimal}` : ""}`;
 }
 
+function forecastForPeriod(basis: SimulationBasis, days: Horizon) {
+  if (basis.forecast.status !== "READY") return null;
+  return days === 7 ? basis.forecast.totals.d7 : days === 14 ? basis.forecast.totals.d14 : basis.forecast.totals.d28;
+}
+
+function usableForecast(quantity: string | null): quantity is string {
+  return quantity !== null && BigInt(quantity.replace(".", "")) <= 100000000n;
+}
+
 function ScenarioFields({ title, value, onChange }: { title: string; value: Draft; onChange: (field: FieldName, value: string) => void }) {
   return <section className="ps-card"><h3>{title}</h3>
     <p>{title === "Kịch bản cơ sở" ? "Tình huống bạn muốn dùng làm mốc so sánh." : "Thử thay đổi các con số và so sánh với cơ sở."}</p>
@@ -50,6 +59,7 @@ function ScenarioFields({ title, value, onChange }: { title: string; value: Draf
       <input type="text" inputMode="decimal" required={!field.optional} maxLength={16} placeholder={field.optional ? "Chưa có giả định" : "Ví dụ: 100.00"}
         aria-label={`${title}: ${field.label}`} value={value[field.key]} onChange={(event) => onChange(field.key, event.target.value)} />
       {field.key === "operatingExpense" && <small>Để trống nếu chưa biết chi phí của kỳ này.</small>}
+      {field.key === "unitCost" && /^0+(?:\.0{1,2})?$/.test(value.unitCost) && <small className="ps-input-warning">Giá vốn đang là 0đ. Hãy kiểm tra lại để tránh tính sai lợi nhuận.</small>}
       {(field.key === "price" || field.key === "unitCost" || field.key === "operatingExpense") && /^\d{1,13}(?:\.\d{1,2})?$/.test(value[field.key]) && (() => {
         const [whole, fraction = ""] = value[field.key].split(".");
         return <small>Đang nhập: {posMoney(`${whole}.${fraction.padEnd(2, "0")}`)}</small>;
@@ -76,7 +86,8 @@ function ResultTable({ result }: { result: SimulationResult }) {
     { label: "Sau chi phí giả định", key: "afterExpense" },
   ] as const;
   return <section className="ps-section ps-results" aria-live="polite"><div className="ps-section-heading"><div><span className="ps-kicker">KẾT QUẢ GIẢ ĐỊNH</span><h2>Kết quả mô phỏng</h2>
-    <p>{result.variant.name} · {result.variant.sku} · {displayDate(result.period.start)} – {displayDate(result.period.end)} ({result.period.days} ngày)</p></div></div>
+    <p>{result.variant.name} · {result.variant.sku}</p></div></div>
+    <div className="ps-period"><span>Kỳ mô phỏng · {result.period.days} ngày</span><strong>{displayDate(result.period.start)} – {displayDate(result.period.end)}</strong></div>
     <div className={`ps-result-highlight ${scenarioLoss ? "loss" : positive ? "increase" : negative ? "decrease" : "unchanged"}`}>
       <div className="ps-result-icon"><Trend size={21} aria-hidden="true" /></div>
       <div><span>So với kịch bản cơ sở</span><h3>Lợi nhuận gộp {direction}{amount !== 0n && ` ${posMoney(absolute)}`}</h3>
@@ -101,17 +112,18 @@ function ResultTable({ result }: { result: SimulationResult }) {
       })}</tbody>
     </table></div>
     <p>Doanh thu sau giảm giá = tiền hàng − giảm giá. Lợi nhuận gộp = doanh thu sau giảm giá − giá vốn. Không bao gồm trả hàng, thuế và các chi phí chưa nhập. “Sau chi phí giả định” không phải lợi nhuận ròng.</p></details>
-    <p className="ps-caveat">Kết quả phụ thuộc vào giả định; giá thay đổi không tự làm thay đổi lượng bán.</p>
+    <p className="ps-caveat">Đây là kết quả ước tính. Nếu đổi giá, hãy tự điều chỉnh số lượng dự kiến khi cần.</p>
   </section>;
 }
 
 function SimulationForm({ basis }: { basis: SimulationBasis }) {
   const initial: Draft = { quantity: "", price: basis.variant.basePrice, unitCost: basis.variant.costPrice, discountPercent: "0", operatingExpense: "" };
-  const [baseline, setBaseline] = useState(initial);
+  const initialForecast = forecastForPeriod(basis, 7);
+  const [baseline, setBaseline] = useState<Draft>(() => ({ ...initial, quantity: usableForecast(initialForecast) ? initialForecast : "" }));
   const [scenario, setScenario] = useState(initial);
   const [days, setDays] = useState<Horizon>(7);
   const [confirmed, setConfirmed] = useState(false);
-  const [quantitySource, setQuantitySource] = useState("Nhập thủ công");
+  const [usingForecast, setUsingForecast] = useState(() => usableForecast(initialForecast));
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -121,44 +133,44 @@ function SimulationForm({ basis }: { basis: SimulationBasis }) {
   }, [result]);
   const start = dayOffset(basis.today, 1);
   const end = dayOffset(start, days - 1);
-  const forecastQuantity = basis.forecast.status === "READY"
-    ? days === 7 ? basis.forecast.totals.d7 : days === 14 ? basis.forecast.totals.d14 : basis.forecast.totals.d28
-    : null;
-  const forecastTooLarge = forecastQuantity !== null && BigInt(forecastQuantity.replace(".", "")) > 100000000n;
+  const forecastQuantity = forecastForPeriod(basis, days);
+  const forecastTooLarge = forecastQuantity !== null && !usableForecast(forecastQuantity);
   const change = (side: "baseline" | "scenario", field: FieldName, value: string) => {
     if (side === "baseline") {
       setBaseline((previous) => ({ ...previous, [field]: value }));
-      if (field === "quantity") setQuantitySource("Nhập thủ công hoặc đã chỉnh sửa");
+      if (field === "quantity") setUsingForecast(false);
     } else setScenario((previous) => ({ ...previous, [field]: value }));
     setConfirmed(false); setResult(null); setError("");
   };
   const toInputs = (draft: Draft): SimulationInputs => ({ ...draft, operatingExpense: draft.operatingExpense === "" ? null : draft.operatingExpense });
   return <div className="ps-workspace">
     {result && <div ref={resultRef}><ResultTable result={result} /></div>}
-    {basis.variant.sku.startsWith("DEMO-") && <div className="bd-notice warning">SKU demo dùng dữ liệu giả lập, không phản ánh cửa hàng thực tế.</div>}
     {basis.variant.isActive !== true && <div className="bd-notice warning">SKU hiện không được đánh dấu đang hoạt động. Kiểm tra trước khi sử dụng giả định.</div>}
     <section className="ps-section"><div><span className="ps-kicker">BƯỚC 2 · CHỌN KỲ VÀ SỐ LƯỢNG</span><h2>{basis.variant.name} · {basis.variant.sku}</h2></div>
-      <p>Giá tham khảo hiện tại: bán {posMoney(basis.variant.basePrice)} · giá vốn {posMoney(basis.variant.costPrice)}. Hãy kiểm tra trước khi tính; giá vốn 0 có thể do chưa cấu hình.</p>
       <FilterField label="Kỳ mô phỏng"><select value={days} disabled={busy} onChange={(event) => {
         const value = Number(event.target.value);
         if (value !== 7 && value !== 14 && value !== 28) throw new Error("Kỳ mô phỏng không hợp lệ.");
-        setDays(value); setBaseline((previous) => ({ ...previous, quantity: "" })); setScenario((previous) => ({ ...previous, quantity: "" }));
-        setQuantitySource("Nhập thủ công"); setConfirmed(false); setResult(null); setError("");
+        const nextForecast = forecastForPeriod(basis, value);
+        const canUseForecast = usableForecast(nextForecast);
+        setDays(value); setBaseline((previous) => ({ ...previous, quantity: canUseForecast ? nextForecast : "" })); setScenario((previous) => ({ ...previous, quantity: "" }));
+        setUsingForecast(canUseForecast); setConfirmed(false); setResult(null); setError("");
       }}><option value={7}>7 ngày</option><option value={14}>14 ngày</option><option value={28}>28 ngày</option></select></FilterField>
-      <p>Kỳ từ {displayDate(start)} đến {displayDate(end)}; bắt đầu ngày mai theo giờ Việt Nam. Khi đổi kỳ cần kiểm tra và nhập lại số lượng.</p>
-      {basis.forecast.status === "READY" ? <>
-        <p>Hệ thống ước tính bán <strong>{forecastQuantity === null ? "—" : formatQuantity(forecastQuantity)} đơn vị</strong> trong {days} ngày. Bạn có thể dùng số này hoặc tự nhập.</p>
-        {basis.forecast.datasetKind === "synthetic" && <div className="bd-notice warning">Mô hình dùng dữ liệu giả lập; chưa chứng minh độ chính xác cho cửa hàng thực tế.</div>}
-        <p>Dự báo là số bán kỳ vọng trước trả hàng, không đảm bảo đủ hàng hoặc bán được. Thay đổi giá không tự thay đổi số lượng bán.</p>
-        {forecastTooLarge && <div className="bd-notice warning">Dự báo vượt giới hạn số lượng mô phỏng; hãy nhập số lượng thủ công.</div>}
-        <Button type="button" variant="outline" disabled={busy || forecastTooLarge} onClick={() => {
-          if (forecastQuantity === null) return;
-          setBaseline((previous) => ({ ...previous, quantity: forecastQuantity }));
-          setQuantitySource(`Dự báo ${days} ngày, làm tròn 2 chữ số thập phân`); setConfirmed(false); setResult(null); setError("");
-        }}>Dùng dự báo cho cơ sở</Button>
-        <details className="ps-details"><summary>Thông tin dự báo và giá tham khảo</summary><p>Dữ liệu bán đến hết {displayDate(basis.forecast.dataAsOf)}; phân tích hoàn tất {new Date(basis.forecast.finishedAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}. Phương pháp: {basis.forecast.model ?? "không rõ"}; phiên bản: {basis.forecast.modelVersion ?? "không rõ"}. Giá tham khảo tải lúc {new Date(basis.asOf).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}.</p></details>
-      </> : <div className="bd-notice warning">{basis.forecast.reason} Bạn vẫn có thể nhập số lượng thủ công.</div>}
-      <p>Nguồn số lượng cơ sở: {quantitySource}.</p>
+      <div className="ps-period"><span>Kỳ mô phỏng · {days} ngày, bắt đầu từ ngày mai</span><strong>{displayDate(start)} – {displayDate(end)}</strong></div>
+      <p>Khi đổi kỳ, số lượng ở cả hai kịch bản sẽ được đặt lại; cơ sở dùng dự báo của kỳ mới nếu có.</p>
+      {forecastQuantity !== null ? <div className={`ps-forecast${forecastTooLarge ? " warning" : ""}`}>
+        <span>Dự kiến bán trong {days} ngày</span><strong>{formatQuantity(forecastQuantity)} sản phẩm</strong>
+        {forecastTooLarge ? <p>Số dự báo vượt mức cho phép là 1.000.000. Hãy tự nhập số lượng phù hợp vào kịch bản cơ sở.</p> : <>
+          <p>{usingForecast ? "Đã điền vào kịch bản cơ sở. Bạn có thể điều chỉnh nếu cần." : "Bạn đã điều chỉnh số lượng ở kịch bản cơ sở."}</p>
+          {!usingForecast && <Button type="button" variant="outline" disabled={busy} onClick={() => {
+            setBaseline((previous) => ({ ...previous, quantity: forecastQuantity }));
+            setUsingForecast(true); setConfirmed(false); setResult(null); setError("");
+          }}>Dùng lại số dự báo</Button>}
+        </>}
+        <p>Đây chỉ là số lượng dự kiến, không đảm bảo sẽ bán được.</p>
+      </div> : <div className="ps-forecast warning">
+        <strong>Chưa có dự báo phù hợp cho sản phẩm này</strong>
+        <p>Dữ liệu bán có thể chưa đủ hoặc dự báo chưa được cập nhật. Hãy tự nhập số lượng dự kiến vào kịch bản cơ sở.</p>
+      </div>}
     </section>
     <form className="ps-section" onSubmit={(event) => {
       event.preventDefault();
@@ -198,13 +210,60 @@ function SelectedVariant({ id }: { id: string }) {
   </>;
 }
 
+function CategoryPicker({ category, onChange }: { category: { id: string; label: string }; onChange: (category: { id: string; label: string }) => void }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const result = useLoad(() => searchSimulationCategories(search, page), [search, page]);
+  const choose = (id: string, label: string) => { onChange({ id, label }); setOpen(false); };
+  return <div className="ps-category">
+    <div className="ps-picker-header"><div><strong>Danh mục: {category.label}</strong><p>Chọn danh mục để thu hẹp danh sách SKU; danh mục cha gồm cả danh mục con.</p></div>
+      <Button type="button" variant="outline" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Đóng danh mục" : "Chọn danh mục"}</Button>
+    </div>
+    {open && <div className="ps-category-options">
+      <div className="ps-category-special">
+        <Button type="button" variant="outline" aria-pressed={category.id === ""} onClick={() => choose("", "Tất cả danh mục")}>Tất cả danh mục</Button>
+        <Button type="button" variant="outline" aria-pressed={category.id === "uncategorized"} onClick={() => choose("uncategorized", "Chưa phân loại")}>Chưa phân loại</Button>
+      </div>
+      <form className="bd-filters" onSubmit={(event) => {
+        event.preventDefault();
+        if (search === input.trim() && page === 1) result.reload();
+        else { setPage(1); setSearch(input.trim()); }
+      }}>
+        <label className="bd-search"><Search size={17} /><input aria-label="Tìm danh mục" maxLength={100} placeholder="Tìm tên danh mục…" value={input} onChange={(event) => setInput(event.target.value)} /></label>
+        <Button type="submit" variant="outline">Tìm danh mục</Button>
+      </form>
+      {result.loading && <div role="status">Đang tìm danh mục…</div>}
+      <ErrorBox error={result.error} />
+      {result.error && <Button type="button" variant="outline" onClick={result.reload}>Thử lại danh mục</Button>}
+      {result.data && <>
+        {result.data.items.length === 0 ? <p>Không tìm thấy danh mục phù hợp.</p> : <div className="ps-category-list">
+          {result.data.items.map((item) => {
+            const label = item.parentName ? `${item.parentName} · ${item.name}` : item.name;
+            return <button type="button" key={item.id} className="ps-category-item" aria-pressed={category.id === item.id} onClick={() => choose(item.id, label)}>
+              <span>{label}{item.isActive !== true ? " · Không hoạt động" : ""}</span>{category.id === item.id && <Check size={18} aria-hidden="true" />}
+            </button>;
+          })}
+        </div>}
+        <nav className="ps-picker-pagination" aria-label="Phân trang danh mục">
+          <span>Trang {result.data.page}</span>
+          <div><Button type="button" size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Trước</Button>
+            <Button type="button" size="sm" variant="outline" disabled={!result.data.hasMore} onClick={() => setPage((value) => value + 1)}>Tiếp</Button></div>
+        </nav>
+      </>}
+    </div>}
+  </div>;
+}
+
 function SimulationWorkspace() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<SimulationVariant | null>(null);
   const [pickerOpen, setPickerOpen] = useState(true);
   const [page, setPage] = useState(1);
-  const result = useLoad(() => searchSimulationVariants(search, page), [search, page]);
+  const [category, setCategory] = useState({ id: "", label: "Tất cả danh mục" });
+  const result = useLoad(() => searchSimulationVariants(search, page, category.id), [search, page, category.id]);
   return <main className="bd-page">
     <header className="bd-hero-copy"><span className="bd-eyebrow"><CircleDollarSign size={15} /> KỊCH BẢN GIẢ ĐỊNH</span>
       <h1>Mô phỏng lợi nhuận</h1><p>Thử thay đổi lượng bán, giá và chi phí để so sánh hai kịch bản cho một SKU.</p>
@@ -212,7 +271,8 @@ function SimulationWorkspace() {
     <section className="bd-data-workspace ps-section"><div className="ps-picker-header"><div><span className="ps-kicker">BƯỚC 1 · CHỌN SẢN PHẨM</span><h2>Chọn SKU</h2>
       <p>{selected ? <>Đang mô phỏng: <strong>{selected.name} · {selected.sku}</strong></> : "Chọn một mã hàng để bắt đầu mô phỏng."}</p></div>
       {selected && <Button type="button" variant="outline" aria-expanded={pickerOpen} onClick={() => setPickerOpen(!pickerOpen)}>{pickerOpen ? "Thu gọn" : "Đổi SKU"}</Button>}</div>
-      {pickerOpen && <><form className="bd-filters" onSubmit={(event) => { event.preventDefault(); if (search === searchInput.trim() && page === 1) result.reload(); else { setPage(1); setSearch(searchInput.trim()); } }}>
+      {pickerOpen && <><CategoryPicker category={category} onChange={(value) => { setCategory(value); setPage(1); }} />
+      <form className="bd-filters" onSubmit={(event) => { event.preventDefault(); if (search === searchInput.trim() && page === 1) result.reload(); else { setPage(1); setSearch(searchInput.trim()); } }}>
         <label className="bd-search"><Search size={17} /><input aria-label="Tìm sản phẩm hoặc SKU" maxLength={100} placeholder="Tìm sản phẩm hoặc SKU…" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} /></label>
         <Button type="submit" variant="outline">Tìm</Button>
       </form>
@@ -221,8 +281,8 @@ function SimulationWorkspace() {
       {result.error && <Button type="button" variant="outline" onClick={result.reload}>Thử lại</Button>}
       {result.data && <>
         {result.data.items.length === 0 ? <p>Không tìm thấy SKU phù hợp.</p> : <div className="ps-picker">{result.data.items.map((item) =>
-          <button type="button" className={`ps-pick${selected?.id === item.id ? " selected" : ""}`} key={item.id} onClick={() => { setSelected(item); setPickerOpen(false); }}>
-            <span><strong>{item.name}</strong><small>{item.sku}{item.isActive !== true ? " · Không hoạt động" : ""}</small></span><b>{selected?.id === item.id ? "Đã chọn" : "Chọn"}</b>
+          <button type="button" className={`ps-pick${selected?.id === item.id ? " selected" : ""}`} aria-label={`${item.name} · ${item.sku}${item.isActive !== true ? " · Không hoạt động" : ""}`} aria-pressed={selected?.id === item.id} key={item.id} onClick={() => { setSelected(item); setPickerOpen(false); }}>
+            <span><strong>{item.name}</strong><small>{item.sku}{item.isActive !== true ? " · Không hoạt động" : ""}</small></span>{selected?.id === item.id && <Check size={18} aria-hidden="true" />}
           </button>)}</div>}
         <nav className="ps-picker-pagination" aria-label="Phân trang SKU">
           <span>Trang {result.data.page}</span>

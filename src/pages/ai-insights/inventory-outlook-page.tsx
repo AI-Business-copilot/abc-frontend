@@ -28,56 +28,47 @@ const actions: Record<string, string> = {
   PREPARE_SCRAP: "Kiểm tra và chuẩn bị xử lý hàng", PROMOTE: "Cân nhắc khuyến mãi",
 };
 const metricLabels: Record<string, string> = {
-  stockAvailable: "Tồn có thể bán", avgDaily30: "Bán trung bình/ngày", leadTimeDays: "Thời gian nhập (ngày)",
-  safetyStockQty: "Tồn an toàn", reorderPoint: "Điểm đặt hàng lại", shortfallToReorderPoint: "Thiếu so với điểm đặt hàng",
-  daysOfCover: "Số ngày đủ bán", sold30: "Đã bán 30 ngày", sold60: "Đã bán 60 ngày",
-  daysWithoutSale: "Số ngày chưa bán", neverSold: "Chưa từng bán", ageDays: "Tuổi sản phẩm (ngày)",
-  periodDays: "Độ dài kỳ (ngày)", recentUnits: "Số lượng kỳ gần nhất", previousUnits: "Số lượng kỳ trước",
-  dropPct: "Mức giảm (%)", thresholdDays: "Ngưỡng cảnh báo (ngày)", targetDays: "Mức tồn mục tiêu (ngày)",
-  excessQty: "Số lượng dư", lotNumber: "Số lô", expirationDate: "Hạn sử dụng", daysToExpiry: "Số ngày đến hạn",
-  lotQuantity: "Số lượng lô", alertDaysBefore: "Cảnh báo trước (ngày)", projectedSellableQty: "Dự kiến bán trước hạn",
-  atRiskQty: "Số lượng có nguy cơ", lotStatus: "Trạng thái lô", possibleStockoutBias: "Có thể bị ảnh hưởng bởi hết hàng",
-  rateSource: "Nguồn tốc độ bán", stockoutInDays: "Dự kiến hết hàng sau (ngày)", stockoutDate: "Ngày dự kiến hết hàng",
-  restockInDays: "Bổ sung sau (ngày)", gapDays: "Số ngày thiếu hàng", slackDays: "Chênh lệch ngày",
-  model: "Mô hình", confidence: "Độ tin cậy", onOrderQty: "Đang đặt chưa về", dailyRate: "Nhu cầu/ngày",
-  restockSource: "Nguồn ngày bổ sung", leadTimeSource: "Nguồn thời gian nhập", lostUnits: "Số lượng có thể mất",
-  worstCaseOnly: "Chỉ trong trường hợp xấu", forecast14: "Dự báo 14 ngày", modelVersion: "Phiên bản mô hình",
-  datasetKind: "Loại dữ liệu mô hình", reviewPeriodDays: "Chu kỳ xem xét (ngày)", protectionDays: "Thời gian bảo vệ (ngày)",
-  safetyStock: "Tồn an toàn", safetyStockSource: "Nguồn tồn an toàn", unsellableLotUnits: "Số lượng lô khó bán trước hạn",
-  sellableStock: "Tồn dự kiến bán được", onOrder: "Hàng đang đặt chưa về", position: "Tồn có thể bán cộng hàng đang đặt",
-  target: "Tồn mục tiêu", rawNeed: "Nhu cầu chưa làm tròn", minOrderQty: "Số lượng đặt tối thiểu",
-  orderMultiple: "Bội số đặt hàng", noSupplier: "Chưa có nhà cung cấp",
+  stockAvailable: "Hàng có thể bán lúc phân tích", avgDaily30: "Trung bình bán mỗi ngày", leadTimeDays: "Thời gian nhập hàng (ngày)",
+  safetyStockQty: "Lượng hàng dự phòng", reorderPoint: "Mức tồn cần cân nhắc đặt thêm", shortfallToReorderPoint: "Còn thiếu để đạt mức cần đặt",
+  daysOfCover: "Ước tính số ngày đủ bán", sold30: "Đã bán trong 30 ngày", sold60: "Đã bán trong 60 ngày",
+  daysWithoutSale: "Số ngày chưa phát sinh bán", neverSold: "Chưa từng ghi nhận bán",
+  periodDays: "Số ngày của mỗi kỳ", recentUnits: "Số lượng bán kỳ gần nhất", previousUnits: "Số lượng bán kỳ trước",
+  dropPct: "Tỷ lệ giảm (%)", thresholdDays: "Ngưỡng cảnh báo (ngày)", targetDays: "Mức tồn mục tiêu (ngày)",
+  excessQty: "Số lượng vượt mức mục tiêu", lotNumber: "Mã lô", expirationDate: "Hạn sử dụng", daysToExpiry: "Còn bao nhiêu ngày đến hạn",
+  lotQuantity: "Số lượng trong lô", alertDaysBefore: "Báo trước hạn (ngày)", projectedSellableQty: "Ước tính bán được trước hạn",
+  atRiskQty: "Số lượng có nguy cơ còn lại", lotStatus: "Tình trạng lô", possibleStockoutBias: "Kết quả có thể bị ảnh hưởng do hết hàng",
+  rateSource: "Căn cứ tính tốc độ bán", stockoutInDays: "Ước tính còn bao nhiêu ngày đến khi hết hàng", stockoutDate: "Ngày có thể hết hàng",
+  restockInDays: "Ước tính thời gian chờ hàng về (ngày)", gapDays: "Số ngày có thể thiếu hàng",
+  onOrderQty: "Số lượng đã đặt, chưa về", dailyRate: "Nhu cầu ước tính mỗi ngày",
+  restockSource: "Căn cứ ước tính ngày hàng về", lostUnits: "Số lượng bán có thể bị bỏ lỡ", forecast14: "Nhu cầu dự báo trong 14 ngày",
+  safetyStock: "Lượng hàng dự phòng", unsellableLotUnits: "Số lượng có thể không bán kịp trước hạn",
+  sellableStock: "Hàng còn có thể bán", onOrder: "Hàng đã đặt, chưa về", position: "Hàng có thể bán và hàng đang về",
+  target: "Mức tồn mong muốn", minOrderQty: "Số lượng đặt tối thiểu",
+  orderMultiple: "Bội số mỗi lần đặt", noSupplier: "Chưa có nhà cung cấp",
 };
-
-function timestamp(value: string | null) {
-  return value ? new Date(value).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "Không rõ";
-}
 
 function metricValue(key: string, value: string | number | boolean | null) {
   if (value === null) return "Không rõ";
   if (typeof value === "boolean") return value ? "Có" : "Không";
-  if (key === "rateSource") return value === "FORECAST" ? "Dự báo" : value === "AVG_30" ? "Trung bình 30 ngày" : String(value);
-  if (key === "restockSource") return value === "OPEN_PO" ? "Đơn hàng đang về" : value === "LEAD_TIME" ? "Thời gian nhập ước tính, chưa xác nhận có đơn" : String(value);
-  if (key === "leadTimeSource") return ({ SUPPLIER: "Theo nhà cung cấp", HISTORY: "Theo các lần nhập trước", VARIANT: "Theo sản phẩm" } as Record<string, string>)[String(value)] ?? String(value);
-  if (key === "confidence") return ({ HIGH: "Tương đối tốt", MEDIUM: "Còn hạn chế", LOW: "Thấp" } as Record<string, string>)[String(value)] ?? String(value);
+  if (key === "rateSource") return value === "FORECAST" ? "Dự báo" : value === "AVG_30" ? "Trung bình 30 ngày" : "Không rõ";
+  if (key === "restockSource") return value === "OPEN_PO" ? "Đơn hàng đang về" : value === "LEAD_TIME" ? "Thời gian nhập ước tính, chưa xác nhận có đơn" : "Không rõ";
   if (key === "lotStatus" && value === "UNUSABLE") return "Không thể bán";
-  if (key === "datasetKind" && value === "synthetic") return "Dữ liệu giả lập";
-  if (key === "safetyStockSource" && value === "PRODUCT_SETTING") return "Theo cấu hình sản phẩm";
-  if (key === "safetyStockSource" && typeof value === "string" && /^AUTO_\d+PCT$/.test(value)) return `Tính tự động với mức phục vụ giả định ${value.slice(5, -3)}%`;
   if (typeof value === "number") return value.toLocaleString("vi-VN", { maximumFractionDigits: 3 });
   if (key === "expirationDate" || key === "stockoutDate") return displayDate(value);
   return value;
 }
 
 function Metrics({ values }: { values: Record<string, string | number | boolean | null> }) {
-  return <details className="ai-details"><summary>Xem số liệu dùng để tính</summary><div className="bd-table-wrap"><table className="bd-table"><tbody>
-    {Object.entries(values).filter(([key]) => metricLabels[key]).map(([key, value]) =>
+  const entries = Object.entries(values).filter(([key]) => metricLabels[key]);
+  if (!entries.length) return null;
+  return <details className="ai-details"><summary>Xem các số liệu làm căn cứ</summary><div className="bd-table-wrap"><table className="bd-table"><tbody>
+    {entries.map(([key, value]) =>
       <tr key={key}><th scope="row">{key === "avgDaily30" && values.rateSource === "FORECAST" ? "Tốc độ bán theo dự báo/ngày" : metricLabels[key]}</th><td>{metricValue(key, value)}</td></tr>)}
   </tbody></table></div></details>;
 }
 
 function Source({ dataAsOf, finishedAt }: { dataAsOf: string | null; finishedAt: string | null }) {
-  return <p className="bd-modal-note">Số bán tại quầy tính đến hết ngày {dataAsOf ? displayDate(dataAsOf) : "không rõ"} · Phân tích hoàn tất: {timestamp(finishedAt)}.</p>;
+  return <p className="bd-modal-note">Dữ liệu bán được tính đến hết {dataAsOf ? displayDate(dataAsOf) : "ngày không rõ"}. Phân tích hoàn tất ngày {finishedAt ? displayDate(finishedAt) : "không rõ"}.</p>;
 }
 
 function SeverityBadge({ level }: { level: InsightSeverity }) {
@@ -88,6 +79,11 @@ function signalTitle(signal: InventorySignal) {
   if (signal.type === "EXPIRATION_RISK" && signal.reasonCode === "EXPIRED_IN_STOCK") return "Đã hết hạn";
   if (signal.type === "EXPIRATION_RISK" && signal.reasonCode === "UNSELLABLE_NEAR_EXPIRY") return "Không thể bán";
   return types[signal.type] ?? signal.type;
+}
+
+function orderedSignals(signals: InventorySignal[]) {
+  const priority: InsightSeverity[] = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+  return [...signals].sort((a, b) => Number(b.current) - Number(a.current) || priority.indexOf(a.severity) - priority.indexOf(b.severity));
 }
 
 function describeSignal(signal: InventorySignal) {
@@ -151,6 +147,7 @@ function InventoryWorkspace() {
   const result = useLoad(() => aiInsightsApi.inventoryOutlook({ search, type, priority, page, pageSize }), [search, type, priority, page, pageSize]);
   const data = result.data;
   const totalPages = data?.state === "READY" ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
+  const dataWarnings = data?.state === "READY" ? data.warnings?.filter((warning) => warning.code !== "FORECAST_SYNTHETIC_MODEL" && warning.code !== "FORECAST_UNAVAILABLE") : null;
 
   return <main className="bd-page inventory-outlook-page">
     <header className="ai-header">
@@ -163,24 +160,27 @@ function InventoryWorkspace() {
       {data.state === "NOT_RUN" && "Chưa có lần phân tích. Chưa thể kết luận về rủi ro tồn kho."}
       {data.state === "RUNNING" && "Phân tích đang chạy; kết quả chưa hoàn chỉnh. Vui lòng làm mới sau khi chạy xong."}
       {data.state === "FAILED" && "Lần phân tích gần nhất thất bại; không thể kết luận về rủi ro tồn kho."}
-      {data.state === "INCOMPLETE" && "Kết quả trước đây chưa đủ điều kiện để hiển thị an toàn. Hãy chạy lại phân tích ở trang Cảnh báo tồn kho."}
+      {data.state === "INCOMPLETE" && "Kết quả trước đây chưa đầy đủ. Hãy chạy lại phân tích ở trang Cảnh báo tồn kho."}
       {" "}<Link to="/app/insights">Đến cảnh báo tồn kho</Link>
     </div>}
     {data?.state === "READY" && <>
-      {data.hasSyntheticSku && <div className="bd-notice warning" role="status">Có SKU DEMO- dùng dữ liệu giả lập, không chứng minh độ chính xác hoặc hiệu quả thực tế.</div>}
-      {data.hasSyntheticSku === null && <div className="bd-notice warning" role="status">Không có thông tin đầy đủ về SKU dữ liệu giả lập trong lần phân tích này.</div>}
-      {!data.ruleFresh && <div className="bd-notice warning" role="status">Kết quả đã quá 36 giờ, không còn được dùng để xếp mức ưu tiên. Hãy chạy lại phân tích trước khi ra quyết định.</div>}
-      {!data.forecastReady && <div className="bd-notice warning" role="status">Dự báo chưa sẵn sàng hoặc đã cũ. Các nhận định dựa trên dự báo và gợi ý nhập hàng có thể không còn phù hợp.</div>}
-      {data.warnings === null && <div className="bd-notice warning" role="status">Không có thông tin cảnh báo chất lượng dữ liệu của lần phân tích này.</div>}
-      {data.warnings?.map((warning, index) => <div className="bd-notice warning" role="status" key={`${warning.code}-${index}`}>{warning.message}</div>)}
+      {!data.ruleFresh && <div className="bd-notice warning" role="status">Thông tin đã cũ và chưa thể xếp mức ưu tiên mới. Hãy chạy lại phân tích trước khi ra quyết định.</div>}
+      {!data.forecastReady && <div className="bd-notice warning" role="status">Dự báo chưa sẵn sàng hoặc đã cũ. Nhận định dựa trên dự báo và gợi ý nhập có thể chưa được cập nhật; hãy kiểm tra thực tế trước khi quyết định.</div>}
+      {data.warnings === null && <div className="bd-notice warning" role="status">Chưa có thông tin về chất lượng dữ liệu của lần phân tích này. Hãy kiểm tra thực tế trước khi quyết định.</div>}
+      {dataWarnings && dataWarnings.length > 0 && <details className="ai-data-warnings">
+        <summary>Có {dataWarnings.length} lưu ý về dữ liệu có thể ảnh hưởng đến nhận định</summary>
+        <ul>{dataWarnings.map((warning, index) => <li key={`${warning.code}-${index}`}>{warning.code === "NO_SALES_DATA" ? "Chưa có dữ liệu bán tại quầy trong 60 ngày gần nhất." : warning.message}</li>)}</ul>
+      </details>}
       <section className="bd-data-workspace">
         <div className="bd-workspace-heading"><div><h2><Boxes size={19} /> Mặt hàng cần xem xét</h2>
-          <p>Số bán tại quầy tính đến hết ngày {displayDate(data.latestRun?.dataAsOf)} · Phân tích hoàn tất: {timestamp(data.latestRun?.finishedAt ?? null)}.</p>
-          <p>Tồn kho và lô là số liệu tại lần phân tích, không phải tồn thời gian thực. Mỗi mã hàng có thể có nhiều vấn đề cần xem riêng.</p>
+          <p>Phân tích ngày {data.latestRun?.finishedAt ? displayDate(data.latestRun.finishedAt) : "không rõ"} · Dữ liệu bán đến hết {displayDate(data.latestRun?.dataAsOf)}.</p>
         </div></div>
+        <div className="inventory-priority-heading"><h3>Mức độ ưu tiên</h3><p>Chọn một mức để lọc mặt hàng. Mỗi mã chỉ được tính một lần theo vấn đề mới có mức ưu tiên cao nhất.</p></div>
         <div className="ai-kpis">
-          <div className="ai-kpi"><span>Mã hàng cần xem</span><strong>{data.summary.totalSku}</strong><small>Trước khi lọc</small></div>
-          {(Object.keys(levels) as InsightSeverity[]).map((level) => <div className={`ai-sev-card inventory-priority-card ${level.toLowerCase()}`} key={level}><span>{levels[level]}</span><strong>{data.summary.byPriority[level]}</strong><small>{levelHints[level]}</small></div>)}
+          <div className="ai-kpi"><span>Mã hàng trong danh sách</span><strong>{data.summary.totalSku}</strong><small>Gồm cả thông tin cũ và đơn nháp</small></div>
+          {(Object.keys(levels) as InsightSeverity[]).map((level) => <button type="button" className={`ai-sev-card inventory-priority-card ${level.toLowerCase()}${priority === level ? " active" : ""}`} key={level}
+            aria-pressed={priority === level} onClick={() => { setDetail(null); setPage(1); setPriority(priority === level ? "" : level); }}>
+            <span>{levels[level]}</span><strong>{data.summary.byPriority[level]}</strong><small>{levelHints[level]}</small></button>)}
           <div className="ai-kpi"><span>Chưa có mức mới</span><strong>{data.summary.withoutCurrentPriority}</strong><small>Chỉ có thông tin cũ hoặc đơn nháp</small></div>
         </div>
         <form className="bd-filters" onSubmit={(event) => { event.preventDefault(); setDetail(null); setPage(1); setSearch(searchInput); }}>
@@ -196,16 +196,20 @@ function InventoryWorkspace() {
           <PaginationSize value={pageSize} onChange={(value) => { setDetail(null); setPageSize(value); setPage(1); }} />
         </form>
         {data.items.length ? <>
-          <div className="bd-table-wrap"><table className="bd-table ai-table"><thead><tr><th>Sản phẩm / mã hàng</th><th>Mức ưu tiên</th><th>Điều cần chú ý</th><th>Nhập hàng</th><th></th></tr></thead>
-            <tbody>{data.items.map((item) => <tr key={item.variantId} className={item.priority ? `sev-${item.priority.toLowerCase()}` : ""}>
+          <div className="bd-table-wrap"><table className="bd-table ai-table inventory-table">
+            <colgroup><col className="inventory-col-product" /><col className="inventory-col-priority" /><col className="inventory-col-signals" /><col className="inventory-col-replenishment" /><col className="inventory-col-detail" /></colgroup>
+            <thead><tr><th>Sản phẩm / mã hàng</th><th>Mức ưu tiên</th><th>Điều cần chú ý</th><th>Nhập hàng</th><th aria-label="Chi tiết"></th></tr></thead>
+            <tbody>{data.items.map((item) => {
+              const signals = orderedSignals(item.signals);
+              return <tr key={item.variantId} className={item.priority ? `sev-${item.priority.toLowerCase()}` : ""}>
               <td className="bd-primary-cell">{item.productName}<br /><small>{item.sku}{item.category ? ` · ${item.category}` : ""}</small></td>
               <td>{item.priority ? <SeverityBadge level={item.priority} /> : "Chưa có mức mới"}</td>
-              <td>{item.signals.length ? <ul className="inventory-signals">{item.signals.map((signal) => <li key={signal.id}>
+              <td>{signals.length ? <><ul className="inventory-signals">{signals.slice(0, 2).map((signal) => <li key={signal.id}>
                 {signalTitle(signal)}{signal.lotNumber ? ` · Lô ${signal.lotNumber}` : ""}{signal.current ? "" : " (thông tin cũ)"}
-              </li>)}</ul> : "Không có cảnh báo đang mở"}</td>
+              </li>)}</ul>{signals.length > 2 && <small>+{signals.length - 2} vấn đề khác trong chi tiết</small>}</> : "Không có cảnh báo đang mở"}</td>
               <td>{!item.replenishment ? "Chưa có gợi ý" : item.replenishment.status === "ORDERED" ? "Đơn nháp chờ xác nhận" : `Gợi ý nhập ${item.replenishment.suggestedQty} sản phẩm${item.replenishment.current ? "" : " (thông tin cũ)"}`}</td>
               <td><button type="button" className="ai-icon-btn" title="Xem chi tiết" aria-label={`Xem chi tiết ${item.productName} ${item.sku}`} onClick={() => setDetail(item)}><Eye size={18} aria-hidden="true" /></button></td>
-            </tr>)}</tbody></table></div>
+            </tr>; })}</tbody></table></div>
           <div className="bd-pagination"><Pagination page={data.page} total={data.total} totalPages={totalPages} onPageChange={(value) => { setDetail(null); setPage(value); }} /></div>
         </> : <div className="bd-empty-state compact"><h3>Không có mã hàng phù hợp</h3><p>Danh sách chỉ gồm cảnh báo đang mở, gợi ý nhập và đơn nháp. Dữ liệu thiếu hoặc cũ không chứng minh cửa hàng không có rủi ro.</p></div>}
         <p className="bd-modal-note">Mỗi mã hàng chỉ được đếm một lần theo mức cao nhất từ thông tin còn mới. Thông tin cũ và đơn nháp không dùng để xếp mức ưu tiên; đơn nháp chưa phải hàng đang về.</p>
@@ -213,21 +217,21 @@ function InventoryWorkspace() {
     </>}
     <Modal open={detail !== null} onClose={() => setDetail(null)} size="wide" title="Chi tiết nhận định tồn kho">
       {detail && <div className="bd-modal-content"><h3>{detail.productName} · {detail.sku}</h3>
-        <p>Mỗi vấn đề và mỗi lô được trình bày riêng. Nếu các hướng xử lý khác nhau, hãy kiểm tra thực tế trước khi quyết định.</p>
-        {detail.signals.map((signal) => <section className="inventory-detail-card" key={signal.id}>
+        <p>Dưới đây là những vấn đề được ghi nhận cho mặt hàng này. Hãy đối chiếu với tình hình thực tế trước khi quyết định nhập thêm hoặc xử lý hàng.</p>
+        {orderedSignals(detail.signals).map((signal) => <section className="inventory-detail-card" key={signal.id}>
           <h3>{signalTitle(signal)}{signal.lotNumber ? ` · Lô ${signal.lotNumber}` : ""}</h3>
-          <p className="inventory-detail-status">{signal.current ? <SeverityBadge level={signal.severity} /> : <span>Mức lúc phát hiện: {levels[signal.severity]}</span>} <span>· {signal.status === "ACKNOWLEDGED" ? "Đang xử lý" : "Mới"}</span></p>
-          {!signal.current && <p className="inventory-stale">Thông tin cũ hoặc dự báo chưa sẵn sàng; không dùng để xếp mức ưu tiên mới nhất. Hãy phân tích lại và kiểm tra thực tế.</p>}
-          <p><strong>Vì sao cần chú ý:</strong> {describeSignal(signal)}{signal.expirationDate ? ` Hạn sử dụng: ${displayDate(signal.expirationDate)}.` : ""}</p>
-          <p><strong>Gợi ý xem xét:</strong> {actions[signal.suggestedAction] ?? "Kiểm tra tình trạng và cân nhắc cách xử lý."}.</p>
+          <p className="inventory-detail-status">{signal.current ? <SeverityBadge level={signal.severity} /> : <span>Mức khi được ghi nhận: {levels[signal.severity]}</span>} <span>· {signal.status === "ACKNOWLEDGED" ? "Đang được xử lý" : "Chưa được xử lý"}</span></p>
+          {!signal.current && <p className="inventory-stale">Thông tin này có thể đã thay đổi hoặc chưa được cập nhật trong lần phân tích mới nhất. Hãy phân tích lại và kiểm tra thực tế trước khi xử lý.</p>}
+          <p><strong>Tình hình:</strong> {describeSignal(signal)}{signal.expirationDate ? ` Hạn sử dụng: ${displayDate(signal.expirationDate)}.` : ""}</p>
+          <p><strong>Gợi ý xử lý:</strong> {actions[signal.suggestedAction] ?? "Kiểm tra tình trạng mặt hàng và cân nhắc cách xử lý phù hợp."}.</p>
           <Source dataAsOf={signal.dataAsOf} finishedAt={signal.finishedAt} />
           <Metrics values={signal.metrics} />
         </section>)}
         {detail.replenishment && <section className="inventory-detail-card">
-          <h3>{detail.replenishment.status === "ORDERED" ? "Đơn nháp chờ xác nhận" : "Đề xuất nhập hàng"}</h3>
-          <p>{detail.replenishment.status === "ORDERED" ? `Đơn ${detail.replenishment.poCode ?? "không rõ"} chưa xác nhận; không tính là hàng đang về hoặc đề xuất mới.` :
-            `${detail.replenishment.current ? "Theo lần phân tích mới nhất" : "Thông tin cũ hoặc dự báo chưa sẵn sàng; hãy phân tích lại trước khi đặt hàng"}: hệ thống gợi ý xem xét nhập ${detail.replenishment.suggestedQty} sản phẩm.`}</p>
-          <p>Nhà cung cấp được gợi ý: {detail.replenishment.supplierName ?? "Chưa xác định"}{detail.replenishment.status === "PENDING" && detail.replenishment.orderByDate ? ` · Ngày nên đặt theo ước tính: ${displayDate(detail.replenishment.orderByDate)}` : ""}{detail.replenishment.status === "PENDING" && detail.replenishment.stockoutDate ? ` · Ngày có thể hết hàng: ${displayDate(detail.replenishment.stockoutDate)}` : ""}</p>
+          <h3>{detail.replenishment.status === "ORDERED" ? "Đơn nháp chưa xác nhận" : "Gợi ý nhập hàng"}</h3>
+          <p>{detail.replenishment.status === "ORDERED" ? `${detail.replenishment.poCode ? `Đơn ${detail.replenishment.poCode}` : "Đơn nháp"} chưa được xác nhận. Vì vậy, hệ thống chưa tính số hàng này là hàng đang về và chưa tạo gợi ý nhập mới.` :
+            `${detail.replenishment.current ? "Dựa trên lần phân tích mới nhất" : "Gợi ý này có thể đã cũ hoặc chưa có dự báo mới; hãy phân tích lại trước khi đặt hàng"}: hệ thống đề xuất cân nhắc nhập ${detail.replenishment.suggestedQty} sản phẩm.`}</p>
+          <p>Nhà cung cấp tham khảo: {detail.replenishment.supplierName ?? "Chưa có nhà cung cấp phù hợp"}{detail.replenishment.status === "PENDING" && detail.replenishment.orderByDate ? ` · Nên cân nhắc đặt trước ${displayDate(detail.replenishment.orderByDate)}` : ""}{detail.replenishment.status === "PENDING" && detail.replenishment.stockoutDate ? ` · Có thể hết hàng vào ${displayDate(detail.replenishment.stockoutDate)}` : ""}</p>
           <Source dataAsOf={detail.replenishment.dataAsOf} finishedAt={detail.replenishment.finishedAt} />
           <Metrics values={detail.replenishment.details} />
         </section>}

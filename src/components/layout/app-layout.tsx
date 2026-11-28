@@ -79,6 +79,7 @@ const navigation: NavigationGroup[] = [
       { to: "/app/replenishment", label: "Gợi ý nhập hàng", icon: PackagePlus, permission: "analytics.read" },
       { to: "/app/product-performance", label: "Hiệu quả sản phẩm", icon: BarChart3, permissionGroups: [["analytics.read", "finance.read"]] },
       { to: "/app/business-movement", label: "Giải thích biến động", icon: Activity, permissionGroups: [["analytics.read", "finance.read"]] },
+      { to: "/app/assistant", label: "Hỏi đáp kinh doanh", icon: CircleHelp, permissionGroups: [["analytics.read", "finance.read"]] },
       { to: "/app/profit-simulation", label: "Mô phỏng lợi nhuận", icon: CircleDollarSign, permissionGroups: [["analytics.read", "finance.read"]] },
     ],
   },
