@@ -218,10 +218,10 @@ export function AuditItemDetailPage() {
       setTargetUserId('');
       setSecondCounterUserId('');
       setNotice(
-        `Đã giao ${updated.sku} cho ${updated.assignedTo?.name ?? 'nhân viên mới'} và ${updated.secondCounter?.name ?? 'người kiểm kê thứ hai'}`,
+        `Đã gán ${updated.sku} cho ${updated.assignedTo?.name ?? 'nhân viên mới'} và ${updated.secondCounter?.name ?? 'người kiểm kê thứ hai'}`,
       );
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Không đổi được người phụ trách');
+      setActionError(err instanceof Error ? err.message : 'Không gán được nhân viên cho dòng kiểm kê');
     } finally {
       setReassigning(false);
     }
@@ -723,10 +723,10 @@ export function AuditItemDetailPage() {
         {canReassign && (
           <Card className="p-6 space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Phân công lại</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Gán nhân viên cho dòng này</h3>
               <p className="text-sm text-gray-600 mt-1">
-                Chuyển dòng này cho nhân viên khác khi người phụ trách đã nghỉ việc hoặc không có mặt
-                hôm nay.
+                Gán lại hai người kiểm kê cho dòng này: dùng khi dòng chưa gán ai, hoặc khi người
+                phụ trách đã nghỉ việc hoặc không có mặt hôm nay.
               </p>
             </div>
 
@@ -787,7 +787,7 @@ export function AuditItemDetailPage() {
                 disabled={reassigning || !targetUserId || !secondCounterUserId}
                 className="bg-[#0f4c3a] hover:bg-[#0a3528] text-white"
               >
-                {reassigning ? 'Đang chuyển...' : 'Chuyển cho nhân viên này'}
+                {reassigning ? 'Đang gán...' : 'Gán cho nhân viên này'}
               </Button>
             </div>
 
